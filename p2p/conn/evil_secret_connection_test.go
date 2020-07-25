@@ -3,6 +3,7 @@ package conn
 import (
 	"bytes"
 	"errors"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io"
 	"testing"
 
@@ -58,7 +59,7 @@ type evilConn struct {
 }
 
 func newEvilConn(shareEphKey, badEphKey, shareAuthSignature, badAuthSignature bool) *evilConn {
-	privKey := ed25519.GenPrivKey()
+	privKey := bls12381.GenPrivKey()
 	locEphPub, locEphPriv := genEphKeys()
 	var rep [32]byte
 	c := &evilConn{
@@ -241,7 +242,7 @@ func (c *evilConn) signChallenge() []byte {
 	return locSignature
 }
 
-// TestMakeSecretConnection creates an evil connection and tests that
+// TestMakeSecretConnection creates an evil connection and tests it
 // MakeSecretConnection errors at different stages.
 func TestMakeSecretConnection(t *testing.T) {
 	testCases := []struct {
@@ -249,8 +250,8 @@ func TestMakeSecretConnection(t *testing.T) {
 		conn   *evilConn
 		errMsg string
 	}{
-		{"refuse to share ethimeral key", newEvilConn(false, false, false, false), "EOF"},
-		{"share bad ethimeral key", newEvilConn(true, true, false, false), "wrong wireType"},
+		{"refuse to share ephemeral key", newEvilConn(false, false, false, false), "EOF"},
+		{"share bad ephemeral key", newEvilConn(true, true, false, false), "wrong wireType"},
 		{"refuse to share auth signature", newEvilConn(true, false, false, false), "EOF"},
 		{"share bad auth signature", newEvilConn(true, false, true, true), "failed to decrypt SecretConnection"},
 		{"all good", newEvilConn(true, false, true, false), ""},

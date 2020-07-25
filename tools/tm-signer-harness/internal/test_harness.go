@@ -3,6 +3,7 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"net"
 	"os"
 	"os/signal"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/state"
 
@@ -74,7 +74,7 @@ type TestHarnessConfig struct {
 	ConnDeadline   time.Duration
 	AcceptRetries  int
 
-	SecretConnKey ed25519.PrivKey
+	SecretConnKey bls12381.PrivKey
 
 	ExitWhenComplete bool // Whether or not to call os.Exit when the harness has completed.
 }

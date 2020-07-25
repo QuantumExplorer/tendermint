@@ -3,6 +3,7 @@ package state_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"time"
 
 	dbm "github.com/tendermint/tm-db"
@@ -98,7 +99,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 	privVals := make(map[string]types.PrivValidator, nVals)
 	for i := 0; i < nVals; i++ {
 		secret := []byte(fmt.Sprintf("test%d", i))
-		pk := ed25519.GenPrivKeyFromSecret(secret)
+		pk := bls12381.GenPrivKeyFromSecret(secret)
 		valAddr := pk.PubKey().Address()
 		vals[i] = types.GenesisValidator{
 			Address: valAddr,

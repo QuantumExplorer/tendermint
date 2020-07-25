@@ -1,10 +1,10 @@
 package light_test
 
 import (
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"time"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
@@ -21,10 +21,14 @@ import (
 type privKeys []crypto.PrivKey
 
 // genPrivKeys produces an array of private keys to generate commits.
-func genPrivKeys(n int) privKeys {
+func genPrivKeys(n int, keyType crypto.KeyType) privKeys {
 	res := make(privKeys, n)
 	for i := range res {
-		res[i] = ed25519.GenPrivKey()
+		if keyType == crypto.BLS12381 {
+			res[i] = bls12381.GenPrivKey()
+		} else if keyType == crypto.Ed25519 {
+			res[i] = bls12381.GenPrivKey()
+		}
 	}
 	return res
 }
