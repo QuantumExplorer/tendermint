@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
 
@@ -9,13 +10,12 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 )
 
 func TestABCIPubKey(t *testing.T) {
-	pkEd := ed25519.GenPrivKey().PubKey()
-	err := testABCIPubKey(t, pkEd, ABCIPubKeyTypeEd25519)
+	pkBLS := bls12381.GenPrivKey().PubKey()
+	err := testABCIPubKey(t, pkBLS, ABCIPubKeyTypeEd25519)
 	assert.NoError(t, err)
 }
 
@@ -29,7 +29,7 @@ func testABCIPubKey(t *testing.T, pk crypto.PubKey, typeStr string) error {
 }
 
 func TestABCIValidators(t *testing.T) {
-	pkEd := ed25519.GenPrivKey().PubKey()
+	pkEd := bls12381.GenPrivKey().PubKey()
 
 	// correct validator
 	tmValExpected := NewValidator(pkEd, 10)
@@ -91,7 +91,7 @@ func (pubKeyEddie) String() string                          { return "" }
 func (pubKeyEddie) Type() string                            { return "pubKeyEddie" }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
-	pubkey := ed25519.GenPrivKey().PubKey()
+	pubkey := bls12381.GenPrivKey().PubKey()
 
 	abciVal := TM2PB.NewValidatorUpdate(pubkey, 10)
 	assert.Equal(t, int64(10), abciVal.Power)
@@ -101,13 +101,13 @@ func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 }
 
 func TestABCIValidatorWithoutPubKey(t *testing.T) {
-	pkEd := ed25519.GenPrivKey().PubKey()
+	pkBLS := bls12381.GenPrivKey().PubKey()
 
-	abciVal := TM2PB.Validator(NewValidator(pkEd, 10))
+	abciVal := TM2PB.Validator(NewValidator(pkBLS, 10))
 
 	// pubkey must be nil
 	tmValExpected := abci.Validator{
-		Address: pkEd.Address(),
+		Address: pkBLS.Address(),
 		Power:   10,
 	}
 

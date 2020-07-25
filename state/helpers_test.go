@@ -10,7 +10,6 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -141,7 +140,7 @@ func makeBlock(state sm.State, height int64) *types.Block {
 func genValSet(size int) *types.ValidatorSet {
 	vals := make([]*types.Validator, size)
 	for i := 0; i < size; i++ {
-		vals[i] = types.NewValidator(ed25519.GenPrivKey().PubKey(), 10)
+		vals[i] = types.NewValidator(bls12381.GenPrivKey().PubKey(), 10)
 	}
 	return types.NewValidatorSet(vals)
 }
@@ -208,7 +207,7 @@ func makeHeaderPartsResponsesParams(
 }
 
 func randomGenesisDoc() *types.GenesisDoc {
-	pubkey := ed25519.GenPrivKey().PubKey()
+	pubkey := bls12381.GenPrivKey().PubKey()
 	return &types.GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     "abc",

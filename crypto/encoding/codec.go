@@ -3,6 +3,7 @@ package encoding
 import (
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -18,6 +19,10 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 			Sum: &pc.PublicKey_Ed25519{
 				Ed25519: k,
 			},
+		}
+	case bls12381.PubKey:
+		kp = pc.PublicKey{
+			Sum: &pc.Pu
 		}
 	default:
 		return kp, fmt.Errorf("toproto: key type %v is not supported", k)

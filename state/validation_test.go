@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
 
@@ -71,7 +72,7 @@ func TestValidateBlockHeader(t *testing.T) {
 		{"LastResultsHash wrong", func(block *types.Block) { block.LastResultsHash = wrongHash }},
 
 		{"EvidenceHash wrong", func(block *types.Block) { block.EvidenceHash = wrongHash }},
-		{"Proposer wrong", func(block *types.Block) { block.ProposerAddress = ed25519.GenPrivKey().PubKey().Address() }},
+		{"Proposer wrong", func(block *types.Block) { block.ProposerAddress = bls12381.GenPrivKey().PubKey().Address() }},
 		{"Proposer invalid", func(block *types.Block) { block.ProposerAddress = []byte("wrong size") }},
 	}
 
