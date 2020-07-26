@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tendermint/tendermint/behaviour"
-	bc "github.com/tendermint/tendermint/blockchain"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/p2p"
-	bcproto "github.com/tendermint/tendermint/proto/tendermint/blockchain"
-	"github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/behaviour"
+	bc "github.com/quantumexplorer/tendermint/blockchain"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/p2p"
+	bcproto "github.com/quantumexplorer/tendermint/proto/tendermint/blockchain"
+	"github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 const (

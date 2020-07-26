@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	cmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
-	"github.com/tendermint/tendermint/cmd/tendermint/commands/debug"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/cli"
-	nm "github.com/tendermint/tendermint/node"
+	cmd "github.com/quantumexplorer/tendermint/cmd/tendermint/commands"
+	"github.com/quantumexplorer/tendermint/cmd/tendermint/commands/debug"
+	cfg "github.com/quantumexplorer/tendermint/config"
+	"github.com/quantumexplorer/tendermint/libs/cli"
+	nm "github.com/quantumexplorer/tendermint/node"
 )
 
 func main() {

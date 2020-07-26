@@ -15,13 +15,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	flow "github.com/tendermint/tendermint/libs/flowrate"
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	"github.com/tendermint/tendermint/libs/protoio"
-	"github.com/tendermint/tendermint/libs/service"
-	"github.com/tendermint/tendermint/libs/timer"
-	tmp2p "github.com/tendermint/tendermint/proto/tendermint/p2p"
+	flow "github.com/quantumexplorer/tendermint/libs/flowrate"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	"github.com/quantumexplorer/tendermint/libs/protoio"
+	"github.com/quantumexplorer/tendermint/libs/service"
+	"github.com/quantumexplorer/tendermint/libs/timer"
+	tmp2p "github.com/quantumexplorer/tendermint/proto/tendermint/p2p"
 )
 
 const (
@@ -606,7 +606,7 @@ FOR_LOOP:
 		switch pkt := packet.Sum.(type) {
 		case *tmp2p.Packet_PacketPing:
 			// TODO: prevent abuse, as they cause flush()'s.
-			// https://github.com/tendermint/tendermint/issues/1190
+			// https://github.com/quantumexplorer/tendermint/issues/1190
 			c.Logger.Debug("Receive Ping")
 			select {
 			case c.pong <- struct{}{}:

@@ -1,14 +1,14 @@
 package privval
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"net"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 )
 
 //-------------------------------------------

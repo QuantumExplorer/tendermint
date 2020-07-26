@@ -1,8 +1,8 @@
 package bls12381
 
 import (
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/internal/benchmarking"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/internal/benchmarking"
 	"io"
 	"testing"
 )

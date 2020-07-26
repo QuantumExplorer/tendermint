@@ -9,12 +9,12 @@ package rpc
 //	"github.com/stretchr/testify/assert"
 //	"github.com/stretchr/testify/require"
 
-//	"github.com/tendermint/tendermint/abci/example/kvstore"
-//	"github.com/tendermint/tendermint/crypto/merkle"
-//	nm "github.com/tendermint/tendermint/node"
-//	"github.com/tendermint/tendermint/rpc/client"
-//	rpctest "github.com/tendermint/tendermint/rpc/test"
-//	"github.com/tendermint/tendermint/types"
+//	"github.com/quantumexplorer/tendermint/abci/example/kvstore"
+//	"github.com/quantumexplorer/tendermint/crypto/merkle"
+//	nm "github.com/quantumexplorer/tendermint/node"
+//	"github.com/quantumexplorer/tendermint/rpc/client"
+//	rpctest "github.com/quantumexplorer/tendermint/rpc/test"
+//	"github.com/quantumexplorer/tendermint/types"
 //)
 
 //var node *nm.Node

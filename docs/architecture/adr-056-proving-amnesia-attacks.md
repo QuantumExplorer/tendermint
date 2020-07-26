@@ -31,7 +31,7 @@ As the distinction between these two attacks (amnesia and back to the past) can 
 
 Currently, the evidence reactor is used to simply broadcast and store evidence. The idea of creating a new reactor for the specific task of verifying these attacks was briefly discussed, but it is decided that the current evidence reactor will be extended.
 
-The process begins with a light client receiving conflicting headers (in the future this could also be a full node during fast sync or state sync), which it sends to a full node to analyse. As part of [evidence handling](https://github.com/tendermint/tendermint/blob/master/docs/architecture/adr-047-handling-evidence-from-light-client.md), this is extracted into potential amnesia evidence when the validator voted in more than one round for a different block.
+The process begins with a light client receiving conflicting headers (in the future this could also be a full node during fast sync or state sync), which it sends to a full node to analyse. As part of [evidence handling](https://github.com/quantumexplorer/tendermint/blob/master/docs/architecture/adr-047-handling-evidence-from-light-client.md), this is extracted into potential amnesia evidence when the validator voted in more than one round for a different block.
 
 ```golang
 type PotentialAmnesiaEvidence struct {
@@ -42,7 +42,7 @@ type PotentialAmnesiaEvidence struct {
 }
 ```
 
-*NOTE: There had been an earlier notion towards batching evidence against the entire set of validators all together but this has given way to individual processing predominantly to maintain consistency with the other forms of evidence. A more extensive breakdown can be found [here](https://github.com/tendermint/tendermint/issues/4729)*
+*NOTE: There had been an earlier notion towards batching evidence against the entire set of validators all together but this has given way to individual processing predominantly to maintain consistency with the other forms of evidence. A more extensive breakdown can be found [here](https://github.com/quantumexplorer/tendermint/issues/4729)*
 
 The evidence will contain the precommit votes for a validator that voted for both rounds. If the validator voted in more than two rounds, then they will have multiple `PotentialAmnesiaEvidence` against them hence it is possible that there is multiple evidence for a validator in a single height but not for a single round. The votes should be all valid and the height and time that the infringement was made should be within:
 
@@ -91,7 +91,7 @@ Other validators will vote <nil> if:
 - They don't have the Amnesia Evidence and it is has an empty polc (each validator needs to run their own trial period of the evidence)
 - Is of an AmnesiaEvidence that has already been committed to the chain.
 
-Finally it is important to stress that the protocol of having a trial period addresses attacks where a validator voted again for a different block at a later round and time. In the event, however, that the validator voted for an earlier round after voting for a later round i.e. `VoteA.Timestamp < VoteB.Timestamp && VoteA.Round > VoteB.Round` then this action is inexcusable and can be punished immediately without the need of a trial period. In this case, PotentialAmnesiaEvidence will be instantly upgraded to AmnesiaEvidence. 
+Finally it is important to stress that the protocol of having a trial period addresses attacks where a validator voted again for a different block at a later round and time. In the event, however, that the validator voted for an earlier round after voting for a later round i.e. `VoteA.Timestamp < VoteB.Timestamp && VoteA.Round > VoteB.Round` then this action is inexcusable and can be punished immediately without the need of a trial period. In this case, PotentialAmnesiaEvidence will be instantly upgraded to AmnesiaEvidence.
 
 
 ## Status

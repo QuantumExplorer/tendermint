@@ -9,9 +9,9 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/crypto"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 func TestLast_FirstSignedHeaderHeight(t *testing.T) {

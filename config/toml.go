@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	tmos "github.com/tendermint/tendermint/libs/os"
+	tmos "github.com/quantumexplorer/tendermint/libs/os"
 )
 
 // DefaultDirPerm is the default permissions used when creating directories.
@@ -205,7 +205,7 @@ max_subscriptions_per_client = {{ .RPC.MaxSubscriptionsPerClient }}
 # How long to wait for a tx to be committed during /broadcast_tx_commit.
 # WARNING: Using a value larger than 10s will result in increasing the
 # global HTTP write timeout, which applies to all connections and endpoints.
-# See https://github.com/tendermint/tendermint/issues/3435
+# See https://github.com/quantumexplorer/tendermint/issues/3435
 timeout_broadcast_tx_commit = "{{ .RPC.TimeoutBroadcastTxCommit }}"
 
 # Maximum size of request body, in bytes
@@ -360,7 +360,7 @@ temp_dir = "{{ .StateSync.TempDir }}"
 # Fast Sync version to use:
 #   1) "v0" (default) - the legacy fast sync implementation
 #   2) "v1" - refactor of v0 version for better testability
-#   2) "v2" - complete redesign of v0, optimized for testability & readability 
+#   2) "v2" - complete redesign of v0, optimized for testability & readability
 version = "{{ .FastSync.Version }}"
 
 #######################################################
@@ -395,7 +395,7 @@ peer_query_maj23_sleep_duration = "{{ .Consensus.PeerQueryMaj23SleepDuration }}"
 [tx_index]
 
 # What indexer to use for transactions
-# 
+#
 # The application will set which txs to index. In some cases a node operator will be able
 # to decide which txs to index based on configuration set in the application.
 #

@@ -8,15 +8,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	"github.com/tendermint/tendermint/libs/service"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/libs/bytes"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmpubsub "github.com/quantumexplorer/tendermint/libs/pubsub"
+	"github.com/quantumexplorer/tendermint/libs/service"
+	rpcclient "github.com/quantumexplorer/tendermint/rpc/client"
+	ctypes "github.com/quantumexplorer/tendermint/rpc/core/types"
+	jsonrpcclient "github.com/quantumexplorer/tendermint/rpc/jsonrpc/client"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 /*

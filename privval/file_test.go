@@ -3,7 +3,7 @@ package privval
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/types"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 func TestGenLoadValidator(t *testing.T) {

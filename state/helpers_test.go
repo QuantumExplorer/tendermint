@@ -3,20 +3,20 @@ package state_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"time"
 
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
+	tmstate "github.com/quantumexplorer/tendermint/proto/tendermint/state"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/proxy"
+	sm "github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/types"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 type paramsChangeTestCase struct {

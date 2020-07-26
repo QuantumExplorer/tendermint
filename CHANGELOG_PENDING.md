@@ -13,12 +13,12 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
   - [evidence] \#4959 Add json tags to `DuplicateVoteEvidence`
   - [light] \#4946 `tendermint lite` cmd has been renamed to `tendermint light`
   - [privval] \#4582 `round` in private_validator_state.json is no longer a string in json it is now a number
-  - [rpc] [\#4792](https://github.com/tendermint/tendermint/pull/4792) `/validators` are now sorted by voting power (@melekes)
+  - [rpc] [\#4792](https://github.com/quantumexplorer/tendermint/pull/4792) `/validators` are now sorted by voting power (@melekes)
   - [rpc] \#4937 Return an error when `page` pagination param is 0 in `/validators`, `tx_search` (@melekes)
 
 - Apps
 
-  - [abci] [\#4704](https://github.com/tendermint/tendermint/pull/4704) Add ABCI methods `ListSnapshots`, `LoadSnapshotChunk`, `OfferSnapshot`, and `ApplySnapshotChunk` for state sync snapshots. `ABCIVersion` bumped to 0.17.0.
+  - [abci] [\#4704](https://github.com/quantumexplorer/tendermint/pull/4704) Add ABCI methods `ListSnapshots`, `LoadSnapshotChunk`, `OfferSnapshot`, and `ApplySnapshotChunk` for state sync snapshots. `ABCIVersion` bumped to 0.17.0.
   - [abci] \#4989 `Proof` within `ResponseQuery` has been renamed to `ProofOps`
   - [abci] `CheckTxType` Protobuf enum names are now uppercase, to follow Protobuf style guide
 
@@ -32,11 +32,11 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 - Blockchain Protocol
 
-  - [evidence] [\#4780](https://github.com/tendermint/tendermint/pull/4780) Cap evidence to an absolute number (@cmwaters)
+  - [evidence] [\#4780](https://github.com/quantumexplorer/tendermint/pull/4780) Cap evidence to an absolute number (@cmwaters)
     - Add `max_num` to consensus evidence parameters (default: 50 items).
   - [evidence] \#4725 Remove `Pubkey` from `DuplicateVoteEvidence`
   - [state] \#4845 Include `BeginBlock#Events`, `EndBlock#Events`, `DeliverTx#Events`, `GasWanted` and `GasUsed` into `LastResultsHash` (@melekes)
-  - [types] [\#4792](https://github.com/tendermint/tendermint/pull/4792) Sort validators by voting power to enable faster commit verification (@melekes)
+  - [types] [\#4792](https://github.com/quantumexplorer/tendermint/pull/4792) Sort validators by voting power to enable faster commit verification (@melekes)
 
 - On-disk serialization
 
@@ -52,7 +52,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - Go API
 
   - [light] \#4946 Rename `lite2` pkg to `light`. Remove `lite` implementation.
-  - [crypto] [\#4721](https://github.com/tendermint/tendermint/pull/4721) Remove `SimpleHashFromMap()` and `SimpleProofsFromMap()` (@erikgrinaker)
+  - [crypto] [\#4721](https://github.com/quantumexplorer/tendermint/pull/4721) Remove `SimpleHashFromMap()` and `SimpleProofsFromMap()` (@erikgrinaker)
   - [crypto] \#4940 All keys have become `[]byte` instead of `[<size>]byte`. The byte method no longer returns the marshaled value but just the `[]byte` form of the data.
   - [crypto] \4988 Removal of key type multisig
     - The key has been moved to the [Cosmos-SDK](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/types/multisig/multisignature.go)
@@ -93,37 +93,37 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 - [abci] \#5031 Add `AppVersion` to consensus parameters (@james-ray)
   - ... making it possible to update your ABCI application version via `EndBlock` response
-- [evidence] [\#4532](https://github.com/tendermint/tendermint/pull/4532) Handle evidence from light clients (@melekes)
-- [evidence] [#4821](https://github.com/tendermint/tendermint/pull/4821) Amnesia evidence can be detected, verified and committed (@cmwaters)
-- [light] [\#4532](https://github.com/tendermint/tendermint/pull/4532) Submit conflicting headers, if any, to a full node & all witnesses (@melekes)
+- [evidence] [\#4532](https://github.com/quantumexplorer/tendermint/pull/4532) Handle evidence from light clients (@melekes)
+- [evidence] [#4821](https://github.com/quantumexplorer/tendermint/pull/4821) Amnesia evidence can be detected, verified and committed (@cmwaters)
+- [light] [\#4532](https://github.com/quantumexplorer/tendermint/pull/4532) Submit conflicting headers, if any, to a full node & all witnesses (@melekes)
 - [p2p] \#4981 Expose `SaveAs` func on NodeKey (@melekes)
-- [rpc] [\#4532](https://github.com/tendermint/tendermint/pull/4923) Support `BlockByHash` query (@fedekunze)
+- [rpc] [\#4532](https://github.com/quantumexplorer/tendermint/pull/4923) Support `BlockByHash` query (@fedekunze)
 - [rpc] \#4979 Support EXISTS operator in `/tx_search` query (@melekes)
 - [rpc] \#5017 Add `/check_tx` endpoint to check transactions without executing them or adding them to the mempool (@melekes)
 - [statesync] Add state sync support, where a new node can be rapidly bootstrapped by fetching state snapshots from peers instead of replaying blocks. See the `[statesync]` config section.
-- [rpc] [\#5108](https://github.com/tendermint/tendermint/pull/5108) Subscribe using the websocket for new evidence events (@cmwaters)
+- [rpc] [\#5108](https://github.com/quantumexplorer/tendermint/pull/5108) Subscribe using the websocket for new evidence events (@cmwaters)
 
 ### IMPROVEMENTS:
 
-- [consensus] [\#4578](https://github.com/tendermint/tendermint/issues/4578) Attempt to repair the consensus WAL file (`data/cs.wal/wal`) automatically in case of corruption (@alessio)
+- [consensus] [\#4578](https://github.com/quantumexplorer/tendermint/issues/4578) Attempt to repair the consensus WAL file (`data/cs.wal/wal`) automatically in case of corruption (@alessio)
   - The original WAL file will be backed up to `data/cs.wal/wal.CORRUPTED`.
-- [evidence] [\#4722](https://github.com/tendermint/tendermint/pull/4722) Improved evidence db (@cmwaters)
-- [evidence] [\#4839](https://github.com/tendermint/tendermint/pull/4839) Reject duplicate evidence from being proposed (@cmwaters)
-- [evidence] [\#4892](https://github.com/tendermint/tendermint/pull/4892) Remove redundant header from phantom validator evidence (@cmwaters)
-- [light] [\#4935](https://github.com/tendermint/tendermint/pull/4935) Fetch and compare a new header with witnesses in parallel (@melekes)
-- [light] [\#4929](https://github.com/tendermint/tendermint/pull/4929) compare header w/ witnesses only when doing bisection (@melekes)
-- [light] [\#4916](https://github.com/tendermint/tendermint/pull/4916) validate basic for inbound validator sets and headers before further processing them (@cmwaters)
+- [evidence] [\#4722](https://github.com/quantumexplorer/tendermint/pull/4722) Improved evidence db (@cmwaters)
+- [evidence] [\#4839](https://github.com/quantumexplorer/tendermint/pull/4839) Reject duplicate evidence from being proposed (@cmwaters)
+- [evidence] [\#4892](https://github.com/quantumexplorer/tendermint/pull/4892) Remove redundant header from phantom validator evidence (@cmwaters)
+- [light] [\#4935](https://github.com/quantumexplorer/tendermint/pull/4935) Fetch and compare a new header with witnesses in parallel (@melekes)
+- [light] [\#4929](https://github.com/quantumexplorer/tendermint/pull/4929) compare header w/ witnesses only when doing bisection (@melekes)
+- [light] [\#4916](https://github.com/quantumexplorer/tendermint/pull/4916) validate basic for inbound validator sets and headers before further processing them (@cmwaters)
 - [p2p/conn] \#4795 Return err on `signChallenge()` instead of panic
-- [state] [\#4781](https://github.com/tendermint/tendermint/pull/4781) Export `InitStateVersion` for the initial state version (@erikgrinaker)
-- [txindex] [\#4466](https://github.com/tendermint/tendermint/pull/4466) Allow to index an event at runtime (@favadi)
+- [state] [\#4781](https://github.com/quantumexplorer/tendermint/pull/4781) Export `InitStateVersion` for the initial state version (@erikgrinaker)
+- [txindex] [\#4466](https://github.com/quantumexplorer/tendermint/pull/4466) Allow to index an event at runtime (@favadi)
   - `abci.EventAttribute` replaces `KV.Pair`
-- [types] [\#4905](https://github.com/tendermint/tendermint/pull/4905) Add `ValidateBasic` to validator and validator set (@cmwaters)
+- [types] [\#4905](https://github.com/quantumexplorer/tendermint/pull/4905) Add `ValidateBasic` to validator and validator set (@cmwaters)
 - [rpc] \#4968 JSON encoding is now handled by `libs/json`, not Amino
 - [mempool] Add RemoveTxByKey() exported function for custom mempool cleaning (@p4u)
 
 ### BUG FIXES:
 
 - [blockchain/v2] Correctly set block store base in status responses (@erikgrinaker)
-- [consensus] [\#4895](https://github.com/tendermint/tendermint/pull/4895) Cache the address of the validator to reduce querying a remote KMS (@joe-bowman)
+- [consensus] [\#4895](https://github.com/quantumexplorer/tendermint/pull/4895) Cache the address of the validator to reduce querying a remote KMS (@joe-bowman)
 - [consensus] \#4970 Stricter on `LastCommitRound` check (@cuonglm)
 - [proxy] \#5078 Fix a bug, where TM does not exit when ABCI app crashes (@melekes)

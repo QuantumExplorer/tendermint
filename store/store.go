@@ -8,9 +8,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	dbm "github.com/tendermint/tm-db"
 
-	tmstore "github.com/tendermint/tendermint/proto/tendermint/store"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
+	tmstore "github.com/quantumexplorer/tendermint/proto/tendermint/store"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 /*

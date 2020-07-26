@@ -8,14 +8,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/service"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/libs/service"
 
-	abcicli "github.com/tendermint/tendermint/abci/client"
-	"github.com/tendermint/tendermint/abci/example/code"
-	abciserver "github.com/tendermint/tendermint/abci/server"
-	"github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	abcicli "github.com/quantumexplorer/tendermint/abci/client"
+	"github.com/quantumexplorer/tendermint/abci/example/code"
+	abciserver "github.com/quantumexplorer/tendermint/abci/server"
+	"github.com/quantumexplorer/tendermint/abci/types"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
 )
 
 const (

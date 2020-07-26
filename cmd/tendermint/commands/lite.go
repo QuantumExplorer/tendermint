@@ -11,14 +11,14 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/light"
-	lproxy "github.com/tendermint/tendermint/light/proxy"
-	lrpc "github.com/tendermint/tendermint/light/rpc"
-	dbs "github.com/tendermint/tendermint/light/store/db"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	rpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmos "github.com/quantumexplorer/tendermint/libs/os"
+	"github.com/quantumexplorer/tendermint/light"
+	lproxy "github.com/quantumexplorer/tendermint/light/proxy"
+	lrpc "github.com/quantumexplorer/tendermint/light/rpc"
+	dbs "github.com/quantumexplorer/tendermint/light/store/db"
+	rpchttp "github.com/quantumexplorer/tendermint/rpc/client/http"
+	rpcserver "github.com/quantumexplorer/tendermint/rpc/jsonrpc/server"
 )
 
 // LightCmd represents the base command when called without any subcommands
@@ -143,7 +143,7 @@ func runProxy(cmd *cobra.Command, args []string) error {
 	cfg.MaxOpenConnections = maxOpenConnections
 	// If necessary adjust global WriteTimeout to ensure it's greater than
 	// TimeoutBroadcastTxCommit.
-	// See https://github.com/tendermint/tendermint/issues/3435
+	// See https://github.com/quantumexplorer/tendermint/issues/3435
 	if cfg.WriteTimeout <= config.RPC.TimeoutBroadcastTxCommit {
 		cfg.WriteTimeout = config.RPC.TimeoutBroadcastTxCommit + 1*time.Second
 	}

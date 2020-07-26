@@ -7,12 +7,12 @@ import (
 	"io"
 	"sync"
 
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/libs/bits"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/crypto/merkle"
+	"github.com/quantumexplorer/tendermint/libs/bits"
+	tmbytes "github.com/quantumexplorer/tendermint/libs/bytes"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
 )
 
 var (

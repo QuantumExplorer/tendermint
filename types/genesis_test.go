@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 func TestGenesisBad(t *testing.T) {

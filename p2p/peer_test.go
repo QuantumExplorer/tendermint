@@ -2,7 +2,7 @@ package p2p
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	golog "log"
 	"net"
 	"testing"
@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	"github.com/quantumexplorer/tendermint/libs/bytes"
+	"github.com/quantumexplorer/tendermint/libs/log"
 
-	"github.com/tendermint/tendermint/config"
-	tmconn "github.com/tendermint/tendermint/p2p/conn"
+	"github.com/quantumexplorer/tendermint/config"
+	tmconn "github.com/quantumexplorer/tendermint/p2p/conn"
 )
 
 func TestPeerBasic(t *testing.T) {

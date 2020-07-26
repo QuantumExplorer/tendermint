@@ -1,7 +1,7 @@
 package secp256k1
 
 import (
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
 )
 
 const (

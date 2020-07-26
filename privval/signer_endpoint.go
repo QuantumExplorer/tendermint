@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tendermint/tendermint/libs/protoio"
-	"github.com/tendermint/tendermint/libs/service"
-	privvalproto "github.com/tendermint/tendermint/proto/tendermint/privval"
+	"github.com/quantumexplorer/tendermint/libs/protoio"
+	"github.com/quantumexplorer/tendermint/libs/service"
+	privvalproto "github.com/quantumexplorer/tendermint/proto/tendermint/privval"
 )
 
 const (

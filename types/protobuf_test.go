@@ -1,16 +1,16 @@
 package types
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	cryptoenc "github.com/quantumexplorer/tendermint/crypto/encoding"
 )
 
 func TestABCIPubKey(t *testing.T) {

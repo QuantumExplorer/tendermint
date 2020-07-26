@@ -6,12 +6,12 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	clist "github.com/tendermint/tendermint/libs/clist"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/p2p"
-	ep "github.com/tendermint/tendermint/proto/tendermint/evidence"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
+	clist "github.com/quantumexplorer/tendermint/libs/clist"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/p2p"
+	ep "github.com/quantumexplorer/tendermint/proto/tendermint/evidence"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 const (

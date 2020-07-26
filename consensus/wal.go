@@ -11,13 +11,13 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	auto "github.com/tendermint/tendermint/libs/autofile"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/libs/service"
-	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	auto "github.com/quantumexplorer/tendermint/libs/autofile"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmos "github.com/quantumexplorer/tendermint/libs/os"
+	"github.com/quantumexplorer/tendermint/libs/service"
+	tmcons "github.com/quantumexplorer/tendermint/proto/tendermint/consensus"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 const (
@@ -202,7 +202,7 @@ func (wal *BaseWAL) WriteSync(msg WALMessage) error {
 	}
 
 	if err := wal.FlushAndSync(); err != nil {
-		wal.Logger.Error(`WriteSync failed to flush consensus wal. 
+		wal.Logger.Error(`WriteSync failed to flush consensus wal.
 		WARNING: may result in creating alternative proposals / votes for the current height iff the node restarted`,
 			"err", err)
 		return err

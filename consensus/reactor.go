@@ -9,17 +9,17 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	cstypes "github.com/tendermint/tendermint/consensus/types"
-	"github.com/tendermint/tendermint/libs/bits"
-	tmevents "github.com/tendermint/tendermint/libs/events"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/p2p"
-	tmcons "github.com/tendermint/tendermint/proto/tendermint/consensus"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	cstypes "github.com/quantumexplorer/tendermint/consensus/types"
+	"github.com/quantumexplorer/tendermint/libs/bits"
+	tmevents "github.com/quantumexplorer/tendermint/libs/events"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/p2p"
+	tmcons "github.com/quantumexplorer/tendermint/proto/tendermint/consensus"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	sm "github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/types"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 const (

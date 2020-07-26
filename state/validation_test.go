@@ -1,27 +1,27 @@
 package state_test
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/proto/tendermint/version"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/libs/bytes"
+	"github.com/quantumexplorer/tendermint/proto/tendermint/version"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/libs/log"
-	memmock "github.com/tendermint/tendermint/mempool/mock"
-	protostate "github.com/tendermint/tendermint/proto/tendermint/state"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/state/mocks"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	memmock "github.com/quantumexplorer/tendermint/mempool/mock"
+	protostate "github.com/quantumexplorer/tendermint/proto/tendermint/state"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	sm "github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/state/mocks"
+	"github.com/quantumexplorer/tendermint/types"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 const validationTestsStopHeight int64 = 10

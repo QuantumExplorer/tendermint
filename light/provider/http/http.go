@@ -6,13 +6,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tendermint/tendermint/light/provider"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/light/provider"
+	rpcclient "github.com/quantumexplorer/tendermint/rpc/client"
+	rpchttp "github.com/quantumexplorer/tendermint/rpc/client/http"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
-// This is very brittle, see: https://github.com/tendermint/tendermint/issues/4740
+// This is very brittle, see: https://github.com/quantumexplorer/tendermint/issues/4740
 var regexpMissingHeight = regexp.MustCompile(`height \d+ (must be less than or equal to|is not available)`)
 
 // http provider uses an RPC client to obtain the necessary information.

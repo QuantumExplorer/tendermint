@@ -1,15 +1,15 @@
 package p2p
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"net"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/service"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	"github.com/quantumexplorer/tendermint/libs/service"
 )
 
 // mockPeer for testing the PeerSet

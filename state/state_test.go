@@ -3,7 +3,7 @@ package state_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"math"
 	"math/big"
 	"os"
@@ -14,14 +14,14 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	cfg "github.com/quantumexplorer/tendermint/config"
+	cryptoenc "github.com/quantumexplorer/tendermint/crypto/encoding"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
+	tmstate "github.com/quantumexplorer/tendermint/proto/tendermint/state"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	sm "github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 // setupTestCase does setup common to all test cases.
@@ -414,7 +414,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 }
 
 // TestProposerPriorityDoesNotGetResetToZero assert that we preserve accum when calling updateState
-// see https://github.com/tendermint/tendermint/issues/2718
+// see https://github.com/quantumexplorer/tendermint/issues/2718
 func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
@@ -746,7 +746,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// add more validators with same voting power as the 2nd
 	// let the genesis validator "unbond",
 	// see how long it takes until the effect wears off and both begin to alternate
-	// see: https://github.com/tendermint/tendermint/issues/2960
+	// see: https://github.com/quantumexplorer/tendermint/issues/2960
 	firstAddedValPubKey := bls12381.GenPrivKey().PubKey()
 	firstAddedValVotingPower := int64(10)
 	fvp, err := cryptoenc.PubKeyToProto(firstAddedValPubKey)

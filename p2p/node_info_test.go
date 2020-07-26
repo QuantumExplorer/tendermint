@@ -1,7 +1,7 @@
 package p2p
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

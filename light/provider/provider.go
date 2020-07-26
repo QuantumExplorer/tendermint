@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 // Provider provides information for the light client to sync (verification

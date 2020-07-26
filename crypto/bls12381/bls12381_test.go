@@ -4,7 +4,7 @@ import (
 	bls "github.com/quantumexplorer/bls-signatures/go-bindings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto"
 	"testing"
 )
 

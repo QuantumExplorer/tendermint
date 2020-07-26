@@ -3,22 +3,22 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"net"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
 
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/state"
+	"github.com/quantumexplorer/tendermint/privval"
+	"github.com/quantumexplorer/tendermint/state"
 
-	"github.com/tendermint/tendermint/libs/log"
-	tmnet "github.com/tendermint/tendermint/libs/net"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmnet "github.com/quantumexplorer/tendermint/libs/net"
+	tmos "github.com/quantumexplorer/tendermint/libs/os"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 // Test harness error codes (which act as exit codes when the test harness fails).

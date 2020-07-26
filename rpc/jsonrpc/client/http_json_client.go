@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	types "github.com/tendermint/tendermint/rpc/jsonrpc/types"
+	types "github.com/quantumexplorer/tendermint/rpc/jsonrpc/types"
 )
 
 const (

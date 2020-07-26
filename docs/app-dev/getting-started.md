@@ -33,8 +33,8 @@ echo export GO111MODULE=on >> ~/.bash_profile
 Then run
 
 ```
-go get github.com/tendermint/tendermint
-cd $GOPATH/src/github.com/tendermint/tendermint
+go get github.com/quantumexplorer/tendermint
+cd $GOPATH/src/github.com/quantumexplorer/tendermint
 make tools
 make install_abci
 ```
@@ -149,7 +149,7 @@ of the ASCII of `abcd`. You can verify this in a python 2 shell by
 running `"YWJjZA==".decode('base64')` or in python 3 shell by running
 `import codecs; codecs.decode(b"YWJjZA==", 'base64').decode('ascii')`.
 Stay tuned for a future release that [makes this output more
-human-readable](https://github.com/tendermint/tendermint/issues/1794).
+human-readable](https://github.com/quantumexplorer/tendermint/issues/1794).
 
 Now let's try setting a different key and value:
 

@@ -3,11 +3,11 @@ package encoding
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	pc "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	pc "github.com/quantumexplorer/tendermint/proto/tendermint/crypto"
 )
 
 // PubKeyToProto takes crypto.PubKey and transforms it to a protobuf Pubkey

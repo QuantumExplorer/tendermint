@@ -2,22 +2,22 @@ package client_test
 
 import (
 	"bytes"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/privval"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpctest "github.com/tendermint/tendermint/rpc/test"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	cryptoenc "github.com/quantumexplorer/tendermint/crypto/encoding"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
+	"github.com/quantumexplorer/tendermint/privval"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/rpc/client"
+	rpctest "github.com/quantumexplorer/tendermint/rpc/test"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 func newEvidence(t *testing.T, val *privval.FilePV,

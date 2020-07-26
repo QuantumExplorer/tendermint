@@ -12,17 +12,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	mempl "github.com/tendermint/tendermint/mempool"
-	"github.com/tendermint/tendermint/rpc/client"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	rpclocal "github.com/tendermint/tendermint/rpc/client/local"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-	rpctest "github.com/tendermint/tendermint/rpc/test"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	mempl "github.com/quantumexplorer/tendermint/mempool"
+	"github.com/quantumexplorer/tendermint/rpc/client"
+	rpchttp "github.com/quantumexplorer/tendermint/rpc/client/http"
+	rpclocal "github.com/quantumexplorer/tendermint/rpc/client/local"
+	ctypes "github.com/quantumexplorer/tendermint/rpc/core/types"
+	rpcclient "github.com/quantumexplorer/tendermint/rpc/jsonrpc/client"
+	rpctest "github.com/quantumexplorer/tendermint/rpc/test"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 func getHTTPClient() *rpchttp.HTTP {

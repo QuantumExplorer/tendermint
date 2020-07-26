@@ -3,7 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"math"
 	"sort"
 	"strings"
@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
 )
 
 func TestValidatorSetBasic(t *testing.T) {

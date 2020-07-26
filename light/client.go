@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	"github.com/tendermint/tendermint/light/provider"
-	"github.com/tendermint/tendermint/light/store"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	"github.com/quantumexplorer/tendermint/light/provider"
+	"github.com/quantumexplorer/tendermint/light/store"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 type mode byte

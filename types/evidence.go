@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tendermint/tendermint/crypto"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	cryptoenc "github.com/quantumexplorer/tendermint/crypto/encoding"
+	"github.com/quantumexplorer/tendermint/crypto/merkle"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
 )
 
 const (
@@ -1169,7 +1169,7 @@ func (e *PotentialAmnesiaEvidence) ValidateBasic() error {
 	}
 
 	// Index must be the same
-	// https://github.com/tendermint/tendermint/issues/4619
+	// https://github.com/quantumexplorer/tendermint/issues/4619
 	if e.VoteA.ValidatorIndex != e.VoteB.ValidatorIndex {
 		return fmt.Errorf(
 			"duplicateVoteEvidence Error: Validator indices do not match. Got %d and %d",

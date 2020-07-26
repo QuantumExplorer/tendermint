@@ -7,7 +7,7 @@
 
 ## Context
 
-- Fullnode mode: fullnode mode does not have the capability to become a validator. 
+- Fullnode mode: fullnode mode does not have the capability to become a validator.
 - Validator mode : this mode is exactly same as existing state machine behavior. sync without voting on consensus, and participate consensus when fully synced
 - Seed mode : lightweight seed mode maintaining an address book, p2p like [TenderSeed](https://gitlab.com/polychainlabs/tenderseed)
 
@@ -77,5 +77,5 @@ Proposed
 
 ## References
 
-- Issue [#2237](https://github.com/tendermint/tendermint/issues/2237) : Tendermint "mode"
+- Issue [#2237](https://github.com/quantumexplorer/tendermint/issues/2237) : Tendermint "mode"
 - [TenderSeed](https://gitlab.com/polychainlabs/tenderseed) : A lightweight Tendermint Seed Node.

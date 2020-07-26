@@ -8,12 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	flow "github.com/tendermint/tendermint/libs/flowrate"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/libs/service"
+	flow "github.com/quantumexplorer/tendermint/libs/flowrate"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/libs/service"
 
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/p2p"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 /*

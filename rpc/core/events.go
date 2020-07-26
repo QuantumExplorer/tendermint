@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	rpctypes "github.com/tendermint/tendermint/rpc/jsonrpc/types"
+	tmpubsub "github.com/quantumexplorer/tendermint/libs/pubsub"
+	tmquery "github.com/quantumexplorer/tendermint/libs/pubsub/query"
+	ctypes "github.com/quantumexplorer/tendermint/rpc/core/types"
+	rpctypes "github.com/quantumexplorer/tendermint/rpc/jsonrpc/types"
 )
 
 const (

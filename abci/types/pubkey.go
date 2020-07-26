@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	cryptoenc "github.com/quantumexplorer/tendermint/crypto/encoding"
 )
 
 const (

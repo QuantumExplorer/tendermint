@@ -2,11 +2,11 @@ PACKAGES=$(shell go list ./...)
 OUTPUT?=build/tendermint
 
 BUILD_TAGS?=tendermint
-LD_FLAGS = -X github.com/tendermint/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD`
+LD_FLAGS = -X github.com/quantumexplorer/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD`
 CGO_LDFLAGS = -L$$HOME/Documents/src/go/src/bls-signatures/build
 CGO_CXXFLAGS = "-I$$HOME/Documents/src/go/src/bls-signatures/src -I$$HOME/Documents/src/go/src/bls-signatures/contrib/relic/include -I$$HOME/Documents/src/go/src/bls-signatures/build/contrib/relic/include"
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
-HTTPS_GIT := https://github.com/tendermint/tendermint.git
+HTTPS_GIT := https://github.com/quantumexplorer/tendermint.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
 CGO_ENABLED ?= 1
 
@@ -118,7 +118,7 @@ go.sum: go.mod
 draw_deps:
 	@# requires brew install graphviz or apt-get install graphviz
 	go get github.com/RobotsAndPencils/goviz
-	@goviz -i github.com/tendermint/tendermint/cmd/tendermint -d 3 | dot -Tpng -o dependency-graph.png
+	@goviz -i github.com/quantumexplorer/tendermint/cmd/tendermint -d 3 | dot -Tpng -o dependency-graph.png
 .PHONY: draw_deps
 
 get_deps_bin_size:
@@ -154,7 +154,7 @@ clean_certs:
 
 format:
 	find . -name '*.go' -type f -not -path "*.git*" -not -name '*.pb.go' -not -name '*pb_test.go' | xargs gofmt -w -s
-	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w -local github.com/tendermint/tendermint
+	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -w -local github.com/quantumexplorer/tendermint
 .PHONY: format
 
 lint:

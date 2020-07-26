@@ -40,7 +40,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/tendermint/tendermint/libs/service"
+	"github.com/quantumexplorer/tendermint/libs/service"
 )
 
 type operation int

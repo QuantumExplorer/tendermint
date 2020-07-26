@@ -1,4 +1,4 @@
-module github.com/tendermint/tendermint
+module github.com/quantumexplorer/tendermint
 
 go 1.14
 

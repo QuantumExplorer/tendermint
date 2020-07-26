@@ -9,11 +9,11 @@ import (
 
 	db "github.com/tendermint/tm-db"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/state/txindex"
-	"github.com/tendermint/tendermint/state/txindex/kv"
-	"github.com/tendermint/tendermint/types"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/state/txindex"
+	"github.com/quantumexplorer/tendermint/state/txindex/kv"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 func TestIndexerServiceIndexesBlocks(t *testing.T) {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	abcicli "github.com/tendermint/tendermint/abci/client"
-	"github.com/tendermint/tendermint/abci/example/counter"
-	"github.com/tendermint/tendermint/abci/example/kvstore"
-	"github.com/tendermint/tendermint/abci/types"
+	abcicli "github.com/quantumexplorer/tendermint/abci/client"
+	"github.com/quantumexplorer/tendermint/abci/example/counter"
+	"github.com/quantumexplorer/tendermint/abci/example/kvstore"
+	"github.com/quantumexplorer/tendermint/abci/types"
 )
 
 // ClientCreator creates new ABCI clients.

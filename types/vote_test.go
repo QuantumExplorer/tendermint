@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"math"
 	"testing"
 	"time"
@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/libs/protoio"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
+	"github.com/quantumexplorer/tendermint/libs/protoio"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
 )
 
 func examplePrevote() *Vote {

@@ -2,7 +2,7 @@ package p2p
 
 import (
 	"bytes"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
 )
 
 func TestLoadOrGenNodeKey(t *testing.T) {

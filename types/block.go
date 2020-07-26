@@ -11,14 +11,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/merkle"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	"github.com/tendermint/tendermint/libs/bits"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
+	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/merkle"
+	"github.com/quantumexplorer/tendermint/crypto/tmhash"
+	"github.com/quantumexplorer/tendermint/libs/bits"
+	tmbytes "github.com/quantumexplorer/tendermint/libs/bytes"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	tmversion "github.com/quantumexplorer/tendermint/proto/tendermint/version"
 )
 
 const (

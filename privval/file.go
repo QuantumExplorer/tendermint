@@ -4,21 +4,21 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/tendermint/tendermint/crypto"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/libs/protoio"
-	"github.com/tendermint/tendermint/libs/tempfile"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	"github.com/quantumexplorer/tendermint/crypto"
+	tmbytes "github.com/quantumexplorer/tendermint/libs/bytes"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	tmos "github.com/quantumexplorer/tendermint/libs/os"
+	"github.com/quantumexplorer/tendermint/libs/protoio"
+	"github.com/quantumexplorer/tendermint/libs/tempfile"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/types"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 // TODO: type ?

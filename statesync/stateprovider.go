@@ -8,16 +8,16 @@ import (
 
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/light"
-	lightprovider "github.com/tendermint/tendermint/light/provider"
-	lighthttp "github.com/tendermint/tendermint/light/provider/http"
-	lightrpc "github.com/tendermint/tendermint/light/rpc"
-	lightdb "github.com/tendermint/tendermint/light/store/db"
-	tmstate "github.com/tendermint/tendermint/proto/tendermint/state"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	"github.com/quantumexplorer/tendermint/light"
+	lightprovider "github.com/quantumexplorer/tendermint/light/provider"
+	lighthttp "github.com/quantumexplorer/tendermint/light/provider/http"
+	lightrpc "github.com/quantumexplorer/tendermint/light/rpc"
+	lightdb "github.com/quantumexplorer/tendermint/light/store/db"
+	tmstate "github.com/quantumexplorer/tendermint/proto/tendermint/state"
+	rpchttp "github.com/quantumexplorer/tendermint/rpc/client/http"
+	sm "github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 //go:generate mockery -case underscore -name StateProvider

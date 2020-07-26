@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tendermint/tendermint/libs/bits"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/quantumexplorer/tendermint/libs/bits"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
 )
 
 const (

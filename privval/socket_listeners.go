@@ -1,11 +1,11 @@
 package privval
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"net"
 	"time"
 
-	p2pconn "github.com/tendermint/tendermint/p2p/conn"
+	p2pconn "github.com/quantumexplorer/tendermint/p2p/conn"
 )
 
 const (
@@ -141,7 +141,7 @@ func (ln *UnixListener) Accept() (net.Conn, error) {
 	conn := newTimeoutConn(tc, ln.timeoutReadWrite)
 
 	// TODO: wrap in something that authenticates
-	// with a MAC - https://github.com/tendermint/tendermint/issues/3099
+	// with a MAC - https://github.com/quantumexplorer/tendermint/issues/3099
 
 	return conn, nil
 }

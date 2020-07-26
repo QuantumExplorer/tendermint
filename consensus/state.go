@@ -13,20 +13,20 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	cfg "github.com/tendermint/tendermint/config"
-	cstypes "github.com/tendermint/tendermint/consensus/types"
-	tmevents "github.com/tendermint/tendermint/libs/events"
-	"github.com/tendermint/tendermint/libs/fail"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	"github.com/tendermint/tendermint/libs/service"
-	"github.com/tendermint/tendermint/p2p"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
+	cfg "github.com/quantumexplorer/tendermint/config"
+	cstypes "github.com/quantumexplorer/tendermint/consensus/types"
+	tmevents "github.com/quantumexplorer/tendermint/libs/events"
+	"github.com/quantumexplorer/tendermint/libs/fail"
+	tmjson "github.com/quantumexplorer/tendermint/libs/json"
+	"github.com/quantumexplorer/tendermint/libs/log"
+	tmmath "github.com/quantumexplorer/tendermint/libs/math"
+	tmos "github.com/quantumexplorer/tendermint/libs/os"
+	"github.com/quantumexplorer/tendermint/libs/service"
+	"github.com/quantumexplorer/tendermint/p2p"
+	tmproto "github.com/quantumexplorer/tendermint/proto/tendermint/types"
+	sm "github.com/quantumexplorer/tendermint/state"
+	"github.com/quantumexplorer/tendermint/types"
+	tmtime "github.com/quantumexplorer/tendermint/types/time"
 )
 
 //-----------------------------------------------------------------------------
@@ -766,7 +766,7 @@ func (cs *State) handleMsg(mi msgInfo) {
 		// We probably don't want to stop the peer here. The vote does not
 		// necessarily comes from a malicious peer but can be just broadcasted by
 		// a typical peer.
-		// https://github.com/tendermint/tendermint/issues/1281
+		// https://github.com/quantumexplorer/tendermint/issues/1281
 		// }
 
 		// NOTE: the vote is broadcast to peers by the reactor listening
@@ -1811,7 +1811,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			// 1) bad peer OR
 			// 2) not a bad peer? this can also err sometimes with "Unexpected step" OR
 			// 3) tmkms use with multiple validators connecting to a single tmkms instance
-			// 		(https://github.com/tendermint/tendermint/issues/3839).
+			// 		(https://github.com/quantumexplorer/tendermint/issues/3839).
 			cs.Logger.Info("Error attempting to add vote", "err", err)
 			return added, ErrAddingVote
 		}

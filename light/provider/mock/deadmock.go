@@ -3,8 +3,8 @@ package mock
 import (
 	"errors"
 
-	"github.com/tendermint/tendermint/light/provider"
-	"github.com/tendermint/tendermint/types"
+	"github.com/quantumexplorer/tendermint/light/provider"
+	"github.com/quantumexplorer/tendermint/types"
 )
 
 var errNoResp = errors.New("no response from provider")
