@@ -12,7 +12,7 @@ message PublicKey {
 
   oneof sum {
     bytes ed25519 = 1;
-    bls12381 = 2;
+    bytes bls12381 = 2;
   }
 }
 
@@ -21,6 +21,6 @@ message PublicKey {
 message PrivateKey {
   oneof sum {
     bytes ed25519 = 1;
-    bls12381 = 2;
+    bytes bls12381 = 2;
   }
 }

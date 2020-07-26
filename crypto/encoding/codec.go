@@ -22,7 +22,9 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 		}
 	case bls12381.PubKey:
 		kp = pc.PublicKey{
-			Sum: &pc.Pu
+			Sum: &pc.PublicKey_Bls12381{
+				Bls12381: k,
+			},
 		}
 	default:
 		return kp, fmt.Errorf("toproto: key type %v is not supported", k)
