@@ -43,7 +43,7 @@ func genPrivKeys(n int, keyType crypto.KeyType) privKeys {
 
 // Extend adds n more keys (to remove, just take a slice).
 func (pkz privKeys) Extend(n int) privKeys {
-	extra := genPrivKeys(n)
+	extra := genPrivKeys(n,crypto.BLS12381)
 	return append(pkz, extra...)
 }
 
@@ -190,7 +190,7 @@ func GenMockNode(
 	var (
 		headers         = make(map[int64]*types.SignedHeader, blockSize)
 		valset          = make(map[int64]*types.ValidatorSet, blockSize)
-		keys            = genPrivKeys(valSize)
+		keys            = genPrivKeys(valSize,crypto.BLS12381)
 		totalVariation  = valVariation
 		valVariationInt int
 		newKeys         privKeys

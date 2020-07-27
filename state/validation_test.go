@@ -629,7 +629,7 @@ func TestVerifyEvidenceWithPhantomValidatorEvidence(t *testing.T) {
 	require.NoError(t, err)
 	err = sm.VerifyEvidence(stateDB, state, ev, nil)
 	if assert.Error(t, err) {
-		assert.Equal(t, "address 576585A00DD4D58318255611D8AAC60E8E77CB32 was a validator at height 3", err.Error())
+		assert.Equal(t, "address 0670F498BCB1EF1AF27350939B4C55A419F421B0 was a validator at height 3", err.Error())
 	}
 
 	privVal := types.NewMockPV()
