@@ -3,7 +3,7 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"github.com/quantumexplorer/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 	"net"
 	"os"
 	"os/signal"
@@ -74,7 +74,7 @@ type TestHarnessConfig struct {
 	ConnDeadline   time.Duration
 	AcceptRetries  int
 
-	SecretConnKey bls12381.PrivKey
+	SecretConnKey ed25519.PrivKey
 
 	ExitWhenComplete bool // Whether or not to call os.Exit when the harness has completed.
 }

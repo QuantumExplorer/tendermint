@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 	"github.com/quantumexplorer/tendermint/libs/service"
 )
 

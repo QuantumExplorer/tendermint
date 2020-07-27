@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"fmt"
-	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	golog "log"
 	"net"
 	"testing"
@@ -24,7 +23,7 @@ func TestPeerBasic(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	// simulate remote peer
-	rp := &remotePeer{PrivKey: bls12381.GenPrivKey(), Config: cfg}
+	rp := &remotePeer{PrivKey: ed25519.GenPrivKey(), Config: cfg}
 	rp.Start()
 	defer rp.Stop()
 
@@ -50,7 +49,7 @@ func TestPeerSend(t *testing.T) {
 	config := cfg
 
 	// simulate remote peer
-	rp := &remotePeer{PrivKey: bls12381.GenPrivKey(), Config: config}
+	rp := &remotePeer{PrivKey: ed25519.GenPrivKey(), Config: config}
 	rp.Start()
 	defer rp.Stop()
 
