@@ -17,6 +17,7 @@ const (
 	BLS12381
 	Sr25519
 	Secp256k1
+	KeyTypeAny
 )
 
 // An address is a []byte, but hex-encoded even in JSON.

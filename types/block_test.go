@@ -410,9 +410,9 @@ func TestBlockMaxDataBytes(t *testing.T) {
 		4: {847, crypto.Ed25519,1, 0, false, 1},
 		5: {-10, crypto.BLS12381, 1, 0, true, 0},
 		6: {10, crypto.BLS12381,1, 0, true, 0},
-		7: {844, crypto.BLS12381,1, 0, true, 0},
-		8: {846, crypto.BLS12381,1, 0, false, 0},
-		9: {847, crypto.BLS12381,1, 0, false, 1},
+		7: {876, crypto.BLS12381,1, 0, true, 0},
+		8: {878, crypto.BLS12381,1, 0, false, 0},
+		9: {879, crypto.BLS12381,1, 0, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -447,10 +447,10 @@ func TestBlockMaxDataBytesUnknownEvidence(t *testing.T) {
 		5: {1291, 1, crypto.Ed25519,1, false, 1},
 		6: {-10, 0, crypto.BLS12381,1, true, 0},
 		7: {10, 0, crypto.BLS12381,1, true, 0},
-		8: {845, 0, crypto.BLS12381,1, true, 0},
-		9: {846, 0, crypto.BLS12381,1, false, 0},
-		10: {1290, 1, crypto.BLS12381,1, false, 0},
-		11: {1291, 1, crypto.BLS12381,1, false, 1},
+		8: {877, 0, crypto.BLS12381,1, true, 0},
+		9: {878, 0, crypto.BLS12381,1, false, 0},
+		10: {1322, 1, crypto.BLS12381,1, false, 0},
+		11: {1323, 1, crypto.BLS12381,1, false, 1},
 	}
 
 	for i, tc := range testCases {
