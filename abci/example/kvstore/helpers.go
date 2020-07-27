@@ -2,13 +2,14 @@ package kvstore
 
 import (
 	"github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
 )
 
 // RandVal creates one random validator, with a key derived
 // from the input value
 func RandVal(i int) types.ValidatorUpdate {
-	pubkey := tmrand.Bytes(32)
+	pubkey := bls12381.GenPrivKey().PubKey().Bytes()
 	power := tmrand.Uint16() + 1
 	v := types.BLS12381ValidatorUpdate(pubkey, int64(power))
 	return v

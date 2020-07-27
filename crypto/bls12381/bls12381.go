@@ -63,23 +63,9 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 //
 // Panics if the private key is not initialized.
 func (privKey PrivKey) PubKey() crypto.PubKey {
-	// If the latter 32 bytes of the privkey are all zero, privkey is not
-	// initialized.
-	initialized := false
-	for _, v := range privKey[32:] {
-		if v != 0 {
-			initialized = true
-			break
-		}
-	}
-
-	if !initialized {
-		panic("Expected bls12381 PrivKey to include concatenated pubkey bytes")
-	}
-
-	pubkeyBytes := make([]byte, PubKeySize)
-	copy(pubkeyBytes, privKey[32:])
-	return PubKey(pubkeyBytes)
+	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey,false)
+	publicKeyBytes := blsPrivateKey.PublicKey().Serialize()
+	return PubKey(publicKeyBytes)
 }
 
 // Equals - you probably don't need to use this.
