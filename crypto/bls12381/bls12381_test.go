@@ -1,6 +1,8 @@
 package bls12381_test
 
 import (
+	"encoding/base64"
+	"encoding/hex"
 	"github.com/quantumexplorer/tendermint/crypto"
 	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"github.com/stretchr/testify/assert"
@@ -19,10 +21,18 @@ func TestSignAndValidateBLS12381(t *testing.T) {
 
 	// Test the signature
 	assert.True(t, pubKey.VerifyBytes(msg, sig))
-	//
-	//// Mutate the signature, just one bit.
-	//// TODO: Replace this with a much better fuzzer, tendermint/ed25519/issues/10
-	//sig[7] ^= byte(0x01)
-	//
-	//assert.False(t, pubKey.VerifyBytes(msg, sig))
+}
+
+func TestBLSAddress(t *testing.T) {
+	decodedPrivateKeyBytes, err := base64.StdEncoding.DecodeString("RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70=")
+	require.Nil(t, err)
+	decodedPublicKeyBytes, err := base64.StdEncoding.DecodeString("F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E")
+	require.Nil(t, err)
+	decodedAddressBytes, err := hex.DecodeString("DDAD59BB10A10088C5A9CA219C3CF5BB4599B54E")
+	require.Nil(t, err)
+	privKey := bls12381.PrivKey(decodedPrivateKeyBytes)
+	pubKey := privKey.PubKey()
+	address := pubKey.Address()
+	assert.EqualValues(t,decodedPublicKeyBytes,pubKey)
+	assert.EqualValues(t,decodedAddressBytes,address)
 }

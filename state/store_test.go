@@ -15,7 +15,6 @@ import (
 	abci "github.com/quantumexplorer/tendermint/abci/types"
 	cfg "github.com/quantumexplorer/tendermint/config"
 	"github.com/quantumexplorer/tendermint/crypto"
-	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 	"github.com/quantumexplorer/tendermint/crypto/merkle"
 	tmrand "github.com/quantumexplorer/tendermint/libs/rand"
 	tmstate "github.com/quantumexplorer/tendermint/proto/tendermint/state"

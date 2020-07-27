@@ -489,7 +489,7 @@ var testGenesisFmt = `{
   "app_hash": ""
 }`
 
-var testPrivValidatorKey = `{
+var testEd25519PrivValidatorKey = `{
   "address": "A3258DCBF45DCA0DF052981870F2D1441A36D145",
   "pub_key": {
     "type": "tendermint/PubKeyEd25519",
@@ -498,6 +498,18 @@ var testPrivValidatorKey = `{
   "priv_key": {
     "type": "tendermint/PrivKeyEd25519",
     "value": "EVkqJO/jIXp3rkASXfh9YnyToYXRXhBr6g9cQVxPFnQBP/5povV4HTjvsy530kybxKHwEi85iU8YL0qQhSYVoQ=="
+  }
+}`
+
+var testPrivValidatorKey = `{
+  "address": "DDAD59BB10A10088C5A9CA219C3CF5BB4599B54E",
+  "pub_key": {
+    "type": "tendermint/PubKeyBLS12381",
+    "value": "F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
+  },
+  "priv_key": {
+    "type": "tendermint/PrivKeyBLS12381",
+    "value": "RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70="
   }
 }`
 

@@ -1,7 +1,6 @@
 package privval
 
 import (
-	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"net"
 	"os"
@@ -14,8 +13,8 @@ import (
 //-------------------------------------------
 // helper funcs
 
-func newPrivKey() bls12381.PrivKey {
-	return bls12381.GenPrivKey()
+func newPrivKey() ed25519.PrivKey {
+	return ed25519.GenPrivKey()
 }
 
 //-------------------------------------------

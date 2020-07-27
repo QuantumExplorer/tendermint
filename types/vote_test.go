@@ -247,7 +247,8 @@ func TestMaxVoteBytes(t *testing.T) {
 	bz, err := proto.Marshal(v)
 	require.NoError(t, err)
 
-	assert.EqualValues(t, MaxVoteBytes, len(bz))
+	assert.EqualValues(t, MaxVoteBytesBLS12381, len(bz))
+	assert.EqualValues(t, MaxVoteBytesForKeyType(privVal.PrivKey.Type()), len(bz))
 }
 
 func TestVoteString(t *testing.T) {

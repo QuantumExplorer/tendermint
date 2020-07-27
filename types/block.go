@@ -275,11 +275,11 @@ func BlockFromProto(bp *tmproto.Block) (*Block, error) {
 // MaxDataBytes returns the maximum size of block's data.
 //
 // XXX: Panics on negative result.
-func MaxDataBytes(maxBytes int64, valsCount, evidenceCount int) int64 {
+func MaxDataBytes(maxBytes int64, keyType crypto.KeyType, valsCount, evidenceCount int) int64 {
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
-		int64(valsCount)*MaxVoteBytes -
+		int64(valsCount)*MaxVoteBytesForKeyType(keyType) -
 		int64(evidenceCount)*MaxEvidenceBytes
 
 	if maxDataBytes < 0 {
@@ -299,12 +299,12 @@ func MaxDataBytes(maxBytes int64, valsCount, evidenceCount int) int64 {
 // of evidence.
 //
 // XXX: Panics on negative result.
-func MaxDataBytesUnknownEvidence(maxBytes int64, valsCount int, maxNumEvidence uint32) int64 {
+func MaxDataBytesUnknownEvidence(maxBytes int64, keyType crypto.KeyType, valsCount int, maxNumEvidence uint32) int64 {
 	maxEvidenceBytes := int64(maxNumEvidence) * MaxEvidenceBytes
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
-		int64(valsCount)*MaxVoteBytes -
+		int64(valsCount)*MaxVoteBytesForKeyType(keyType) -
 		maxEvidenceBytes
 
 	if maxDataBytes < 0 {

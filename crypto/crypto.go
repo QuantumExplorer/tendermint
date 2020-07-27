@@ -15,6 +15,8 @@ type KeyType int
 const (
 	Ed25519 KeyType = iota
 	BLS12381
+	Sr25519
+	Secp256k1
 )
 
 // An address is a []byte, but hex-encoded even in JSON.
@@ -31,7 +33,8 @@ type PubKey interface {
 	Bytes() []byte
 	VerifyBytes(msg []byte, sig []byte) bool
 	Equals(PubKey) bool
-	Type() string
+	TypeIdentifier() string
+	Type() KeyType
 }
 
 type PrivKey interface {
@@ -39,7 +42,8 @@ type PrivKey interface {
 	Sign(msg []byte) ([]byte, error)
 	PubKey() PubKey
 	Equals(PrivKey) bool
-	Type() string
+	TypeIdentifier() string
+	Type() KeyType
 }
 
 type Symmetric interface {

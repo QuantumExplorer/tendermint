@@ -3,7 +3,6 @@ package conn
 import (
 	"bytes"
 	"errors"
-	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"io"
 	"testing"
 
@@ -59,7 +58,7 @@ type evilConn struct {
 }
 
 func newEvilConn(shareEphKey, badEphKey, shareAuthSignature, badAuthSignature bool) *evilConn {
-	privKey := bls12381.GenPrivKey()
+	privKey := ed25519.GenPrivKey()
 	locEphPub, locEphPriv := genEphKeys()
 	var rep [32]byte
 	c := &evilConn{

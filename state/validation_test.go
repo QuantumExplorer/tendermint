@@ -12,7 +12,6 @@ import (
 	"github.com/quantumexplorer/tendermint/libs/bytes"
 	"github.com/quantumexplorer/tendermint/proto/tendermint/version"
 
-	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 	"github.com/quantumexplorer/tendermint/crypto/tmhash"
 	"github.com/quantumexplorer/tendermint/libs/log"
 	memmock "github.com/quantumexplorer/tendermint/mempool/mock"

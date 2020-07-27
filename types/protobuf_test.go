@@ -81,14 +81,15 @@ func TestABCIEvidence(t *testing.T) {
 	assert.Equal(t, "duplicate/vote", abciEv.Type)
 }
 
-type pubKeyEddie struct{}
+type pubKeyBLS struct{}
 
-func (pubKeyEddie) Address() Address                        { return []byte{} }
-func (pubKeyEddie) Bytes() []byte                           { return []byte{} }
-func (pubKeyEddie) VerifyBytes(msg []byte, sig []byte) bool { return false }
-func (pubKeyEddie) Equals(crypto.PubKey) bool               { return false }
-func (pubKeyEddie) String() string                          { return "" }
-func (pubKeyEddie) Type() string                            { return "pubKeyEddie" }
+func (pubKeyBLS) Address() Address                        { return []byte{} }
+func (pubKeyBLS) Bytes() []byte                           { return []byte{} }
+func (pubKeyBLS) VerifyBytes(msg []byte, sig []byte) bool { return false }
+func (pubKeyBLS) Equals(crypto.PubKey) bool               { return false }
+func (pubKeyBLS) String() string                          { return "" }
+func (pubKeyBLS) TypeIdentifier() string                  { return "pubKeyBLS12381" }
+func (pubKeyBLS) Type() crypto.KeyType                    { return crypto.BLS12381 }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := bls12381.GenPrivKey().PubKey()
@@ -97,7 +98,7 @@ func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	assert.Equal(t, int64(10), abciVal.Power)
 
 	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(nil, 10) })
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyEddie{}, 10) })
+	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyBLS{}, 10) })
 }
 
 func TestABCIValidatorWithoutPubKey(t *testing.T) {

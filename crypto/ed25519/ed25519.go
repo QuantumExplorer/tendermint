@@ -92,8 +92,12 @@ func (privKey PrivKey) Equals(other crypto.PrivKey) bool {
 	return false
 }
 
-func (privKey PrivKey) Type() string {
+func (privKey PrivKey) TypeIdentifier() string {
 	return keyType
+}
+
+func (privKey PrivKey) Type() crypto.KeyType {
+	return crypto.Ed25519
 }
 
 // GenPrivKey generates a new ed25519 private key.
@@ -158,8 +162,12 @@ func (pubKey PubKey) String() string {
 	return fmt.Sprintf("PubKeyEd25519{%X}", []byte(pubKey))
 }
 
-func (pubKey PubKey) Type() string {
+func (pubKey PubKey) TypeIdentifier() string {
 	return keyType
+}
+
+func (pubKey PubKey) Type() crypto.KeyType {
+	return crypto.Ed25519
 }
 
 func (pubKey PubKey) Equals(other crypto.PubKey) bool {
