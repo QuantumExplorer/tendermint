@@ -120,7 +120,7 @@ have to start a new blockchain, or write something custom to get the old
 data into the new chain.
 
 However, any bump in the PATCH version should be compatible with existing histories
-(if not please open an [issue](https://github.com/quantumexplorer/tendermint/issues)).
+(if not please open an [issue](https://github.com/tendermint/tendermint/issues)).
 
 For more information on upgrading, see [UPGRADING.md](./UPGRADING.md).
 

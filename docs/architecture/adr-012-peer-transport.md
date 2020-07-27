@@ -10,10 +10,10 @@ handling. An artifact is the dependency of the Switch on
 
 Addresses:
 
-- [#2046](https://github.com/quantumexplorer/tendermint/issues/2046)
-- [#2047](https://github.com/quantumexplorer/tendermint/issues/2047)
+- [#2046](https://github.com/tendermint/tendermint/issues/2046)
+- [#2047](https://github.com/tendermint/tendermint/issues/2047)
 
-First iteraton in [#2067](https://github.com/quantumexplorer/tendermint/issues/2067)
+First iteraton in [#2067](https://github.com/tendermint/tendermint/issues/2067)
 
 ## Decision
 

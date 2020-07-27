@@ -80,7 +80,7 @@ performance of random reads and of iterating through the tree to determine eleme
 (ie. elements aren't indexed by the element number).
 
 An alternative design was suggested by Jae Kwon in
-[#3639](https://github.com/quantumexplorer/tendermint/issues/3639) where chunking
+[#3639](https://github.com/tendermint/tendermint/issues/3639) where chunking
 happens lazily and in a dynamic way: nodes request key ranges from their peers,
 and peers respond with some subset of the
 requested range and with notes on how to request the rest in parallel from other
@@ -94,7 +94,7 @@ Additionally, per chunk validation tends to come more naturally to the
 Lazy approach since it tends to use the existing structure of the tree
 (ie. keys or nodes) rather than state-sync specific chunks. Such a
 design for tendermint was originally tracked in
-[#828](https://github.com/quantumexplorer/tendermint/issues/828).
+[#828](https://github.com/tendermint/tendermint/issues/828).
 
 #### Eager StateSync
 Warp Sync as implemented in Parity
@@ -228,10 +228,10 @@ Proposed
 * Static Scheduling lacks opportunity for real time chunk availability optimizations
 
 ## References
-[sync: Sync current state without full replay for Applications](https://github.com/quantumexplorer/tendermint/issues/828) - original issue
+[sync: Sync current state without full replay for Applications](https://github.com/tendermint/tendermint/issues/828) - original issue
 [tendermint state sync proposal 2](https://docs.google.com/document/d/1npGTAa1qxe8EQZ1wG0a0Sip9t5oX2vYZNUDwr_LVRR4/edit) - ackratos proposal
 [proposal 2 implementation](https://github.com/tendermint/tendermint/pull/3243)  - ackratos implementation
-[WIP General/Lazy State-Sync pseudo-spec](https://github.com/quantumexplorer/tendermint/issues/3639) - Jae Proposal
+[WIP General/Lazy State-Sync pseudo-spec](https://github.com/tendermint/tendermint/issues/3639) - Jae Proposal
 [Warp Sync Implementation](https://github.com/tendermint/tendermint/pull/3594) - ackratos
 [Chunk Proposal](https://github.com/tendermint/tendermint/pull/3799) - Bucky proposed
 

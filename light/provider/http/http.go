@@ -12,7 +12,7 @@ import (
 	"github.com/quantumexplorer/tendermint/types"
 )
 
-// This is very brittle, see: https://github.com/quantumexplorer/tendermint/issues/4740
+// This is very brittle, see: https://github.com/tendermint/tendermint/issues/4740
 var regexpMissingHeight = regexp.MustCompile(`height \d+ (must be less than or equal to|is not available)`)
 
 // http provider uses an RPC client to obtain the necessary information.

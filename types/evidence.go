@@ -1169,7 +1169,7 @@ func (e *PotentialAmnesiaEvidence) ValidateBasic() error {
 	}
 
 	// Index must be the same
-	// https://github.com/quantumexplorer/tendermint/issues/4619
+	// https://github.com/tendermint/tendermint/issues/4619
 	if e.VoteA.ValidatorIndex != e.VoteB.ValidatorIndex {
 		return fmt.Errorf(
 			"duplicateVoteEvidence Error: Validator indices do not match. Got %d and %d",

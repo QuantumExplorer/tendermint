@@ -13,7 +13,7 @@ Respective versioned files can be found https://raw.githubusercontent.com/tender
 ## Quick reference
 
 - **Where to get help:** https://tendermint.com/
-- **Where to file issues:** https://github.com/quantumexplorer/tendermint/issues
+- **Where to file issues:** https://github.com/tendermint/tendermint/issues
 - **Supported Docker versions:** [the latest release](https://github.com/moby/moby/releases) (down to 1.6 on a best-effort basis)
 
 ## Tendermint

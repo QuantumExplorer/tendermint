@@ -647,5 +647,5 @@ $ curl -s 'localhost:26657/abci_query?data="tendermint"'
 
 I hope everything went smoothly and your first, but hopefully not the last,
 Tendermint Core application is up and running. If not, please [open an issue on
-Github](https://github.com/quantumexplorer/tendermint/issues/new/choose). To dig
+Github](https://github.com/tendermint/tendermint/issues/new/choose). To dig
 deeper, read [the docs](https://docs.tendermint.com/master/).

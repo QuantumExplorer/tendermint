@@ -144,7 +144,7 @@ func BootstrapState(db dbm.DB, state State) error {
 // e.g. `LastHeightChanged` must remain. The state at to must also exist.
 //
 // The from parameter is necessary since we can't do a key scan in a performant way due to the key
-// encoding not preserving ordering: https://github.com/quantumexplorer/tendermint/issues/4567
+// encoding not preserving ordering: https://github.com/tendermint/tendermint/issues/4567
 // This will cause some old states to be left behind when doing incremental partial prunes,
 // specifically older checkpoints and LastHeightChanged targets.
 func PruneStates(db dbm.DB, from int64, to int64) error {

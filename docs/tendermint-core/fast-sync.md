@@ -29,4 +29,4 @@ reported peer height. See [the IsCaughtUp
 method](https://github.com/quantumexplorer/tendermint/blob/b467515719e686e4678e6da4e102f32a491b85a0/blockchain/pool.go#L128).
 
 If we're lagging sufficiently, we should go back to fast syncing, but
-this is an [open issue](https://github.com/quantumexplorer/tendermint/issues/129).
+this is an [open issue](https://github.com/tendermint/tendermint/issues/129).

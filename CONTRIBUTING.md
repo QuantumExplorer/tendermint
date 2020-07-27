@@ -10,14 +10,14 @@ main Tendermint project, the following process leads to the best chance of
 landing changes in master.
 
 All work on the code base should be motivated by a [Github
-Issue](https://github.com/quantumexplorer/tendermint/issues).
-[Search](https://github.com/quantumexplorer/tendermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
+Issue](https://github.com/tendermint/tendermint/issues).
+[Search](https://github.com/tendermint/tendermint/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 is a good place start when looking for places to contribute. If you
 would like to work on an issue which already exists, please indicate so
 by leaving a comment.
 
 All new contributions should start with a [Github
-Issue](https://github.com/quantumexplorer/tendermint/issues/new/choose). The
+Issue](https://github.com/tendermint/tendermint/issues/new/choose). The
 issue helps capture the problem you're trying to solve and allows for
 early feedback. Once the issue is created the process can proceed in different
 directions depending on how well defined the problem and potential
@@ -37,7 +37,7 @@ the form of an [Architectural Decision Record
 overall strategy to ensure the code base maintains coherence
 in the larger context. If you are not comfortable with writing an ADR,
 you can open a less-formal issue and the maintainers will help you
-turn it into an ADR. ADR numbers can be registered [here](https://github.com/quantumexplorer/tendermint/issues/2313).
+turn it into an ADR. ADR numbers can be registered [here](https://github.com/tendermint/tendermint/issues/2313).
 
 When the problem as well as proposed solution are well understood,
 changes should start with a [draft

@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/quantumexplorer/tendermint/crypto"
 	mempl "github.com/quantumexplorer/tendermint/mempool"
 	"github.com/quantumexplorer/tendermint/types"
 )
@@ -10,6 +11,7 @@ import (
 func TxPreCheck(state State) mempl.PreCheckFunc {
 	maxDataBytes := types.MaxDataBytesUnknownEvidence(
 		state.ConsensusParams.Block.MaxBytes,
+		crypto.BLS12381,
 		state.Validators.Size(),
 		state.ConsensusParams.Evidence.MaxNum,
 	)

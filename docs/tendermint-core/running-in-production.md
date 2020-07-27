@@ -33,7 +33,7 @@ or by increasing the `consensus.timeout_commit` param. Note both of these are
 local settings and not enforced by the consensus.
 
 We're working on [state
-syncing](https://github.com/quantumexplorer/tendermint/issues/828),
+syncing](https://github.com/tendermint/tendermint/issues/828),
 which will enable history to be thrown away
 and recent application state to be directly synced. We'll need to develop solutions
 for archival nodes that allow queries on historical transactions and states.
@@ -147,7 +147,7 @@ command will scrap all the available info and kill the process. See
 You can inspect the resulting archive yourself or create an issue on
 [Github](https://github.com/quantumexplorer/tendermint). Before opening an issue
 however, be sure to check if there's [no existing
-issue](https://github.com/quantumexplorer/tendermint/issues) already.
+issue](https://github.com/tendermint/tendermint/issues) already.
 
 ## Monitoring Tendermint
 
@@ -269,7 +269,7 @@ Recommended:
 
 While for now, Tendermint stores all the history and it may require significant
 disk space over time, we are planning to implement state syncing (See [this
-issue](https://github.com/quantumexplorer/tendermint/issues/828)). So, storing all
+issue](https://github.com/tendermint/tendermint/issues/828)). So, storing all
 the past blocks will not be necessary.
 
 ### Validator signing on 32 bit architectures (or ARM)

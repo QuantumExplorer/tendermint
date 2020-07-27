@@ -27,7 +27,7 @@ The default codec is now proto3, not amino. Check out the [TODO]() for
 motivation behind this change. The schema files can be found in the `/proto`
 directory. In the future we're considering using gRPC for the remote private
 validator and ABCI
-([\#4698](https://github.com/quantumexplorer/tendermint/issues/4698)).
+([\#4698](https://github.com/tendermint/tendermint/issues/4698)).
 
 ### Blockchain Protocol
 
@@ -460,9 +460,9 @@ for consistency with other messages.
 
 Note that the TCP sockets don't yet use a persistent key,
 so while they're encrypted, they can't yet be properly authenticated.
-See [#3105](https://github.com/quantumexplorer/tendermint/issues/3105).
+See [#3105](https://github.com/tendermint/tendermint/issues/3105).
 Note the Unix socket has neither encryption nor authentication, but will
-add a shared-secret in [#3099](https://github.com/quantumexplorer/tendermint/issues/3099).
+add a shared-secret in [#3099](https://github.com/tendermint/tendermint/issues/3099).
 
 ## v0.27.0
 

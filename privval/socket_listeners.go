@@ -141,7 +141,7 @@ func (ln *UnixListener) Accept() (net.Conn, error) {
 	conn := newTimeoutConn(tc, ln.timeoutReadWrite)
 
 	// TODO: wrap in something that authenticates
-	// with a MAC - https://github.com/quantumexplorer/tendermint/issues/3099
+	// with a MAC - https://github.com/tendermint/tendermint/issues/3099
 
 	return conn, nil
 }
