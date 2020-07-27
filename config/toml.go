@@ -473,7 +473,7 @@ func ResetTestRootWithChainID(testName string, chainID string) *Config {
 	return config
 }
 
-var testGenesisFmt = `{
+var testEd25519GenesisFmt = `{
   "genesis_time": "2018-10-10T08:20:13.695936996Z",
   "chain_id": "%s",
   "validators": [
@@ -481,6 +481,22 @@ var testGenesisFmt = `{
       "pub_key": {
         "type": "tendermint/PubKeyEd25519",
         "value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="
+      },
+      "power": "10",
+      "name": ""
+    }
+  ],
+  "app_hash": ""
+}`
+
+var testGenesisFmt = `{
+  "genesis_time": "2018-10-10T08:20:13.695936996Z",
+  "chain_id": "%s",
+  "validators": [
+    {
+      "pub_key": {
+        "type": "tendermint/PubKeyBLS12381",
+        "value":"F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
       },
       "power": "10",
       "name": ""
