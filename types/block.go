@@ -280,7 +280,7 @@ func MaxDataBytes(maxBytes int64, keyType crypto.KeyType, valsCount, evidenceCou
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
 		int64(valsCount)*MaxVoteBytesForKeyType(keyType) -
-		int64(evidenceCount)*MaxEvidenceBytes
+		int64(evidenceCount)*MaxEvidenceBytesForKeyType(keyType)
 
 	if maxDataBytes < 0 {
 		panic(fmt.Sprintf(
@@ -300,7 +300,7 @@ func MaxDataBytes(maxBytes int64, keyType crypto.KeyType, valsCount, evidenceCou
 //
 // XXX: Panics on negative result.
 func MaxDataBytesUnknownEvidence(maxBytes int64, keyType crypto.KeyType, valsCount int, maxNumEvidence uint32) int64 {
-	maxEvidenceBytes := int64(maxNumEvidence) * MaxEvidenceBytes
+	maxEvidenceBytes := int64(maxNumEvidence) * MaxEvidenceBytesForKeyType(keyType)
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -

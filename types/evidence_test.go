@@ -147,7 +147,7 @@ func TestMaxEvidenceBytes(t *testing.T) {
 		bz, err := pb.Marshal()
 		require.NoError(t, err, tt.testName)
 
-		assert.LessOrEqual(t, int64(len(bz)), MaxEvidenceBytes, tt.testName)
+		assert.LessOrEqual(t, int64(len(bz)), MaxEvidenceBytesForKeyType(crypto.BLS12381), tt.testName)
 	}
 
 }

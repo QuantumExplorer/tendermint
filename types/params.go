@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"github.com/quantumexplorer/tendermint/crypto"
 	"time"
 
 	abci "github.com/quantumexplorer/tendermint/abci/types"
@@ -113,9 +114,9 @@ func ValidateConsensusParams(params tmproto.ConsensusParams) error {
 			params.Evidence.MaxNum, MaxEvidencePerBlock)
 	}
 
-	if int64(params.Evidence.MaxNum)*MaxEvidenceBytes > params.Block.MaxBytes {
+	if int64(params.Evidence.MaxNum)*MaxEvidenceBytesForKeyType(crypto.BLS12381) > params.Block.MaxBytes {
 		return fmt.Errorf("total possible evidence size is bigger than block.MaxBytes, %d > %d",
-			int64(params.Evidence.MaxNum)*MaxEvidenceBytes, params.Block.MaxBytes)
+			int64(params.Evidence.MaxNum)*MaxEvidenceBytesForKeyType(crypto.BLS12381), params.Block.MaxBytes)
 	}
 
 	if params.Evidence.ProofTrialPeriod <= 0 {
