@@ -107,9 +107,9 @@ out the state is incorrect until you download the whole thing and compare it
 with a verified block header.
 
 A similar solution was implemented by Binance in
-[#3594](https://github.com/quantumexplorer/tendermint/pull/3594)
+[#3594](https://github.com/tendermint/tendermint/pull/3594)
 based on their initial implementation in
-[PR #3243](https://github.com/quantumexplorer/tendermint/pull/3243)
+[PR #3243](https://github.com/tendermint/tendermint/pull/3243)
 and [some learnings](https://docs.google.com/document/d/1npGTAa1qxe8EQZ1wG0a0Sip9t5oX2vYZNUDwr_LVRR4/edit).
 Note this still requires the honest majority peer assumption.
 
@@ -130,7 +130,7 @@ structure while Eager can optimize for sequential reads.
 
 This distinctin between approaches was demonstrated by Binance's
 [ackratos](https://github.com/ackratos) in their implementation of [Lazy
-State sync](https://github.com/quantumexplorer/tendermint/pull/3243), The
+State sync](https://github.com/tendermint/tendermint/pull/3243), The
 [analysis](https://docs.google.com/document/d/1npGTAa1qxe8EQZ1wG0a0Sip9t5oX2vYZNUDwr_LVRR4/)
 of the performance, and follow up implementation of [Warp
 Sync](http://github.com/quantumexplorer/tendermint/pull/3594).
@@ -143,7 +143,7 @@ Light client validation: In which the node receiving data is expected to
 first perform a light client sync and have all the nessesary block
 headers. Within the trusted block header (trusted in terms of from a
 validator set subject to [weak
-subjectivity](https://github.com/quantumexplorer/tendermint/pull/3795)) and
+subjectivity](https://github.com/tendermint/tendermint/pull/3795)) and
 can compare any subset of keys called a chunk against the merkle root.
 The advantage of light client validation is that the block headers are
 signed by validators which have something to lose for malicious
@@ -203,7 +203,7 @@ will need implement:
 ![StateSync Architecture Diagram](img/state-sync.png)
 
 ## Implementation Path
-* Create StateSync reactor based on  [#3753](https://github.com/quantumexplorer/tendermint/pull/3753)
+* Create StateSync reactor based on  [#3753](https://github.com/tendermint/tendermint/pull/3753)
 * Design SnapshotFormat with an eye towards cosmos-hub implementation
 * ABCI message to send/receive SnapshotFormat
 * IAVL+ changes to support SnapshotFormat
@@ -230,9 +230,9 @@ Proposed
 ## References
 [sync: Sync current state without full replay for Applications](https://github.com/quantumexplorer/tendermint/issues/828) - original issue
 [tendermint state sync proposal 2](https://docs.google.com/document/d/1npGTAa1qxe8EQZ1wG0a0Sip9t5oX2vYZNUDwr_LVRR4/edit) - ackratos proposal
-[proposal 2 implementation](https://github.com/quantumexplorer/tendermint/pull/3243)  - ackratos implementation
+[proposal 2 implementation](https://github.com/tendermint/tendermint/pull/3243)  - ackratos implementation
 [WIP General/Lazy State-Sync pseudo-spec](https://github.com/quantumexplorer/tendermint/issues/3639) - Jae Proposal
-[Warp Sync Implementation](https://github.com/quantumexplorer/tendermint/pull/3594) - ackratos
-[Chunk Proposal](https://github.com/quantumexplorer/tendermint/pull/3799) - Bucky proposed
+[Warp Sync Implementation](https://github.com/tendermint/tendermint/pull/3594) - ackratos
+[Chunk Proposal](https://github.com/tendermint/tendermint/pull/3799) - Bucky proposed
 
 

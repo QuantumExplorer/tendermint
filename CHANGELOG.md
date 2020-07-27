@@ -74,10 +74,10 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 - Go API
 
-  - [privval] [\#4744](https://github.com/quantumexplorer/tendermint/pull/4744) Remove deprecated `OldFilePV` (@melekes)
-  - [mempool] [\#4759](https://github.com/quantumexplorer/tendermint/pull/4759) Modify `Mempool#InitWAL` to return an error (@melekes)
-  - [node] [\#4832](https://github.com/quantumexplorer/tendermint/pull/4832) `ConfigureRPC` returns an error (@melekes)
-  - [rpc] [\#4836](https://github.com/quantumexplorer/tendermint/pull/4836) Overhaul `lib` folder (@melekes)
+  - [privval] [\#4744](https://github.com/tendermint/tendermint/pull/4744) Remove deprecated `OldFilePV` (@melekes)
+  - [mempool] [\#4759](https://github.com/tendermint/tendermint/pull/4759) Modify `Mempool#InitWAL` to return an error (@melekes)
+  - [node] [\#4832](https://github.com/tendermint/tendermint/pull/4832) `ConfigureRPC` returns an error (@melekes)
+  - [rpc] [\#4836](https://github.com/tendermint/tendermint/pull/4836) Overhaul `lib` folder (@melekes)
     Move lib/ folder to jsonrpc/.
     Rename:
       rpc package -> jsonrpc package
@@ -98,28 +98,28 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 ### FEATURES:
 
-- [pex] [\#4439](https://github.com/quantumexplorer/tendermint/pull/4439) Use highwayhash for pex buckets (@tau3)
+- [pex] [\#4439](https://github.com/tendermint/tendermint/pull/4439) Use highwayhash for pex buckets (@tau3)
 
 ### IMPROVEMENTS:
 
-- [abci/server] [\#4719](https://github.com/quantumexplorer/tendermint/pull/4719) Print panic & stack trace to STDERR if logger is not set (@melekes)
-- [types] [\#4638](https://github.com/quantumexplorer/tendermint/pull/4638) Implement `Header#ValidateBasic` (@alexanderbez)
-- [buildsystem] [\#4378](https://github.com/quantumexplorer/tendermint/pull/4738) Replace build_c and install_c with TENDERMINT_BUILD_OPTIONS parsing. The following options are available:
+- [abci/server] [\#4719](https://github.com/tendermint/tendermint/pull/4719) Print panic & stack trace to STDERR if logger is not set (@melekes)
+- [types] [\#4638](https://github.com/tendermint/tendermint/pull/4638) Implement `Header#ValidateBasic` (@alexanderbez)
+- [buildsystem] [\#4378](https://github.com/tendermint/tendermint/pull/4738) Replace build_c and install_c with TENDERMINT_BUILD_OPTIONS parsing. The following options are available:
   - nostrip: don't strip debugging symbols nor DWARF tables.
   - cleveldb: use cleveldb as db backend instead of goleveldb.
   - race: pass -race to go build and enable data race detection.
-- [mempool] [\#4759](https://github.com/quantumexplorer/tendermint/pull/4759) Allow ReapX and CheckTx functions to run in parallel (@melekes)
-- [rpc/core] [\#4844](https://github.com/quantumexplorer/tendermint/pull/4844) Do not lock consensus state in `/validators`, `/consensus_params` and `/status` (@melekes)
+- [mempool] [\#4759](https://github.com/tendermint/tendermint/pull/4759) Allow ReapX and CheckTx functions to run in parallel (@melekes)
+- [rpc/core] [\#4844](https://github.com/tendermint/tendermint/pull/4844) Do not lock consensus state in `/validators`, `/consensus_params` and `/status` (@melekes)
 
 ### BUG FIXES:
 
-- [blockchain/v2] [\#4761](https://github.com/quantumexplorer/tendermint/pull/4761) Fix excessive CPU usage caused by spinning on closed channels (@erikgrinaker)
+- [blockchain/v2] [\#4761](https://github.com/tendermint/tendermint/pull/4761) Fix excessive CPU usage caused by spinning on closed channels (@erikgrinaker)
 - [blockchain/v2] Respect `fast_sync` option (@erikgrinaker)
-- [light] [\#4741](https://github.com/quantumexplorer/tendermint/pull/4741) Correctly return  `ErrSignedHeaderNotFound` and `ErrValidatorSetNotFound` on corresponding RPC errors (@erikgrinaker)
+- [light] [\#4741](https://github.com/tendermint/tendermint/pull/4741) Correctly return  `ErrSignedHeaderNotFound` and `ErrValidatorSetNotFound` on corresponding RPC errors (@erikgrinaker)
 - [rpc] [\#4805](https://github.com/quantumexplorer/tendermint/issues/4805) Attempt to handle panics during panic recovery (@erikgrinaker)
-- [types] [\#4764](https://github.com/quantumexplorer/tendermint/pull/4764) Return an error if voting power overflows in `VerifyCommitTrusting` (@melekes)
-- [privval] [\#4812](https://github.com/quantumexplorer/tendermint/pull/4812) Retry `GetPubKey/SignVote/SignProposal` a few times before returning an error (@melekes)
-- [p2p] [\#4847](https://github.com/quantumexplorer/tendermint/pull/4847) Return masked IP (not the actual IP) in addrbook#groupKey (@melekes)
+- [types] [\#4764](https://github.com/tendermint/tendermint/pull/4764) Return an error if voting power overflows in `VerifyCommitTrusting` (@melekes)
+- [privval] [\#4812](https://github.com/tendermint/tendermint/pull/4812) Retry `GetPubKey/SignVote/SignProposal` a few times before returning an error (@melekes)
+- [p2p] [\#4847](https://github.com/tendermint/tendermint/pull/4847) Return masked IP (not the actual IP) in addrbook#groupKey (@melekes)
 
 ## v0.33.4
 
@@ -135,29 +135,29 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 
 - Go API
 
-  - [lite2] [\#4616](https://github.com/quantumexplorer/tendermint/pull/4616) Make `maxClockDrift` an option `Verify/VerifyAdjacent/VerifyNonAdjacent` now accept `maxClockDrift time.Duration` (@melekes).
-  - [rpc/client] [\#4628](https://github.com/quantumexplorer/tendermint/pull/4628) Split out HTTP and local clients into `http` and `local` packages (@erikgrinaker).
+  - [lite2] [\#4616](https://github.com/tendermint/tendermint/pull/4616) Make `maxClockDrift` an option `Verify/VerifyAdjacent/VerifyNonAdjacent` now accept `maxClockDrift time.Duration` (@melekes).
+  - [rpc/client] [\#4628](https://github.com/tendermint/tendermint/pull/4628) Split out HTTP and local clients into `http` and `local` packages (@erikgrinaker).
 
 ### FEATURES:
 
 - [abci] [\#4588](https://github.com/quantumexplorer/tendermint/issues/4588) Add `ResponseCommit.retain_height` field, which will automatically remove blocks below this height. This bumps the ABCI version to 0.16.2 (@erikgrinaker).
-- [cmd] [\#4665](https://github.com/quantumexplorer/tendermint/pull/4665) New `tendermint completion` command to generate Bash/Zsh completion scripts (@alessio).
+- [cmd] [\#4665](https://github.com/tendermint/tendermint/pull/4665) New `tendermint completion` command to generate Bash/Zsh completion scripts (@alessio).
 - [rpc] [\#4588](https://github.com/quantumexplorer/tendermint/issues/4588) Add `/status` response fields for the earliest block available on the node (@erikgrinaker).
-- [rpc] [\#4611](https://github.com/quantumexplorer/tendermint/pull/4611) Add `codespace` to `ResultBroadcastTx` (@whylee259).
+- [rpc] [\#4611](https://github.com/tendermint/tendermint/pull/4611) Add `codespace` to `ResultBroadcastTx` (@whylee259).
 
 ### IMPROVEMENTS:
 
-- [all] [\#4608](https://github.com/quantumexplorer/tendermint/pull/4608) Give reactors descriptive names when they're initialized (@tessr).
+- [all] [\#4608](https://github.com/tendermint/tendermint/pull/4608) Give reactors descriptive names when they're initialized (@tessr).
 - [blockchain] [\#4588](https://github.com/quantumexplorer/tendermint/issues/4588) Add `Base` to blockchain reactor P2P messages `StatusRequest` and `StatusResponse` (@erikgrinaker).
 - [Docker] [\#4569](https://github.com/quantumexplorer/tendermint/issues/4569) Default configuration added to docker image (you can still mount your own config the same way) (@greg-szabo).
 - [example/kvstore] [\#4588](https://github.com/quantumexplorer/tendermint/issues/4588) Add `RetainBlocks` option to control block retention (@erikgrinaker).
-- [evidence] [\#4632](https://github.com/quantumexplorer/tendermint/pull/4632) Inbound evidence checked if already existing (@cmwaters).
-- [lite2] [\#4575](https://github.com/quantumexplorer/tendermint/pull/4575) Use bisection for within-range verification (@cmwaters).
-- [lite2] [\#4562](https://github.com/quantumexplorer/tendermint/pull/4562) Cache headers when using bisection (@cmwaters).
-- [p2p] [\#4548](https://github.com/quantumexplorer/tendermint/pull/4548) Add ban list to address book (@cmwaters).
+- [evidence] [\#4632](https://github.com/tendermint/tendermint/pull/4632) Inbound evidence checked if already existing (@cmwaters).
+- [lite2] [\#4575](https://github.com/tendermint/tendermint/pull/4575) Use bisection for within-range verification (@cmwaters).
+- [lite2] [\#4562](https://github.com/tendermint/tendermint/pull/4562) Cache headers when using bisection (@cmwaters).
+- [p2p] [\#4548](https://github.com/tendermint/tendermint/pull/4548) Add ban list to address book (@cmwaters).
 - [privval] [\#4534](https://github.com/quantumexplorer/tendermint/issues/4534) Add `error` as a return value on`GetPubKey()` (@marbar3778).
 - [p2p] [\#4621](https://github.com/quantumexplorer/tendermint/issues/4621) Ban peers when messages are unsolicited or too frequent (@cmwaters).
-- [rpc] [\#4703](https://github.com/quantumexplorer/tendermint/pull/4703) Add `count` and `total` to `/validators` response (@melekes).
+- [rpc] [\#4703](https://github.com/tendermint/tendermint/pull/4703) Add `count` and `total` to `/validators` response (@melekes).
 - [tools] [\#4615](https://github.com/quantumexplorer/tendermint/issues/4615) Allow developers to use Docker to generate proto stubs, via `make proto-gen-docker` (@erikgrinaker).
 
 ### BUG FIXES:
@@ -237,20 +237,20 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 ### BREAKING CHANGES:
 
 - CLI/RPC/Config
-  - [cli] [\#4505](https://github.com/quantumexplorer/tendermint/pull/4505) `tendermint lite` sub-command new syntax (@melekes):
+  - [cli] [\#4505](https://github.com/tendermint/tendermint/pull/4505) `tendermint lite` sub-command new syntax (@melekes):
     `lite cosmoshub-3 -p 52.57.29.196:26657 -w public-seed-node.cosmoshub.certus.one:26657
     --height 962118 --hash 28B97BE9F6DE51AC69F70E0B7BFD7E5C9CD1A595B7DC31AFF27C50D4948`
 
 - Go API
-  - [lite2] [\#4535](https://github.com/quantumexplorer/tendermint/pull/4535) Remove `Start/Stop` (@melekes)
+  - [lite2] [\#4535](https://github.com/tendermint/tendermint/pull/4535) Remove `Start/Stop` (@melekes)
   - [lite2] [\#4469](https://github.com/quantumexplorer/tendermint/issues/4469) Remove `RemoveNoLongerTrustedHeaders` and `RemoveNoLongerTrustedHeadersPeriod` option (@cmwaters)
   - [lite2] [\#4473](https://github.com/quantumexplorer/tendermint/issues/4473) Return height as a 2nd param in `TrustedValidatorSet` (@melekes)
-  - [lite2] [\#4536](https://github.com/quantumexplorer/tendermint/pull/4536) `Update` returns a signed header (1st param) (@melekes)
+  - [lite2] [\#4536](https://github.com/tendermint/tendermint/pull/4536) `Update` returns a signed header (1st param) (@melekes)
 
 
 ### IMPROVEMENTS:
 
-- [blockchain/v2] [\#4361](https://github.com/quantumexplorer/tendermint/pull/4361) Add reactor (@brapse)
+- [blockchain/v2] [\#4361](https://github.com/tendermint/tendermint/pull/4361) Add reactor (@brapse)
 - [cmd] [\#4515](https://github.com/quantumexplorer/tendermint/issues/4515) Change `tendermint debug dump` sub-command archives filename's format (@melekes)
 - [consensus] [\#3583](https://github.com/quantumexplorer/tendermint/issues/3583) Reduce `non-deterministic signature` log noise (@tau3)
 - [examples/kvstore] [\#4507](https://github.com/quantumexplorer/tendermint/issues/4507) ABCI query now returns the proper height (@erikgrinaker)
@@ -262,9 +262,9 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - [lite2] [\#4464](https://github.com/quantumexplorer/tendermint/issues/4464) Cross-check first header (@cmwaters)
 - [lite2] [\#4470](https://github.com/quantumexplorer/tendermint/issues/4470) Fix inconsistent header-validatorset pairing (@melekes)
 - [lite2] [\#4488](https://github.com/quantumexplorer/tendermint/issues/4488) Allow local clock drift -10 sec. (@melekes)
-- [p2p] [\#4449](https://github.com/quantumexplorer/tendermint/pull/4449) Use `curve25519.X25519()` instead of `ScalarMult` (@erikgrinaker)
+- [p2p] [\#4449](https://github.com/tendermint/tendermint/pull/4449) Use `curve25519.X25519()` instead of `ScalarMult` (@erikgrinaker)
 - [types] [\#4417](https://github.com/quantumexplorer/tendermint/issues/4417) **VerifyCommitX() functions should return as soon as +2/3 threshold is reached** (@alessio).
-- [libs/kv] [\#4542](https://github.com/quantumexplorer/tendermint/pull/4542) remove unused type KI64Pair (@tessr)
+- [libs/kv] [\#4542](https://github.com/tendermint/tendermint/pull/4542) remove unused type KI64Pair (@tessr)
 
 ### BUG FIXES:
 
@@ -272,7 +272,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - [cmd] [\#4515](https://github.com/quantumexplorer/tendermint/issues/4515) **Fix `tendermint debug kill` sub-command** (@melekes)
 - [rpc] [\#3935](https://github.com/quantumexplorer/tendermint/issues/3935) **Create buffered subscriptions on `/subscribe`** (@melekes)
 - [rpc] [\#4375](https://github.com/quantumexplorer/tendermint/issues/4375) Stop searching for txs in `/tx_search` upon client timeout (@gterzian)
-- [rpc] [\#4406](https://github.com/quantumexplorer/tendermint/pull/4406) Fix issue with multiple subscriptions on the websocket (@antho1404)
+- [rpc] [\#4406](https://github.com/tendermint/tendermint/pull/4406) Fix issue with multiple subscriptions on the websocket (@antho1404)
 - [rpc] [\#4432](https://github.com/quantumexplorer/tendermint/issues/4432) Fix `/tx_search` pagination with ordered results (@erikgrinaker)
 - [rpc] [\#4492](https://github.com/quantumexplorer/tendermint/issues/4492) Keep the original subscription "id" field when new RPCs come in (@michaelfig)
 
@@ -350,9 +350,9 @@ subjectivity interface. Refer to the [spec](https://github.com/tendermint/spec/b
       }
     }
     ```
-  - [rpc] [\#4141](https://github.com/quantumexplorer/tendermint/pull/4141) Remove `#event` suffix from the ID in event responses.
+  - [rpc] [\#4141](https://github.com/tendermint/tendermint/pull/4141) Remove `#event` suffix from the ID in event responses.
     `{"jsonrpc": "2.0", "id": 0, "result": ...}`
-  - [rpc] [\#4141](https://github.com/quantumexplorer/tendermint/pull/4141) Switch to integer IDs instead of `json-client-XYZ`
+  - [rpc] [\#4141](https://github.com/tendermint/tendermint/pull/4141) Switch to integer IDs instead of `json-client-XYZ`
     ```
     id=0 method=/subscribe
     id=0 result=...
@@ -402,14 +402,14 @@ subjectivity interface. Refer to the [spec](https://github.com/tendermint/spec/b
 - Blockchain Protocol
 
   - [abci] [\#2521](https://github.com/quantumexplorer/tendermint/issues/2521) Remove `TotalTxs` and `NumTxs` from `Header`
-  - [types] [\#4151](https://github.com/quantumexplorer/tendermint/pull/4151) Enforce ordering of votes in DuplicateVoteEvidence to be lexicographically sorted on BlockID
+  - [types] [\#4151](https://github.com/tendermint/tendermint/pull/4151) Enforce ordering of votes in DuplicateVoteEvidence to be lexicographically sorted on BlockID
   - [types] [\#1648](https://github.com/quantumexplorer/tendermint/issues/1648) Change `Commit` to consist of just signatures
 
 - P2P Protocol
 
-  - [p2p] [\#3668](https://github.com/quantumexplorer/tendermint/pull/3668) Make `SecretConnection` non-malleable
+  - [p2p] [\#3668](https://github.com/tendermint/tendermint/pull/3668) Make `SecretConnection` non-malleable
 
-- [proto] [\#3986](https://github.com/quantumexplorer/tendermint/pull/3986) Prefix protobuf types to avoid name conflicts.
+- [proto] [\#3986](https://github.com/tendermint/tendermint/pull/3986) Prefix protobuf types to avoid name conflicts.
   - ABCI becomes `tendermint.abci.types` with the new API endpoint `/tendermint.abci.types.ABCIApplication/`
   - core_grpc becomes `tendermint.rpc.grpc` with the new API endpoint `/tendermint.rpc.grpc.BroadcastAPI/`
   - merkle becomes `tendermint.crypto.merkle`
@@ -419,7 +419,7 @@ subjectivity interface. Refer to the [spec](https://github.com/tendermint/spec/b
 ### FEATURES:
 
 - [p2p] [\#4053](https://github.com/quantumexplorer/tendermint/issues/4053) Add `unconditional_peer_ids` and `persistent_peers_max_dial_period` config variables (see ADR-050) (@dongsam)
-- [tools] [\#4227](https://github.com/quantumexplorer/tendermint/pull/4227) Implement `tendermint debug kill` and
+- [tools] [\#4227](https://github.com/tendermint/tendermint/pull/4227) Implement `tendermint debug kill` and
   `tendermint debug dump` commands for Tendermint node debugging functionality. See `--help` in both
   commands for further documentation and usage.
 - [cli] [\#4234](https://github.com/quantumexplorer/tendermint/issues/4234) Add `--db_backend and --db_dir` flags (@princesinha19)
@@ -438,20 +438,20 @@ subjectivity interface. Refer to the [spec](https://github.com/tendermint/spec/b
 
 - [rpc] [\#3188](https://github.com/quantumexplorer/tendermint/issues/3188) Added `block_size` to `BlockMeta` this is reflected in `/blockchain`
 - [types] [\#2521](https://github.com/quantumexplorer/tendermint/issues/2521) Add `NumTxs` to `BlockMeta` and `EventDataNewBlockHeader`
-- [p2p] [\#4185](https://github.com/quantumexplorer/tendermint/pull/4185) Simplify `SecretConnection` handshake with merlin
+- [p2p] [\#4185](https://github.com/tendermint/tendermint/pull/4185) Simplify `SecretConnection` handshake with merlin
 - [cli] [\#4065](https://github.com/quantumexplorer/tendermint/issues/4065) Add `--consensus.create_empty_blocks_interval` flag (@jgimeno)
 - [docs] [\#4065](https://github.com/quantumexplorer/tendermint/issues/4065) Document `--consensus.create_empty_blocks_interval` flag (@jgimeno)
-- [crypto] [\#4190](https://github.com/quantumexplorer/tendermint/pull/4190) Added SR25519 signature scheme
+- [crypto] [\#4190](https://github.com/tendermint/tendermint/pull/4190) Added SR25519 signature scheme
 - [abci] [\#4177] kvstore: Return `LastBlockHeight` and `LastBlockAppHash` in `Info` (@princesinha19)
 - [rpc] [\#2741](https://github.com/quantumexplorer/tendermint/issues/2741) Add `proposer` to `/consensus_state` response (@princesinha19)
-- [deps] [\#4289](https://github.com/quantumexplorer/tendermint/pull/4289) Update tm-db to 0.4.0, this includes major breaking changes in the dep that change how errors are handled.
+- [deps] [\#4289](https://github.com/tendermint/tendermint/pull/4289) Update tm-db to 0.4.0, this includes major breaking changes in the dep that change how errors are handled.
 
 ### BUG FIXES:
 
-- [rpc/lib][\#4051](https://github.com/quantumexplorer/tendermint/pull/4131) Fix RPC client, which was previously resolving https protocol to http (@yenkhoon)
-- [rpc] [\#4141](https://github.com/quantumexplorer/tendermint/pull/4141) JSONRPCClient: validate that Response.ID matches Request.ID
-- [rpc] [\#4141](https://github.com/quantumexplorer/tendermint/pull/4141) WSClient: check for unsolicited responses
-- [types] [\4164](https://github.com/quantumexplorer/tendermint/pull/4164) Prevent temporary power overflows on validator updates
+- [rpc/lib][\#4051](https://github.com/tendermint/tendermint/pull/4131) Fix RPC client, which was previously resolving https protocol to http (@yenkhoon)
+- [rpc] [\#4141](https://github.com/tendermint/tendermint/pull/4141) JSONRPCClient: validate that Response.ID matches Request.ID
+- [rpc] [\#4141](https://github.com/tendermint/tendermint/pull/4141) WSClient: check for unsolicited responses
+- [types] [\4164](https://github.com/tendermint/tendermint/pull/4164) Prevent temporary power overflows on validator updates
 - [cs] [\#4069](https://github.com/quantumexplorer/tendermint/issues/4069) Don't panic when block meta is not found in store (@gregzaitsev)
 - [types] [\#4164](https://github.com/quantumexplorer/tendermint/issues/4164) Prevent temporary power overflows on validator updates (joint
   efforts of @gchaincl and @ancazamfir)
@@ -465,7 +465,7 @@ subjectivity interface. Refer to the [spec](https://github.com/tendermint/spec/b
 
 ### BUG FIXES
 
-- [p2p] [\#4847](https://github.com/quantumexplorer/tendermint/pull/4847) Return masked IP (not the actual IP) in addrbook#groupKey (@melekes)
+- [p2p] [\#4847](https://github.com/tendermint/tendermint/pull/4847) Return masked IP (not the actual IP) in addrbook#groupKey (@melekes)
 
 ## v0.32.11
 
@@ -547,7 +547,7 @@ program](https://hackerone.com/tendermint).
 
 - [rpc/lib] [\#4248](https://github.com/quantumexplorer/tendermint/issues/4248) RPC client basic authentication support (@greg-szabo)
 
-- [metrics] [\#4294](https://github.com/quantumexplorer/tendermint/pull/4294) Add
+- [metrics] [\#4294](https://github.com/tendermint/tendermint/pull/4294) Add
   - `consensus_validator_power`: track your validators power
   - `consensus_validator_last_signed_height`: track at which height the validator last signed
   - `consensus_validator_missed_blocks`: total amount of missed blocks for a validator
@@ -555,7 +555,7 @@ program](https://hackerone.com/tendermint).
 
 ### BUG FIXES:
 
-- [rpc/lib] [\#4131](https://github.com/quantumexplorer/tendermint/pull/4131) Fix RPC client, which was previously resolving https protocol to http (@yenkhoon)
+- [rpc/lib] [\#4131](https://github.com/tendermint/tendermint/pull/4131) Fix RPC client, which was previously resolving https protocol to http (@yenkhoon)
 - [cs] [\#4069](https://github.com/quantumexplorer/tendermint/issues/4069) Don't panic when block meta is not found in store (@gregzaitsev)
 
 ## v0.32.8
@@ -572,25 +572,25 @@ program.](https://hackerone.com/tendermint).
 
 - Go API
 
-  - [libs/pubsub] [\#4070](https://github.com/quantumexplorer/tendermint/pull/4070) `Query#(Matches|Conditions)` returns an error.
+  - [libs/pubsub] [\#4070](https://github.com/tendermint/tendermint/pull/4070) `Query#(Matches|Conditions)` returns an error.
 
 ### IMPROVEMENTS:
 
-- [mempool] [\#4083](https://github.com/quantumexplorer/tendermint/pull/4083) Added TxInfo parameter to CheckTx(), and removed CheckTxWithInfo() (@erikgrinaker)
+- [mempool] [\#4083](https://github.com/tendermint/tendermint/pull/4083) Added TxInfo parameter to CheckTx(), and removed CheckTxWithInfo() (@erikgrinaker)
 - [mempool] [\#4057](https://github.com/quantumexplorer/tendermint/issues/4057) Include peer ID when logging rejected txns (@erikgrinaker)
 - [tools] [\#4023](https://github.com/quantumexplorer/tendermint/issues/4023) Improved `tm-monitor` formatting of start time and avg tx throughput (@erikgrinaker)
 - [p2p] [\#3991](https://github.com/quantumexplorer/tendermint/issues/3991) Log "has been established or dialed" as debug log instead of Error for connected peers (@whunmr)
-- [rpc] [\#4077](https://github.com/quantumexplorer/tendermint/pull/4077) Added support for `EXISTS` clause to the Websocket query interface.
+- [rpc] [\#4077](https://github.com/tendermint/tendermint/pull/4077) Added support for `EXISTS` clause to the Websocket query interface.
 - [privval] Add `SignerDialerEndpointRetryWaitInterval` option (@cosmostuba)
 - [crypto] Add `RegisterKeyType` to amino to allow external key types registration (@austinabell)
 
 ### BUG FIXES:
 
-- [libs/pubsub] [\#4070](https://github.com/quantumexplorer/tendermint/pull/4070) Strip out non-numeric characters when attempting to match numeric values.
-- [libs/pubsub] [\#4070](https://github.com/quantumexplorer/tendermint/pull/4070) No longer panic in Query#(Matches|Conditions) preferring to return an error instead.
+- [libs/pubsub] [\#4070](https://github.com/tendermint/tendermint/pull/4070) Strip out non-numeric characters when attempting to match numeric values.
+- [libs/pubsub] [\#4070](https://github.com/tendermint/tendermint/pull/4070) No longer panic in Query#(Matches|Conditions) preferring to return an error instead.
 - [tools] [\#4023](https://github.com/quantumexplorer/tendermint/issues/4023) Refresh `tm-monitor` health when validator count is updated (@erikgrinaker)
-- [state] [\#4104](https://github.com/quantumexplorer/tendermint/pull/4104) txindex/kv: Fsync data to disk immediately after receiving it (@guagualvcha)
-- [state] [\#4095](https://github.com/quantumexplorer/tendermint/pull/4095) txindex/kv: Return an error if there's one when the user searches for a tx (hash=X) (@hsyis)
+- [state] [\#4104](https://github.com/tendermint/tendermint/pull/4104) txindex/kv: Fsync data to disk immediately after receiving it (@guagualvcha)
+- [state] [\#4095](https://github.com/tendermint/tendermint/pull/4095) txindex/kv: Return an error if there's one when the user searches for a tx (hash=X) (@hsyis)
 
 ## v0.32.7
 
@@ -678,15 +678,15 @@ program](https://hackerone.com/tendermint).
 
 - [rpc] [\#2010](https://github.com/quantumexplorer/tendermint/issues/2010) Add NewHTTPWithClient and NewJSONRPCClientWithHTTPClient (note these and NewHTTP, NewJSONRPCClient functions panic if remote is invalid) (@gracenoah)
 - [rpc] [\#3882](https://github.com/quantumexplorer/tendermint/issues/3882) Add custom marshalers to proto messages to disable `omitempty`
-- [deps] [\#3952](https://github.com/quantumexplorer/tendermint/pull/3952) bump github.com/go-kit/kit from 0.6.0 to 0.9.0
-- [deps] [\#3951](https://github.com/quantumexplorer/tendermint/pull/3951) bump github.com/stretchr/testify from 1.3.0 to 1.4.0
-- [deps] [\#3945](https://github.com/quantumexplorer/tendermint/pull/3945) bump github.com/gorilla/websocket from 1.2.0 to 1.4.1
-- [deps] [\#3948](https://github.com/quantumexplorer/tendermint/pull/3948) bump github.com/libp2p/go-buffer-pool from 0.0.1 to 0.0.2
-- [deps] [\#3943](https://github.com/quantumexplorer/tendermint/pull/3943) bump github.com/fortytw2/leaktest from 1.2.0 to 1.3.0
-- [deps] [\#3939](https://github.com/quantumexplorer/tendermint/pull/3939) bump github.com/rs/cors from 1.6.0 to 1.7.0
-- [deps] [\#3937](https://github.com/quantumexplorer/tendermint/pull/3937) bump github.com/magiconair/properties from 1.8.0 to 1.8.1
-- [deps] [\#3947](https://github.com/quantumexplorer/tendermint/pull/3947) update gogo/protobuf version from v1.2.1 to v1.3.0
-- [deps] [\#4001](https://github.com/quantumexplorer/tendermint/pull/4001) bump github.com/tendermint/tm-db from 0.1.1 to 0.2.0
+- [deps] [\#3952](https://github.com/tendermint/tendermint/pull/3952) bump github.com/go-kit/kit from 0.6.0 to 0.9.0
+- [deps] [\#3951](https://github.com/tendermint/tendermint/pull/3951) bump github.com/stretchr/testify from 1.3.0 to 1.4.0
+- [deps] [\#3945](https://github.com/tendermint/tendermint/pull/3945) bump github.com/gorilla/websocket from 1.2.0 to 1.4.1
+- [deps] [\#3948](https://github.com/tendermint/tendermint/pull/3948) bump github.com/libp2p/go-buffer-pool from 0.0.1 to 0.0.2
+- [deps] [\#3943](https://github.com/tendermint/tendermint/pull/3943) bump github.com/fortytw2/leaktest from 1.2.0 to 1.3.0
+- [deps] [\#3939](https://github.com/tendermint/tendermint/pull/3939) bump github.com/rs/cors from 1.6.0 to 1.7.0
+- [deps] [\#3937](https://github.com/tendermint/tendermint/pull/3937) bump github.com/magiconair/properties from 1.8.0 to 1.8.1
+- [deps] [\#3947](https://github.com/tendermint/tendermint/pull/3947) update gogo/protobuf version from v1.2.1 to v1.3.0
+- [deps] [\#4001](https://github.com/tendermint/tendermint/pull/4001) bump github.com/tendermint/tm-db from 0.1.1 to 0.2.0
 
 ### BUG FIXES:
 
@@ -710,14 +710,14 @@ program](https://hackerone.com/tendermint).
 ### IMPROVEMENTS:
 
 - [consensus] [\#3839](https://github.com/quantumexplorer/tendermint/issues/3839) Reduce "Error attempting to add vote" message severity (Error -> Info)
-- [mempool] [\#3877](https://github.com/quantumexplorer/tendermint/pull/3877) Make `max_tx_bytes` configurable instead of `max_msg_bytes` (@bluele)
-- [privval] [\#3370](https://github.com/quantumexplorer/tendermint/issues/3370) Refactor and simplify validator/kms connection handling. Please refer to [this comment](https://github.com/quantumexplorer/tendermint/pull/3370#issue-257360971) for details
+- [mempool] [\#3877](https://github.com/tendermint/tendermint/pull/3877) Make `max_tx_bytes` configurable instead of `max_msg_bytes` (@bluele)
+- [privval] [\#3370](https://github.com/quantumexplorer/tendermint/issues/3370) Refactor and simplify validator/kms connection handling. Please refer to [this comment](https://github.com/tendermint/tendermint/pull/3370#issue-257360971) for details
 - [rpc] [\#3880](https://github.com/quantumexplorer/tendermint/issues/3880) Document endpoints with `swagger`, introduce contract tests of implementation against documentation
 
 ### BUG FIXES:
 
 - [config] [\#3868](https://github.com/quantumexplorer/tendermint/issues/3868) Move misplaced `max_msg_bytes` into mempool section (@bluele)
-- [rpc] [\#3910](https://github.com/quantumexplorer/tendermint/pull/3910) Fix DATA RACE in HTTP client (@gchaincl)
+- [rpc] [\#3910](https://github.com/tendermint/tendermint/pull/3910) Fix DATA RACE in HTTP client (@gchaincl)
 - [store] [\#3893](https://github.com/quantumexplorer/tendermint/issues/3893) Fix "Unregistered interface types.Evidence" panic
 
 ## v0.32.2
@@ -739,7 +739,7 @@ program](https://hackerone.com/tendermint).
 
 - [blockchain] [\#3561](https://github.com/quantumexplorer/tendermint/issues/3561) Add early version of the new blockchain reactor, which is supposed to be more modular and testable compared to the old version. To try it, you'll have to change `version` in the config file, [here](https://github.com/quantumexplorer/tendermint/blob/master/config/toml.go#L303) NOTE: It's not ready for a production yet. For further information, see [ADR-40](https://github.com/quantumexplorer/tendermint/blob/master/docs/architecture/adr-040-blockchain-reactor-refactor.md) & [ADR-43](https://github.com/quantumexplorer/tendermint/blob/master/docs/architecture/adr-043-blockchain-riri-org.md)
 - [mempool] [\#3826](https://github.com/quantumexplorer/tendermint/issues/3826) Make `max_msg_bytes` configurable(@bluele)
-- [node] [\#3846](https://github.com/quantumexplorer/tendermint/pull/3846) Allow replacing existing p2p.Reactor(s) using [`CustomReactors`
+- [node] [\#3846](https://github.com/tendermint/tendermint/pull/3846) Allow replacing existing p2p.Reactor(s) using [`CustomReactors`
   option](https://godoc.org/github.com/quantumexplorer/tendermint/node#CustomReactors).
   Warning: beware of accidental name clashes. Here is the list of existing
   reactors: MEMPOOL, BLOCKCHAIN, CONSENSUS, EVIDENCE, PEX.
@@ -785,7 +785,7 @@ program](https://hackerone.com/tendermint).
 ### FEATURES:
 
 - [node] Add variadic argument to `NewNode` to support functional options, allowing the Node to be more easily customized.
-- [node][\#3730](https://github.com/quantumexplorer/tendermint/pull/3730) Add `CustomReactors` option to `NewNode` allowing caller to pass
+- [node][\#3730](https://github.com/tendermint/tendermint/pull/3730) Add `CustomReactors` option to `NewNode` allowing caller to pass
   custom reactors to run inside Tendermint node (@ParthDesai)
 - [abci] [\#2127](https://github.com/quantumexplorer/tendermint/issues/2127)RequestCheckTx has a new field, `CheckTxType`, which can take values of `CheckTxType_New` and `CheckTxType_Recheck`, indicating whether this is a new tx being checked for the first time or whether this tx is being rechecked after a block commit. This allows applications to skip certain expensive operations, like signature checking, if they've already been done once. see [docs](https://github.com/quantumexplorer/tendermint/blob/eddb433d7c082efbeaf8974413a36641519ee895/docs/spec/abci/apps.md#mempool-connection)
 
@@ -798,7 +798,7 @@ program](https://hackerone.com/tendermint).
 
 - [p2p] [\#3338](https://github.com/quantumexplorer/tendermint/issues/3338) Prevent "sent next PEX request too soon" errors by not calling
   ensurePeers outside of ensurePeersRoutine
-- [behaviour] [\3772](https://github.com/quantumexplorer/tendermint/pull/3772) Return correct reason in MessageOutOfOrder (@jim380)
+- [behaviour] [\3772](https://github.com/tendermint/tendermint/pull/3772) Return correct reason in MessageOutOfOrder (@jim380)
 - [config] [\#3723](https://github.com/quantumexplorer/tendermint/issues/3723) Add consensus_params to testnet config generation; document time_iota_ms (@ashleyvega)
 
 
@@ -827,7 +827,7 @@ program](https://hackerone.com/tendermint).
     It is recommended to switch to Go Modules if your project has tendermint as
     a dependency. Read more on Modules here:
     https://github.com/golang/go/wiki/Modules
-  - [config] [\#3632](https://github.com/quantumexplorer/tendermint/pull/3632) Removed `leveldb` as generic
+  - [config] [\#3632](https://github.com/tendermint/tendermint/pull/3632) Removed `leveldb` as generic
     option for `db_backend`. Must be `goleveldb` or `cleveldb`.
   - [rpc] [\#3616](https://github.com/quantumexplorer/tendermint/issues/3616) Fix field names for `/block_results` response (eg. `results.DeliverTx`
     -> `results.deliver_tx`). See docs for details.
@@ -842,7 +842,7 @@ program](https://hackerone.com/tendermint).
 * Go API
   - [abci] [\#3193](https://github.com/quantumexplorer/tendermint/issues/3193) Use RequestDeliverTx and RequestCheckTx in the ABCI
     Application interface
-  - [libs/db] [\#3632](https://github.com/quantumexplorer/tendermint/pull/3632) Removed deprecated `LevelDBBackend` const
+  - [libs/db] [\#3632](https://github.com/tendermint/tendermint/pull/3632) Removed deprecated `LevelDBBackend` const
     If you have `db_backend` set to `leveldb` in your config file, please
     change it to `goleveldb` or `cleveldb`.
   - [p2p] [\#3521](https://github.com/quantumexplorer/tendermint/issues/3521) Remove NewNetAddressStringWithOptionalID
@@ -857,7 +857,7 @@ program](https://hackerone.com/tendermint).
 - [abci/examples] [\#3659](https://github.com/quantumexplorer/tendermint/issues/3659) Change validator update tx format in the `persistent_kvstore` to use base64 for pubkeys instead of hex (@needkane)
 - [consensus] [\#3656](https://github.com/quantumexplorer/tendermint/issues/3656) Exit if SwitchToConsensus fails
 - [p2p] [\#3666](https://github.com/quantumexplorer/tendermint/issues/3666) Add per channel telemetry to improve reactor observability
-- [rpc] [\#3686](https://github.com/quantumexplorer/tendermint/pull/3686) `HTTPClient#Call` returns wrapped errors, so a caller could use `errors.Cause` to retrieve an error code. (@wooparadog)
+- [rpc] [\#3686](https://github.com/tendermint/tendermint/pull/3686) `HTTPClient#Call` returns wrapped errors, so a caller could use `errors.Cause` to retrieve an error code. (@wooparadog)
 
 ### BUG FIXES:
 - [libs/db] [\#3717](https://github.com/quantumexplorer/tendermint/issues/3717) Fixed the BoltDB backend's Batch.Delete implementation (@Yawning)
@@ -1057,14 +1057,14 @@ Special thanks to external contributors on this release:
 
 ### FEATURES:
 - [node] [\#2659](https://github.com/quantumexplorer/tendermint/issues/2659) Add `node.Mempool()` method, which allows you to access mempool
-- [libs/db] [\#3604](https://github.com/quantumexplorer/tendermint/pull/3604) Add experimental support for bolt db (etcd's fork of bolt) (@CrocdileChan)
+- [libs/db] [\#3604](https://github.com/tendermint/tendermint/pull/3604) Add experimental support for bolt db (etcd's fork of bolt) (@CrocdileChan)
 
 ### IMPROVEMENTS:
 - [cli] [\#3585](https://github.com/quantumexplorer/tendermint/issues/3585) Add `--keep-addr-book` option to `unsafe_reset_all` cmd to not
   clear the address book (@climber73)
 - [cli] [\#3160](https://github.com/quantumexplorer/tendermint/issues/3160) Add
   `--config=<path-to-config>` option to `testnet` cmd (@gregdhill)
-- [cli] [\#3661](https://github.com/quantumexplorer/tendermint/pull/3661) Add
+- [cli] [\#3661](https://github.com/tendermint/tendermint/pull/3661) Add
   `--hostname-suffix`, `--hostname` and `--random-monikers` options to `testnet`
   cmd for greater peer address/identity generation flexibility.
 - [crypto] [\#3672](https://github.com/quantumexplorer/tendermint/issues/3672) Return more info in the `AddSignatureFromPubKey` error
@@ -1076,10 +1076,10 @@ Special thanks to external contributors on this release:
   * Use `boltdb` tag to compile Tendermint with bolt db
 - [node] [\#3362](https://github.com/quantumexplorer/tendermint/issues/3362) Return an error if `persistent_peers` list is invalid (except
   when IP lookup fails)
-- [p2p] [\#3463](https://github.com/quantumexplorer/tendermint/pull/3463) Do not log "Can't add peer's address to addrbook" error for a private peer (@guagualvcha)
+- [p2p] [\#3463](https://github.com/tendermint/tendermint/pull/3463) Do not log "Can't add peer's address to addrbook" error for a private peer (@guagualvcha)
 - [p2p] [\#3531](https://github.com/quantumexplorer/tendermint/issues/3531) Terminate session on nonce wrapping (@climber73)
-- [pex] [\#3647](https://github.com/quantumexplorer/tendermint/pull/3647) Dial seeds, if any, instead of crawling peers first (@defunctzombie)
-- [rpc] [\#3534](https://github.com/quantumexplorer/tendermint/pull/3534) Add support for batched requests/responses in JSON RPC
+- [pex] [\#3647](https://github.com/tendermint/tendermint/pull/3647) Dial seeds, if any, instead of crawling peers first (@defunctzombie)
+- [rpc] [\#3534](https://github.com/tendermint/tendermint/pull/3534) Add support for batched requests/responses in JSON RPC
 - [rpc] [\#3362](https://github.com/quantumexplorer/tendermint/issues/3362) `/dial_seeds` & `/dial_peers` return errors if addresses are
   incorrect (except when IP lookup fails)
 
@@ -1095,7 +1095,7 @@ that were valid (ie. `ResponseDeliverTx.Code == 0`)
 - [p2p] [\#3532](https://github.com/quantumexplorer/tendermint/issues/3532) Limit the number of attempts to connect to a peer in seed mode
   to 16 (as a result, the node will stop retrying after a 35 hours time window)
 - [p2p] [\#3362](https://github.com/quantumexplorer/tendermint/issues/3362) Allow inbound peers to be persistent, including for seed nodes.
-- [pex] [\#3603](https://github.com/quantumexplorer/tendermint/pull/3603) Dial seeds when addrbook needs more addresses (@defunctzombie)
+- [pex] [\#3603](https://github.com/tendermint/tendermint/pull/3603) Dial seeds when addrbook needs more addresses (@defunctzombie)
 
 ### OTHERS:
 - [networks] fixes ansible integration script (@carlosflrs)
@@ -1118,7 +1118,7 @@ Special thanks to external contributors on this release:
 
 ### BUG FIXES:
 
-- [state] [\#3537](https://github.com/quantumexplorer/tendermint/pull/3537#issuecomment-482711833)
+- [state] [\#3537](https://github.com/tendermint/tendermint/pull/3537#issuecomment-482711833)
   `LoadValidators`: do not return an empty validator set
 - [blockchain] [\#3457](https://github.com/quantumexplorer/tendermint/issues/3457)
   Fix "peer did not send us anything" in `fast_sync` mode when under high pressure
@@ -1132,7 +1132,7 @@ the address book. This swallowed the peer's self-reported port which is importan
 It brings back `NetAddress()` to `NodeInfo` and uses it instead of `SocketAddr` for adding peers.
 Additionally, it improves response time on the `/validators` or `/status` RPC endpoints.
 As a side-effect it makes these RPC endpoint more difficult to DoS and fixes a performance degradation in `ExecCommitBlock`.
-Also, it contains an [ADR](https://github.com/quantumexplorer/tendermint/pull/3539) that proposes decoupling the
+Also, it contains an [ADR](https://github.com/tendermint/tendermint/pull/3539) that proposes decoupling the
 responsibility for peer behaviour from the `p2p.Switch` (by @brapse).
 
 Special thanks to external contributors on this release:
@@ -1140,15 +1140,15 @@ Special thanks to external contributors on this release:
 
 ### IMPROVEMENTS:
 
-- [p2p] [\#3463](https://github.com/quantumexplorer/tendermint/pull/3463) Do not log "Can't add peer's address to addrbook" error for a private peer
-- [p2p] [\#3547](https://github.com/quantumexplorer/tendermint/pull/3547) Fix a couple of annoying typos (@mdyring)
+- [p2p] [\#3463](https://github.com/tendermint/tendermint/pull/3463) Do not log "Can't add peer's address to addrbook" error for a private peer
+- [p2p] [\#3547](https://github.com/tendermint/tendermint/pull/3547) Fix a couple of annoying typos (@mdyring)
 
 ### BUG FIXES:
 
 - [docs] [\#3514](https://github.com/quantumexplorer/tendermint/issues/3514) Fix block.Header.Time description (@melekes)
 - [p2p] [\#2716](https://github.com/quantumexplorer/tendermint/issues/2716) Check if we're already connected to peer right before dialing it (@melekes)
 - [p2p] [\#3545](https://github.com/quantumexplorer/tendermint/issues/3545) Add back `NetAddress()` to `NodeInfo` and use it instead of peer's `SocketAddr()` when adding a peer to the `PEXReactor` (potential fix for [\#3532](https://github.com/quantumexplorer/tendermint/issues/3532))
-- [state] [\#3438](https://github.com/quantumexplorer/tendermint/pull/3438)
+- [state] [\#3438](https://github.com/tendermint/tendermint/pull/3438)
   Persist validators every 100000 blocks even if no changes to the set
   occurred (@guagualvcha). This
   1) Prevents possible DoS attack using `/validators` or `/status` RPC
@@ -1232,8 +1232,8 @@ Special thanks to external contributors on this release:
 * Apps
 
 * Go API
-  - [crypto] [\#3426](https://github.com/quantumexplorer/tendermint/pull/3426) Remove `Ripemd160` helper method (@needkane)
-  - [libs/common] [\#3429](https://github.com/quantumexplorer/tendermint/pull/3429) Remove `RepeatTimer` (also `TimerMaker` and `Ticker` interface)
+  - [crypto] [\#3426](https://github.com/tendermint/tendermint/pull/3426) Remove `Ripemd160` helper method (@needkane)
+  - [libs/common] [\#3429](https://github.com/tendermint/tendermint/pull/3429) Remove `RepeatTimer` (also `TimerMaker` and `Ticker` interface)
   - [rpc/client] [\#3458](https://github.com/quantumexplorer/tendermint/issues/3458) Include `NetworkClient` interface into `Client` interface
   - [types] [\#3448](https://github.com/quantumexplorer/tendermint/issues/3448) Remove method `PB2TM.ConsensusParams`
 
@@ -1310,7 +1310,7 @@ program](https://hackerone.com/tendermint).
   - [libs/common] TrapSignal accepts logger as a first parameter and does not block anymore
     * previously it was dumping "captured ..." msg to os.Stdout
     * TrapSignal should not be responsible for blocking thread of execution
-  - [libs/db] [\#3397](https://github.com/quantumexplorer/tendermint/pull/3397) Add possibility to `Close()` `Batch` to prevent memory leak when using ClevelDB. (@Stumble)
+  - [libs/db] [\#3397](https://github.com/tendermint/tendermint/pull/3397) Add possibility to `Close()` `Batch` to prevent memory leak when using ClevelDB. (@Stumble)
   - [types] [\#3354](https://github.com/quantumexplorer/tendermint/issues/3354) Remove RoundState from EventDataRoundState
   - [rpc] [\#3435](https://github.com/quantumexplorer/tendermint/issues/3435) `StartHTTPServer` / `StartHTTPAndTLSServer` now require a Config (use `rpcserver.DefaultConfig`)
 
@@ -1346,10 +1346,10 @@ program](https://hackerone.com/tendermint).
   - leveldb.openedtables
   - leveldb.alivesnaps
   - leveldb.aliveiters
-- [privval] [\#3351](https://github.com/quantumexplorer/tendermint/pull/3351) First part of larger refactoring that clarifies and separates concerns in the privval package.
+- [privval] [\#3351](https://github.com/tendermint/tendermint/pull/3351) First part of larger refactoring that clarifies and separates concerns in the privval package.
 
 ### BUG FIXES:
-- [blockchain] [\#3358](https://github.com/quantumexplorer/tendermint/pull/3358) Fix timer leak in `BlockPool` (@guagualvcha)
+- [blockchain] [\#3358](https://github.com/tendermint/tendermint/pull/3358) Fix timer leak in `BlockPool` (@guagualvcha)
 - [cmd] [\#3408](https://github.com/quantumexplorer/tendermint/issues/3408) Fix `testnet` command's panic when creating non-validator configs (using `--n` flag) (@srmo)
 - [libs/db/remotedb/grpcdb] [\#3402](https://github.com/quantumexplorer/tendermint/issues/3402) Close Iterator/ReverseIterator after use
 - [libs/pubsub] [\#951](https://github.com/quantumexplorer/tendermint/issues/951), [\#1880](https://github.com/quantumexplorer/tendermint/issues/1880) Use non-blocking send when dispatching messages [ADR-33](https://github.com/quantumexplorer/tendermint/blob/develop/docs/architecture/adr-033-pubsub.md)
@@ -1357,7 +1357,7 @@ program](https://hackerone.com/tendermint).
   (@guagualvcha)
 - [p2p/conn] [\#3347](https://github.com/quantumexplorer/tendermint/issues/3347) Reject all-zero shared secrets in the Diffie-Hellman step of secret-connection
 - [p2p] [\#3369](https://github.com/quantumexplorer/tendermint/issues/3369) Do not panic when filter times out
-- [p2p] [\#3359](https://github.com/quantumexplorer/tendermint/pull/3359) Fix reconnecting report duplicate ID error due to race condition between adding peer to peerSet and starting it (@guagualvcha)
+- [p2p] [\#3359](https://github.com/tendermint/tendermint/pull/3359) Fix reconnecting report duplicate ID error due to race condition between adding peer to peerSet and starting it (@guagualvcha)
 
 ## v0.30.2
 
@@ -1538,7 +1538,7 @@ and constraining the hash of the ConsensusParams to include only a few fields.
 The proposer selection algorithm saw significant progress,
 including a [formal proof by @cwgoes for the base-case in Idris](https://github.com/cwgoes/tm-proposer-idris)
 and a [much more detailed specification (still in progress) by
-@ancazamfir](https://github.com/quantumexplorer/tendermint/pull/3140).
+@ancazamfir](https://github.com/tendermint/tendermint/pull/3140).
 
 Fixes to the proposer selection algorithm include normalizing the proposer
 priorities to mitigate the effects of large changes to the validator set.
@@ -1690,7 +1690,7 @@ See [UPGRADING.md](UPGRADING.md) for more details.
 
 ### BUG FIXES:
 
-- [p2p] [\#3025](https://github.com/quantumexplorer/tendermint/pull/3025) Revert to using defers in addrbook.  Fixes deadlocks in pex and consensus upon invalid ExternalAddr/ListenAddr configuration.
+- [p2p] [\#3025](https://github.com/tendermint/tendermint/pull/3025) Revert to using defers in addrbook.  Fixes deadlocks in pex and consensus upon invalid ExternalAddr/ListenAddr configuration.
 
 ## v0.27.1
 
@@ -1745,7 +1745,7 @@ message.
   - [rpc] [\#2932](https://github.com/quantumexplorer/tendermint/issues/2932) Rename `accum` to `proposer_priority`
 
 * Go API
-  - [db] [\#2913](https://github.com/quantumexplorer/tendermint/pull/2913)
+  - [db] [\#2913](https://github.com/tendermint/tendermint/pull/2913)
     ReverseIterator API change: start < end, and end is exclusive.
   - [types] [\#2932](https://github.com/quantumexplorer/tendermint/issues/2932) Rename `Validator.Accum` to `Validator.ProposerPriority`
 
@@ -1915,9 +1915,9 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
 - [crypto/merkle] [\#2756](https://github.com/quantumexplorer/tendermint/issues/2756) Fix crypto/merkle ProofOperators.Verify to check bounds on keypath parts.
 - [mempool] fix a bug where we create a WAL despite `wal_dir` being empty
 - [p2p] [\#2771](https://github.com/quantumexplorer/tendermint/issues/2771) Fix `peer-id` label name to `peer_id` in prometheus metrics
-- [p2p] [\#2797](https://github.com/quantumexplorer/tendermint/pull/2797) Fix IDs in peer NodeInfo and require them for addresses
+- [p2p] [\#2797](https://github.com/tendermint/tendermint/pull/2797) Fix IDs in peer NodeInfo and require them for addresses
   in AddressBook
-- [p2p] [\#2797](https://github.com/quantumexplorer/tendermint/pull/2797) Do not close conn immediately after sending pex addrs in seed mode. Partial fix for [\#2092](https://github.com/quantumexplorer/tendermint/issues/2092).
+- [p2p] [\#2797](https://github.com/tendermint/tendermint/pull/2797) Do not close conn immediately after sending pex addrs in seed mode. Partial fix for [\#2092](https://github.com/quantumexplorer/tendermint/issues/2092).
 
 ## v0.26.0
 
@@ -2248,10 +2248,10 @@ BREAKING CHANGES:
 - [abci] Changed Validators to LastCommitInfo in RequestBeginBlock
 - [abci] Removed Fee from ResponseDeliverTx and ResponseCheckTx
 - [crypto] Switch crypto.Signature from interface to []byte for space efficiency
-  [#2128](https://github.com/quantumexplorer/tendermint/pull/2128)
+  [#2128](https://github.com/tendermint/tendermint/pull/2128)
     - NOTE: this means signatures no longer have the prefix bytes in Amino
       binary nor the `type` field in Amino JSON. They're just bytes.
-- [p2p] Remove salsa and ripemd primitives, in favor of using chacha as a stream cipher, and hkdf [#2054](https://github.com/quantumexplorer/tendermint/pull/2054)
+- [p2p] Remove salsa and ripemd primitives, in favor of using chacha as a stream cipher, and hkdf [#2054](https://github.com/tendermint/tendermint/pull/2054)
 - [tools] Removed `make ensure_deps` in favor of `make get_vendor_deps`
 - [types] CanonicalTime uses nanoseconds instead of clipping to ms
     - breaks serialization/signing of all messages with a timestamp
@@ -2263,7 +2263,7 @@ FEATURES:
 
 IMPROVEMENTS:
 - [blockchain] Improve fast-sync logic
-  [#1805](https://github.com/quantumexplorer/tendermint/pull/1805)
+  [#1805](https://github.com/tendermint/tendermint/pull/1805)
     - tweak params
     - only process one block at a time to avoid starving
 - [common] bit array functions which take in another parameter are now thread safe
@@ -2277,7 +2277,7 @@ BUG FIXES:
 - [p2p] Allow startup if a configured seed node's IP can't be resolved ([#1716](https://github.com/quantumexplorer/tendermint/issues/1716))
 - [node] Fully exit when CTRL-C is pressed even if consensus state panics [#2072](https://github.com/quantumexplorer/tendermint/issues/2072)
 
-[i1815]: https://github.com/quantumexplorer/tendermint/pull/1815
+[i1815]: https://github.com/tendermint/tendermint/pull/1815
 
 ## 0.22.8
 

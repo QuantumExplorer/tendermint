@@ -10,7 +10,7 @@
 ## Context
 
 The blockchain reactor is responsible for two high level processes:sending/receiving blocks from peers and FastSync-ing blocks to catch upnode who is far behind. The goal of [ADR-40](https://github.com/quantumexplorer/tendermint/blob/master/docs/architecture/adr-040-blockchain-reactor-refactor.md) was to refactor these two processes by separating business logic currently wrapped up in go-channels into pure `handle*` functions. While the ADR specified what the final form of the reactor might look like it lacked guidance on intermediary steps to get there.
-The following diagram illustrates the state of the [blockchain-reorg](https://github.com/quantumexplorer/tendermint/pull/3561) reactor which will be referred to as `v1`.
+The following diagram illustrates the state of the [blockchain-reorg](https://github.com/tendermint/tendermint/pull/3561) reactor which will be referred to as `v1`.
 
 ![v1 Blockchain Reactor Architecture
 Diagram](https://github.com/quantumexplorer/tendermint/blob/f9e556481654a24aeb689bdadaf5eab3ccd66829/docs/architecture/img/blockchain-reactor-v1.png)
@@ -380,10 +380,10 @@ type Peer struct {
 This design is under active development. The Implementation has been
 staged in the following PRs:
 
-- [Routine](https://github.com/quantumexplorer/tendermint/pull/3878)
-- [Processor](https://github.com/quantumexplorer/tendermint/pull/4012)
-- [Scheduler](https://github.com/quantumexplorer/tendermint/pull/4043)
-- [Reactor](https://github.com/quantumexplorer/tendermint/pull/4067)
+- [Routine](https://github.com/tendermint/tendermint/pull/3878)
+- [Processor](https://github.com/tendermint/tendermint/pull/4012)
+- [Scheduler](https://github.com/tendermint/tendermint/pull/4043)
+- [Reactor](https://github.com/tendermint/tendermint/pull/4067)
 
 ## Consequences
 
@@ -407,4 +407,4 @@ staged in the following PRs:
 ## References
 
 - [ADR-40](https://github.com/quantumexplorer/tendermint/blob/master/docs/architecture/adr-040-blockchain-reactor-refactor.md): The original blockchain reactor re-org proposal
-- [Blockchain re-org](https://github.com/quantumexplorer/tendermint/pull/3561): The current blockchain reactor re-org implementation (v1)
+- [Blockchain re-org](https://github.com/tendermint/tendermint/pull/3561): The current blockchain reactor re-org implementation (v1)

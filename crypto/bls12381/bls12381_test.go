@@ -1,16 +1,16 @@
 package bls12381
 
 import (
-	bls "github.com/quantumexplorer/bls-signatures/go-bindings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/quantumexplorer/tendermint/crypto"
+	"github.com/quantumexplorer/tendermint/crypto/bls12831"
 	"testing"
 )
 
 func TestSignAndValidateBLS12381(t *testing.T) {
 
-	privKey := bls.GenPrivKey()
+	privKey := bls12381()
 	pubKey := privKey.PubKey()
 
 	msg := crypto.CRandBytes(128)

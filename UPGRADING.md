@@ -177,7 +177,7 @@ change.
 The secret connection now includes a transcript hashing. If you want to
 implement a handshake (or otherwise have an existing implementation), you'll
 need to make the same changes that were made
-[here](https://github.com/quantumexplorer/tendermint/pull/3668).
+[here](https://github.com/tendermint/tendermint/pull/3668).
 
 ### Config Changes
 
@@ -411,7 +411,7 @@ will need to be updated. For specific details:
 
 Finally, the proposer selection algorithm continues to evolve. See the
 [work-in-progress
-specification](https://github.com/quantumexplorer/tendermint/pull/3140).
+specification](https://github.com/tendermint/tendermint/pull/3140).
 
 For everything else, please see the [CHANGELOG](./CHANGELOG.md#v0.29.0).
 

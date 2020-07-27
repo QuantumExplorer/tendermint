@@ -1,7 +1,7 @@
 package privval
 
 import (
-	"github.com/quantumexplorer/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 	"net"
 	"time"
 
@@ -45,7 +45,7 @@ var _ net.Listener = (*TCPListener)(nil)
 type TCPListener struct {
 	*net.TCPListener
 
-	secretConnKey bls12381.PrivKey
+	secretConnKey ed25519.PrivKey
 
 	timeoutAccept    time.Duration
 	timeoutReadWrite time.Duration
@@ -53,7 +53,7 @@ type TCPListener struct {
 
 // NewTCPListener returns a listener that accepts authenticated encrypted connections
 // using the given secretConnKey and the default timeout values.
-func NewTCPListener(ln net.Listener, secretConnKey bls12381.PrivKey) *TCPListener {
+func NewTCPListener(ln net.Listener, secretConnKey ed25519.PrivKey) *TCPListener {
 	return &TCPListener{
 		TCPListener:      ln.(*net.TCPListener),
 		secretConnKey:    secretConnKey,
