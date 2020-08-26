@@ -119,6 +119,21 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		}
 	}
 
+	if block.Header.CoreChainLockedHeight < state.LastChainLock.CoreBlockHeight {
+		return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. Previous CoreChainLockedHeight %d, got %d",
+			state.LastChainLock.CoreBlockHeight,
+			block.Header.CoreChainLockedHeight,
+		)
+	}
+
+	if block.Header.CoreChainLockedHeight != block.ChainLock.CoreBlockHeight {
+		return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. ChainLock CoreBlockHeight %d, got %d",
+			block.ChainLock.CoreBlockHeight,
+			block.Header.CoreChainLockedHeight,
+		)
+	}
+
+
 	// Limit the amount of evidence
 	numEvidence := len(block.Evidence.Evidence)
 	// MaxNumEvidence is capped at uint16, so conversion is always safe.

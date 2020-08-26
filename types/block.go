@@ -23,7 +23,8 @@ import (
 
 const (
 	// MaxHeaderBytes is a maximum header size.
-	MaxHeaderBytes int64 = 626
+	MaxHeaderBytes int64 = 632
+	MaxChainLockSize int64 = 132
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
 	// MaxBlockSizeBytes in size) not including it's parts except Data.
@@ -42,6 +43,7 @@ type Block struct {
 
 	Header     `json:"header"`
 	Data       `json:"data"`
+	ChainLock  ChainLock    `json:"chain_lock"`
 	Evidence   EvidenceData `json:"evidence"`
 	LastCommit *Commit      `json:"last_commit"`
 }
@@ -227,6 +229,7 @@ func (b *Block) ToProto() (*tmproto.Block, error) {
 	pb := new(tmproto.Block)
 
 	pb.Header = *b.Header.ToProto()
+	pb.ChainLock = *b.ChainLock.ToProto()
 	pb.LastCommit = b.LastCommit.ToProto()
 	pb.Data = b.Data.ToProto()
 
@@ -279,6 +282,7 @@ func MaxDataBytes(maxBytes int64, keyType crypto.KeyType, valsCount, evidenceCou
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
+		MaxChainLockSize -
 		int64(valsCount)*MaxVoteBytesForKeyType(keyType) -
 		int64(evidenceCount)*MaxEvidenceBytesForKeyType(keyType)
 
@@ -304,6 +308,7 @@ func MaxDataBytesUnknownEvidence(maxBytes int64, keyType crypto.KeyType, valsCou
 	maxDataBytes := maxBytes -
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
+		MaxChainLockSize -
 		int64(valsCount)*MaxVoteBytesForKeyType(keyType) -
 		maxEvidenceBytes
 
@@ -327,10 +332,11 @@ func MaxDataBytesUnknownEvidence(maxBytes int64, keyType crypto.KeyType, valsCou
 // - https://github.com/tendermint/spec/blob/master/spec/blockchain/blockchain.md
 type Header struct {
 	// basic block info
-	Version tmversion.Consensus `json:"version"`
-	ChainID string              `json:"chain_id"`
-	Height  int64               `json:"height"`
-	Time    time.Time           `json:"time"`
+	Version               tmversion.Consensus `json:"version"`
+	ChainID               string              `json:"chain_id"`
+	Height                int64               `json:"height"`
+	CoreChainLockedHeight uint32              `json:"core_chain_locked_height"`
+	Time                  time.Time           `json:"time"`
 
 	// prev block info
 	LastBlockID BlockID `json:"last_block_id"`
@@ -459,6 +465,7 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		hbz,
 		cdcEncode(h.ChainID),
 		cdcEncode(h.Height),
+		cdcEncode(h.CoreChainLockedHeight),
 		pbt,
 		bzbi,
 		cdcEncode(h.LastCommitHash),
@@ -482,6 +489,7 @@ func (h *Header) StringIndented(indent string) string {
 %s  Version:        %v
 %s  ChainID:        %v
 %s  Height:         %v
+%s  CoreCLHeight:   %v
 %s  Time:           %v
 %s  LastBlockID:    %v
 %s  LastCommit:     %v
@@ -497,6 +505,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.Version,
 		indent, h.ChainID,
 		indent, h.Height,
+		indent, h.CoreChainLockedHeight,
 		indent, h.Time,
 		indent, h.LastBlockID,
 		indent, h.LastCommitHash,
@@ -518,20 +527,21 @@ func (h *Header) ToProto() *tmproto.Header {
 	}
 
 	return &tmproto.Header{
-		Version:            h.Version,
-		ChainID:            h.ChainID,
-		Height:             h.Height,
-		Time:               h.Time,
-		LastBlockId:        h.LastBlockID.ToProto(),
-		ValidatorsHash:     h.ValidatorsHash,
-		NextValidatorsHash: h.NextValidatorsHash,
-		ConsensusHash:      h.ConsensusHash,
-		AppHash:            h.AppHash,
-		DataHash:           h.DataHash,
-		EvidenceHash:       h.EvidenceHash,
-		LastResultsHash:    h.LastResultsHash,
-		LastCommitHash:     h.LastCommitHash,
-		ProposerAddress:    h.ProposerAddress,
+		Version:               h.Version,
+		ChainID:               h.ChainID,
+		Height:                h.Height,
+		CoreChainLockedHeight: h.CoreChainLockedHeight,
+		Time:                  h.Time,
+		LastBlockId:           h.LastBlockID.ToProto(),
+		ValidatorsHash:        h.ValidatorsHash,
+		NextValidatorsHash:    h.NextValidatorsHash,
+		ConsensusHash:         h.ConsensusHash,
+		AppHash:               h.AppHash,
+		DataHash:              h.DataHash,
+		EvidenceHash:          h.EvidenceHash,
+		LastResultsHash:       h.LastResultsHash,
+		LastCommitHash:        h.LastCommitHash,
+		ProposerAddress:       h.ProposerAddress,
 	}
 }
 
@@ -552,6 +562,7 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.Version = ph.Version
 	h.ChainID = ph.ChainID
 	h.Height = ph.Height
+	h.CoreChainLockedHeight = ph.CoreChainLockedHeight
 	h.Time = ph.Time
 	h.Height = ph.Height
 	h.LastBlockID = *bi

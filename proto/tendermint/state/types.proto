@@ -50,25 +50,27 @@ message State {
   google.protobuf.Timestamp last_block_time = 5
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 
+  tendermint.types.ChainLock last_core_chain_lock = 6 [(gogoproto.nullable) = false];
+
   // LastValidators is used to validate block.LastCommit.
   // Validators are persisted to the database separately every time they change,
   // so we can query for historical validator sets.
   // Note that if s.LastBlockHeight causes a valset change,
   // we set s.LastHeightValidatorsChanged = s.LastBlockHeight + 1 + 1
   // Extra +1 due to nextValSet delay.
-  tendermint.types.ValidatorSet next_validators                = 6;
-  tendermint.types.ValidatorSet validators                     = 7;
-  tendermint.types.ValidatorSet last_validators                = 8;
-  int64                         last_height_validators_changed = 9;
+  tendermint.types.ValidatorSet next_validators                = 7;
+  tendermint.types.ValidatorSet validators                     = 8;
+  tendermint.types.ValidatorSet last_validators                = 9;
+  int64                         last_height_validators_changed = 10;
 
   // Consensus parameters used for validating blocks.
   // Changes returned by EndBlock and updated after Commit.
-  tendermint.types.ConsensusParams consensus_params                     = 10 [(gogoproto.nullable) = false];
-  int64                            last_height_consensus_params_changed = 11;
+  tendermint.types.ConsensusParams consensus_params                     = 11 [(gogoproto.nullable) = false];
+  int64                            last_height_consensus_params_changed = 12;
 
   // Merkle root of the results from executing prev block
-  bytes last_results_hash = 12;
+  bytes last_results_hash = 14;
 
   // the latest AppHash we've received from calling abci.Commit()
-  bytes app_hash = 13;
+  bytes app_hash = 15;
 }

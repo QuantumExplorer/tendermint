@@ -56,6 +56,8 @@ type State struct {
 	LastBlockID     types.BlockID
 	LastBlockTime   time.Time
 
+	LastChainLock types.ChainLock
+
 	// LastValidators is used to validate block.LastCommit.
 	// Validators are persisted to the database separately every time they change,
 	// so we can query for historical validator sets.
@@ -89,6 +91,8 @@ func (state State) Copy() State {
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
+
+		LastChainLock: state.LastChainLock,
 
 		NextValidators:              state.NextValidators.Copy(),
 		Validators:                  state.Validators.Copy(),
@@ -141,6 +145,8 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	sm.ChainID = state.ChainID
 	sm.LastBlockHeight = state.LastBlockHeight
 
+	sm.LastCoreChainLock = tmproto.ChainLock(state.LastChainLock)
+
 	sm.LastBlockID = state.LastBlockID.ToProto()
 	sm.LastBlockTime = state.LastBlockTime
 	vals, err := state.Validators.ToProto()
@@ -191,6 +197,8 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	state.LastBlockHeight = pb.LastBlockHeight
 	state.LastBlockTime = pb.LastBlockTime
 
+	state.LastChainLock = types.ChainLock(pb.LastCoreChainLock)
+
 	vals, err := types.ValidatorSetFromProto(pb.Validators)
 	if err != nil {
 		return nil, err
@@ -236,8 +244,19 @@ func (state State) MakeBlock(
 	proposerAddress []byte,
 ) (*types.Block, *types.PartSet) {
 
+	var chainLock types.ChainLock
+	if state.ConsensusParams.ChainLock.ChainLockHeight > state.LastChainLock.CoreBlockHeight {
+		chainLock = types.ChainLock {
+			CoreBlockHeight: state.ConsensusParams.ChainLock.ChainLockHeight,
+			CoreBlockHash: state.ConsensusParams.ChainLock.ChainLockHash,
+			Signature: state.ConsensusParams.ChainLock.Signature,
+		}
+	} else {
+		chainLock = state.LastChainLock
+	}
+
 	// Build base block with block data.
-	block := types.MakeBlock(height, txs, commit, evidence)
+	block := types.MakeBlock(height, chainLock, txs, commit, evidence)
 
 	// Set time.
 	var timestamp time.Time
@@ -247,6 +266,7 @@ func (state State) MakeBlock(
 		timestamp = MedianTime(commit, state.LastValidators)
 	}
 
+
 	// Fill rest of header with state data.
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
@@ -255,6 +275,8 @@ func (state State) MakeBlock(
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerAddress,
 	)
+
+
 
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
 }
