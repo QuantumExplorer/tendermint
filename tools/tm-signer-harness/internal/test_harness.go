@@ -218,6 +218,7 @@ func (th *TestHarness) TestSignProposal() error {
 	prop := &types.Proposal{
 		Type:     tmproto.ProposalType,
 		Height:   100,
+		CoreChainLockedHeight: 1,
 		Round:    0,
 		POLRound: -1,
 		BlockID: types.BlockID{
