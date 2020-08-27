@@ -63,6 +63,11 @@ func (b *Block) ValidateBasic() error {
 		return fmt.Errorf("invalid header: %w", err)
 	}
 
+	if err := b.ChainLock.ValidateBasic(); err != nil {
+		return fmt.Errorf("invalid chain lock data: %w", err)
+	}
+
+
 	// Validate the last commit and its hash.
 	if b.LastCommit == nil {
 		return errors.New("nil LastCommit")
@@ -261,6 +266,12 @@ func BlockFromProto(bp *tmproto.Block) (*Block, error) {
 	}
 	b.Data = data
 	b.Evidence.FromProto(&bp.Evidence)
+
+	chainLock, err := ChainLockFromProto(&bp.ChainLock)
+	if err != nil {
+		return nil, err
+	}
+	b.ChainLock = chainLock
 
 	if bp.LastCommit != nil {
 		lc, err := CommitFromProto(bp.LastCommit)

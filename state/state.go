@@ -352,6 +352,10 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		nextValidatorSet = types.NewValidatorSet(validators).CopyIncrementProposerPriority(1)
 	}
 
+	var lastChainLock types.ChainLock
+
+	lastChainLock.PopulateFromChainLockParams(genDoc.ConsensusParams.ChainLock)
+
 	return State{
 		Version: InitStateVersion,
 		ChainID: genDoc.ChainID,
@@ -359,6 +363,8 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
+
+		LastChainLock: lastChainLock,
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
