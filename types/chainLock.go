@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/quantumexplorer/tendermint/crypto"
@@ -26,21 +27,6 @@ func (cl *ChainLock) ToProto() *tmproto.ChainLock {
 	}
 }
 
-// FromProto sets a protobuf Header to the given pointer.
-// It returns an error if the header is invalid.
-func ChainLockFromProto(clp *tmproto.ChainLock) (ChainLock, error) {
-	if clp == nil {
-		return ChainLock{}, errors.New("nil Chain Lock")
-	}
-
-	cl := new(ChainLock)
-	cl.CoreBlockHeight = clp.CoreBlockHeight
-	cl.CoreBlockHash = clp.CoreBlockHash
-	cl.Signature = clp.Signature
-
-	return *cl, cl.ValidateBasic()
-}
-
 func (cl *ChainLock) PopulateFromChainLockParams(clp tmproto.ChainLockParams) error {
 
 	cl.CoreBlockHeight = clp.ChainLockHeight
@@ -48,6 +34,17 @@ func (cl *ChainLock) PopulateFromChainLockParams(clp tmproto.ChainLockParams) er
 	cl.Signature = clp.Signature
 
 	return cl.ValidateBasic()
+}
+
+func (cl ChainLock) RequestId() []byte {
+	s := []byte{0x05, 0x63, 0x6c, 0x73, 0x69, 0x67} //5 clsig
+
+	var coreBlockHeightBytes [4]byte
+	binary.LittleEndian.PutUint32(coreBlockHeightBytes[:],cl.CoreBlockHeight)
+
+
+	s = append(s,coreBlockHeightBytes[:]...)
+	return crypto.Sha256(crypto.Sha256(s))
 }
 
 // ValidateBasic performs stateless validation on a Chain Lock returning an error
@@ -76,6 +73,21 @@ func (cl ChainLock) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// FromProto sets a protobuf Header to the given pointer.
+// It returns an error if the header is invalid.
+func ChainLockFromProto(clp *tmproto.ChainLock) (ChainLock, error) {
+	if clp == nil {
+		return ChainLock{}, errors.New("nil Chain Lock")
+	}
+
+	cl := new(ChainLock)
+	cl.CoreBlockHeight = clp.CoreBlockHeight
+	cl.CoreBlockHash = clp.CoreBlockHash
+	cl.Signature = clp.Signature
+
+	return *cl, cl.ValidateBasic()
 }
 
 func NewMockChainLock() ChainLock {

@@ -1,7 +1,9 @@
 package state_test
 
 import (
+	"fmt"
 	"github.com/quantumexplorer/tendermint/crypto/bls12381"
+	"github.com/quantumexplorer/tendermint/proxy"
 	"testing"
 	"time"
 
@@ -287,6 +289,15 @@ func TestValidateFailBlockOnCommittedEvidence(t *testing.T) {
 	ev2 := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultTestTime,
 		privVals[val2.Address.String()], chainID)
 
+	app := &testApp{}
+	cc := proxy.NewLocalClientCreator(app)
+	proxyApp := proxy.NewAppConns(cc)
+
+	errProxy := proxyApp.Start()
+	if errProxy != nil {
+		panic(fmt.Errorf("error start app: %w", errProxy))
+	}
+
 	evpool := &mocks.EvidencePool{}
 	evpool.On("IsPending", ev).Return(false)
 	evpool.On("IsPending", ev2).Return(false)
@@ -296,7 +307,7 @@ func TestValidateFailBlockOnCommittedEvidence(t *testing.T) {
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
 		nil,
-		nil,
+		proxyApp.Validation(),
 		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
@@ -319,6 +330,15 @@ func TestValidateAlreadyPendingEvidence(t *testing.T) {
 	ev2 := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultTestTime,
 		privVals[val2.Address.String()], chainID)
 
+	app := &testApp{}
+	cc := proxy.NewLocalClientCreator(app)
+	proxyApp := proxy.NewAppConns(cc)
+
+	errProxy := proxyApp.Start()
+	if errProxy != nil {
+		panic(fmt.Errorf("error start app: %w", errProxy))
+	}
+
 	evpool := &mocks.EvidencePool{}
 	evpool.On("IsPending", ev).Return(false)
 	evpool.On("IsPending", ev2).Return(true)
@@ -327,7 +347,7 @@ func TestValidateAlreadyPendingEvidence(t *testing.T) {
 
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
-		nil,nil,
+		nil,proxyApp.Validation(),
 		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
@@ -350,10 +370,19 @@ func TestValidateDuplicateEvidenceShouldFail(t *testing.T) {
 	ev2 := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultTestTime,
 		privVals[val2.Address.String()], chainID)
 
+	app := &testApp{}
+	cc := proxy.NewLocalClientCreator(app)
+	proxyApp := proxy.NewAppConns(cc)
+
+	errProxy := proxyApp.Start()
+	if errProxy != nil {
+		panic(fmt.Errorf("error start app: %w", errProxy))
+	}
+
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
 		nil,
-		nil,
+		proxyApp.Validation(),
 		nil,
 		sm.MockEvidencePool{})
 	// A block with a couple pieces of evidence passes.
@@ -396,6 +425,15 @@ func TestValidateUnseenAmnesiaEvidence(t *testing.T) {
 		Polc:                     types.NewEmptyPOLC(),
 	}
 
+	app := &testApp{}
+	cc := proxy.NewLocalClientCreator(app)
+	proxyApp := proxy.NewAppConns(cc)
+
+	errProxy := proxyApp.Start()
+	if errProxy != nil {
+		panic(fmt.Errorf("error start app: %w", errProxy))
+	}
+
 	evpool := &mocks.EvidencePool{}
 	evpool.On("IsPending", ae).Return(false)
 	evpool.On("IsCommitted", ae).Return(false)
@@ -405,7 +443,7 @@ func TestValidateUnseenAmnesiaEvidence(t *testing.T) {
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
 		nil,
-		nil,
+		proxyApp.Validation(),
 		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
@@ -446,6 +484,15 @@ func TestValidatePrimedAmnesiaEvidence(t *testing.T) {
 		Polc:                     types.NewEmptyPOLC(),
 	}
 
+	app := &testApp{}
+	cc := proxy.NewLocalClientCreator(app)
+	proxyApp := proxy.NewAppConns(cc)
+
+	errProxy := proxyApp.Start()
+	if errProxy != nil {
+		panic(fmt.Errorf("error start app: %w", errProxy))
+	}
+
 	evpool := &mocks.EvidencePool{}
 	evpool.On("IsPending", ae).Return(false)
 	evpool.On("IsCommitted", ae).Return(false)
@@ -455,7 +502,7 @@ func TestValidatePrimedAmnesiaEvidence(t *testing.T) {
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
 		nil,
-		nil,
+		proxyApp.Validation(),
 		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
@@ -473,10 +520,19 @@ func TestVerifyEvidenceWrongAddress(t *testing.T) {
 	state, stateDB, _ := makeState(1, int(height))
 	ev := types.NewMockDuplicateVoteEvidence(height, defaultTestTime, chainID)
 
+	app := &testApp{}
+	cc := proxy.NewLocalClientCreator(app)
+	proxyApp := proxy.NewAppConns(cc)
+
+	errProxy := proxyApp.Start()
+	if errProxy != nil {
+		panic(fmt.Errorf("error start app: %w", errProxy))
+	}
+
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
 		nil,
-		nil,
+		proxyApp.Validation(),
 		nil,
 		sm.MockEvidencePool{})
 	// A block with a couple pieces of evidence passes.

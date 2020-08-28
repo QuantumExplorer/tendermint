@@ -94,8 +94,9 @@ message RequestCheckTx {
 message RequestCheckQuorumSignature {
   uint32 coreHeight = 1;
   uint32 quorumType = 2;
-  bytes  digest     = 3;
-  bytes  signature  = 4;
+  bytes  requestId  = 3;
+  bytes  digest     = 4;
+  bytes  signature  = 5;
 }
 
 message RequestDeliverTx {

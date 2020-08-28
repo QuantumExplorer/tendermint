@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	abci "github.com/quantumexplorer/tendermint/abci/types"
+	"github.com/quantumexplorer/tendermint/proxy"
 
 	dbm "github.com/tendermint/tm-db"
 
@@ -14,7 +16,7 @@ import (
 //-----------------------------------------------------
 // Validate block
 
-func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block *types.Block) error {
+func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, proxyAppValidationConn proxy.AppConnValidation, state State, block *types.Block) error {
 	// Validate internal consistency.
 	if err := block.ValidateBasic(); err != nil {
 		return err
@@ -137,6 +139,23 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 			block.ChainLock.CoreBlockHeight,
 			block.Header.CoreChainLockedHeight,
 		)
+	}
+
+	signatureCheckRequest := abci.RequestCheckQuorumSignature{
+		CoreHeight: block.ChainLock.CoreBlockHeight,
+		QuorumType: 1,
+		RequestId: block.ChainLock.RequestId(),
+		Digest: block.ChainLock.CoreBlockHash,
+		Signature: block.ChainLock.Signature,
+	}
+
+	checkQuorumSignatureResponse, err := proxyAppValidationConn.CheckQuorumSignatureSync(signatureCheckRequest)
+	if err != nil {
+		return err
+	}
+
+	if checkQuorumSignatureResponse.Code != 0 {
+		return fmt.Errorf("chain Lock signature deemed invalid by abci application")
 	}
 
 	//We need to query our abci application to make sure the chain lock signature is valid
