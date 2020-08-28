@@ -31,6 +31,7 @@ type BlockExecutor struct {
 
 	// execute the app against this
 	proxyApp proxy.AppConnConsensus
+	validationApp proxy.AppConnValidation
 
 	// events
 	eventBus types.BlockEventPublisher
@@ -59,6 +60,7 @@ func NewBlockExecutor(
 	db dbm.DB,
 	logger log.Logger,
 	proxyApp proxy.AppConnConsensus,
+	validationApp proxy.AppConnValidation,
 	mempool mempl.Mempool,
 	evpool EvidencePool,
 	options ...BlockExecutorOption,
@@ -66,6 +68,7 @@ func NewBlockExecutor(
 	res := &BlockExecutor{
 		db:       db,
 		proxyApp: proxyApp,
+		validationApp: validationApp,
 		eventBus: types.NopEventBus{},
 		mempool:  mempool,
 		evpool:   evpool,
@@ -164,7 +167,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	// Update the state with the block and responses.
-	state, err = updateState(state, blockID, &block.Header, abciResponses, validatorUpdates)
+	state, err = updateState(state, blockID, &block.Header, &block.ChainLock, abciResponses, validatorUpdates)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -400,6 +403,7 @@ func updateState(
 	state State,
 	blockID types.BlockID,
 	header *types.Header,
+	chainLock *types.ChainLock,
 	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) (State, error) {
@@ -449,6 +453,7 @@ func updateState(
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
+		LastChainLock: 					  *chainLock,
 		NextValidators:                   nValSet,
 		Validators:                       state.NextValidators.Copy(),
 		LastValidators:                   state.Validators.Copy(),

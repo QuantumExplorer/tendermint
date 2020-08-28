@@ -143,6 +143,7 @@ func TestReactorWithEvidence(t *testing.T) {
 		mtx := new(sync.Mutex)
 		proxyAppConnMem := abcicli.NewLocalClient(mtx, app)
 		proxyAppConnCon := abcicli.NewLocalClient(mtx, app)
+		proxyAppConnVal := abcicli.NewLocalClient(mtx, app)
 
 		// Make Mempool
 		mempool := mempl.NewCListMempool(thisConfig.Mempool, proxyAppConnMem, 0)
@@ -157,7 +158,7 @@ func TestReactorWithEvidence(t *testing.T) {
 		evpool := newMockEvidencePool(privVals[vIdx])
 
 		// Make State
-		blockExec := sm.NewBlockExecutor(stateDB, log.TestingLogger(), proxyAppConnCon, mempool, evpool)
+		blockExec := sm.NewBlockExecutor(stateDB, log.TestingLogger(), proxyAppConnCon, proxyAppConnVal, mempool, evpool)
 		cs := NewState(thisConfig.Consensus, state, blockExec, blockStore, mempool, evpool)
 		cs.SetLogger(log.TestingLogger().With("module", "consensus"))
 		cs.SetPrivValidator(pv)

@@ -20,6 +20,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		return err
 	}
 
+	if err := block.ChainLock.ValidateBasic(); err != nil {
+		return err
+	}
+
 	// Validate basic info.
 	if block.Version.App != state.Version.Consensus.App ||
 		block.Version.Block != state.Version.Consensus.Block {
@@ -119,6 +123,8 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 		}
 	}
 
+
+
 	if block.Header.CoreChainLockedHeight < state.LastChainLock.CoreBlockHeight {
 		return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. Previous CoreChainLockedHeight %d, got %d",
 			state.LastChainLock.CoreBlockHeight,
@@ -132,6 +138,8 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, state State, block
 			block.Header.CoreChainLockedHeight,
 		)
 	}
+
+	//We need to query our abci application to make sure the chain lock signature is valid
 
 
 	// Limit the amount of evidence

@@ -37,6 +37,7 @@ func TestValidateBlockHeader(t *testing.T) {
 		stateDB,
 		log.TestingLogger(),
 		proxyApp.Consensus(),
+		proxyApp.Validation(),
 		memmock.Mempool{},
 		sm.MockEvidencePool{},
 	)
@@ -107,6 +108,7 @@ func TestValidateBlockCommit(t *testing.T) {
 		stateDB,
 		log.TestingLogger(),
 		proxyApp.Consensus(),
+		proxyApp.Validation(),
 		memmock.Mempool{},
 		sm.MockEvidencePool{},
 	)
@@ -221,6 +223,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 		stateDB,
 		log.TestingLogger(),
 		proxyApp.Consensus(),
+		proxyApp.Validation(),
 		memmock.Mempool{},
 		sm.MockEvidencePool{},
 	)
@@ -294,6 +297,7 @@ func TestValidateFailBlockOnCommittedEvidence(t *testing.T) {
 		stateDB, log.TestingLogger(),
 		nil,
 		nil,
+		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
 	block := makeBlock(state, height)
@@ -323,7 +327,7 @@ func TestValidateAlreadyPendingEvidence(t *testing.T) {
 
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
-		nil,
+		nil,nil,
 		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
@@ -348,6 +352,7 @@ func TestValidateDuplicateEvidenceShouldFail(t *testing.T) {
 
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
+		nil,
 		nil,
 		nil,
 		sm.MockEvidencePool{})
@@ -401,6 +406,7 @@ func TestValidateUnseenAmnesiaEvidence(t *testing.T) {
 		stateDB, log.TestingLogger(),
 		nil,
 		nil,
+		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
 	block := makeBlock(state, height)
@@ -450,6 +456,7 @@ func TestValidatePrimedAmnesiaEvidence(t *testing.T) {
 		stateDB, log.TestingLogger(),
 		nil,
 		nil,
+		nil,
 		evpool)
 	// A block with a couple pieces of evidence passes.
 	block := makeBlock(state, height)
@@ -468,6 +475,7 @@ func TestVerifyEvidenceWrongAddress(t *testing.T) {
 
 	blockExec := sm.NewBlockExecutor(
 		stateDB, log.TestingLogger(),
+		nil,
 		nil,
 		nil,
 		sm.MockEvidencePool{})
