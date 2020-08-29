@@ -81,7 +81,7 @@ func TestBlockchainMessageVectors(t *testing.T) {
 
 	chainLock := types.NewMockChainLock()
 
-	block := types.MakeBlock(int64(3),chainLock,[]types.Tx{types.Tx("Hello World")}, nil, nil)
+	block := types.MakeBlock(int64(3),chainLock.CoreBlockHeight,&chainLock,[]types.Tx{types.Tx("Hello World")}, nil, nil)
 
 	bpb, err := block.ToProto()
 	require.NoError(t, err)

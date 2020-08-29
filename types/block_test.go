@@ -44,7 +44,7 @@ func TestBlockAddEvidence(t *testing.T) {
 	ev := NewMockDuplicateVoteEvidenceWithValidator(h, time.Now(), vals[0], "block-test-chain")
 	evList := []Evidence{ev}
 
-	block := MakeBlock(h, chainLock, txs, commit, evList)
+	block := MakeBlock(h, chainLock.CoreBlockHeight, &chainLock, txs, commit, evList)
 	require.NotNil(t, block)
 	require.Equal(t, 1, len(block.Evidence.Evidence))
 	require.NotNil(t, block.EvidenceHash)
@@ -94,12 +94,12 @@ func TestBlockValidateBasic(t *testing.T) {
 			blk.Evidence = EvidenceData{Evidence: []Evidence{&PotentialAmnesiaEvidence{}}}
 		}, true},
 	}
-	chainLock := NewMockChainLock()
+
 	for i, tc := range testCases {
 		tc := tc
 		i := i
 		t.Run(tc.testName, func(t *testing.T) {
-			block := MakeBlock(h, chainLock, txs, commit, evList)
+			block := MakeBlock(h,0, nil, txs, commit, evList)
 			block.ProposerAddress = valSet.GetProposer().Address
 			tc.malleateBlock(block)
 			err = block.ValidateBasic()
@@ -110,13 +110,13 @@ func TestBlockValidateBasic(t *testing.T) {
 
 func TestBlockHash(t *testing.T) {
 	assert.Nil(t, (*Block)(nil).Hash())
-	assert.Nil(t, MakeBlock(int64(3), NewMockChainLock(), []Tx{Tx("Hello World")}, nil, nil).Hash())
+	assert.Nil(t, MakeBlock(int64(3), 0, nil, []Tx{Tx("Hello World")}, nil, nil).Hash())
 }
 
 func TestBlockMakePartSet(t *testing.T) {
 	assert.Nil(t, (*Block)(nil).MakePartSet(2))
 
-	partSet := MakeBlock(int64(3), NewMockChainLock(), []Tx{Tx("Hello World")}, nil, nil).MakePartSet(1024)
+	partSet := MakeBlock(int64(3), 0,nil, []Tx{Tx("Hello World")}, nil, nil).MakePartSet(1024)
 	assert.NotNil(t, partSet)
 	assert.EqualValues(t, 1, partSet.Total())
 }
@@ -126,7 +126,6 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	chainLock := NewMockChainLock()
 
 	voteSet, _, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
@@ -135,7 +134,7 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	ev := NewMockDuplicateVoteEvidenceWithValidator(h, time.Now(), vals[0], "block-test-chain")
 	evList := []Evidence{ev}
 
-	partSet := MakeBlock(h, chainLock, []Tx{Tx("Hello World")}, commit, evList).MakePartSet(512)
+	partSet := MakeBlock(h,0, nil, []Tx{Tx("Hello World")}, commit, evList).MakePartSet(512)
 	assert.NotNil(t, partSet)
 	assert.EqualValues(t, 5, partSet.Total())
 }
@@ -145,7 +144,7 @@ func TestBlockHashesTo(t *testing.T) {
 
 	lastID := makeBlockIDRandom()
 	h := int64(3)
-	chainLock := NewMockChainLock()
+
 
 	voteSet, valSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, h-1, 1, voteSet, vals, time.Now())
@@ -154,7 +153,7 @@ func TestBlockHashesTo(t *testing.T) {
 	ev := NewMockDuplicateVoteEvidenceWithValidator(h, time.Now(), vals[0], "block-test-chain")
 	evList := []Evidence{ev}
 
-	block := MakeBlock(h, chainLock, []Tx{Tx("Hello World")}, commit, evList)
+	block := MakeBlock(h,0, nil, []Tx{Tx("Hello World")}, commit, evList)
 	block.ValidatorsHash = valSet.Hash()
 	assert.False(t, block.HashesTo([]byte{}))
 	assert.False(t, block.HashesTo([]byte("something else")))
@@ -162,7 +161,7 @@ func TestBlockHashesTo(t *testing.T) {
 }
 
 func TestBlockSize(t *testing.T) {
-	size := MakeBlock(int64(3), NewMockChainLock(), []Tx{Tx("Hello World")}, nil, nil).Size()
+	size := MakeBlock(int64(3),0, nil, []Tx{Tx("Hello World")}, nil, nil).Size()
 	if size <= 0 {
 		t.Fatal("Size of the block is zero or negative")
 	}
@@ -173,7 +172,7 @@ func TestBlockString(t *testing.T) {
 	assert.Equal(t, "nil-Block", (*Block)(nil).StringIndented(""))
 	assert.Equal(t, "nil-Block", (*Block)(nil).StringShort())
 
-	block := MakeBlock(int64(3), NewMockChainLock(), []Tx{Tx("Hello World")}, nil, nil)
+	block := MakeBlock(int64(3),0, nil, []Tx{Tx("Hello World")}, nil, nil)
 	assert.NotEqual(t, "nil-Block", block.String())
 	assert.NotEqual(t, "nil-Block", block.StringIndented(""))
 	assert.NotEqual(t, "nil-Block", block.StringShort())
@@ -654,18 +653,17 @@ func TestBlockIDValidateBasic(t *testing.T) {
 
 func TestBlockProtoBuf(t *testing.T) {
 	h := tmrand.Int63()
-	chainLock := NewMockChainLock()
 	c1 := randCommit(time.Now())
-	b1 := MakeBlock(h, chainLock, []Tx{Tx([]byte{1})}, &Commit{Signatures: []CommitSig{}}, []Evidence{})
+	b1 := MakeBlock(h,0, nil, []Tx{Tx([]byte{1})}, &Commit{Signatures: []CommitSig{}}, []Evidence{})
 	b1.ProposerAddress = tmrand.Bytes(crypto.AddressSize)
 
-	b2 := MakeBlock(h, chainLock, []Tx{Tx([]byte{1})}, c1, []Evidence{})
+	b2 := MakeBlock(h,0, nil, []Tx{Tx([]byte{1})}, c1, []Evidence{})
 	b2.ProposerAddress = tmrand.Bytes(crypto.AddressSize)
 	evi := NewMockDuplicateVoteEvidence(h, time.Now(), "block-test-chain")
 	b2.Evidence = EvidenceData{Evidence: EvidenceList{evi}}
 	b2.EvidenceHash = b2.Evidence.Hash()
 
-	b3 := MakeBlock(h, chainLock, []Tx{}, c1, []Evidence{})
+	b3 := MakeBlock(h,0, nil, []Tx{}, c1, []Evidence{})
 	b3.ProposerAddress = tmrand.Bytes(crypto.AddressSize)
 	testCases := []struct {
 		msg      string

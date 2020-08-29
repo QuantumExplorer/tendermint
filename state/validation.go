@@ -22,8 +22,10 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, proxyAppValidation
 		return err
 	}
 
-	if err := block.ChainLock.ValidateBasic(); err != nil {
-		return err
+	if block.ChainLock != nil {
+		if err := block.ChainLock.ValidateBasic(); err != nil {
+			return err
+		}
 	}
 
 	// Validate basic info.
@@ -125,38 +127,57 @@ func validateBlock(evidencePool EvidencePool, stateDB dbm.DB, proxyAppValidation
 		}
 	}
 
+	//if block.Header.CoreChainLockedHeight < state.LastCoreBlockHeight {
+	//	return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. Previous LastCoreBlockHeight %d, got %d",
+	//		state.LastCoreBlockHeight,
+	//		block.Header.CoreChainLockedHeight,
+	//	)
+	//}
 
+	if block.ChainLock != nil {
+		//If there is a new Chain Lock we need to make sure the height in the header is the same as the chain lock
+		if block.Header.CoreChainLockedHeight != block.ChainLock.CoreBlockHeight {
+			return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. ChainLock CoreBlockHeight %d, got %d",
+				block.ChainLock.CoreBlockHeight,
+				block.Header.CoreChainLockedHeight,
+			)
+		}
 
-	if block.Header.CoreChainLockedHeight < state.LastChainLock.CoreBlockHeight {
-		return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. Previous CoreChainLockedHeight %d, got %d",
-			state.LastChainLock.CoreBlockHeight,
-			block.Header.CoreChainLockedHeight,
-		)
+		//We also need to make sure that the new height is superior to the old height
+		if block.Header.CoreChainLockedHeight <= state.LastChainLock.CoreBlockHeight {
+			return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. Previous CoreChainLockedHeight %d, got %d",
+				state.LastChainLock.CoreBlockHeight,
+				block.Header.CoreChainLockedHeight,
+			)
+		}
+
+		signatureCheckRequest := abci.RequestCheckQuorumSignature{
+			CoreHeight: block.ChainLock.CoreBlockHeight,
+			QuorumType: 1,
+			RequestId: block.ChainLock.RequestId(),
+			Digest: block.ChainLock.CoreBlockHash,
+			Signature: block.ChainLock.Signature,
+		}
+
+		checkQuorumSignatureResponse, err := proxyAppValidationConn.CheckQuorumSignatureSync(signatureCheckRequest)
+		if err != nil {
+			return err
+		}
+
+		if checkQuorumSignatureResponse.Code != 0 {
+			return fmt.Errorf("chain Lock signature deemed invalid by abci application")
+		}
+	} else {
+		//If there is no new Chain Lock we need to make sure the height has stayed the same
+		if block.Header.CoreChainLockedHeight != state.LastChainLock.CoreBlockHeight {
+			return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight when no new Chain Lock. Previous CoreChainLockedHeight %d, got %d",
+				state.LastChainLock.CoreBlockHeight,
+				block.Header.CoreChainLockedHeight,
+			)
+		}
 	}
 
-	if block.Header.CoreChainLockedHeight != block.ChainLock.CoreBlockHeight {
-		return fmt.Errorf("wrong Block.Header.CoreChainLockedHeight. ChainLock CoreBlockHeight %d, got %d",
-			block.ChainLock.CoreBlockHeight,
-			block.Header.CoreChainLockedHeight,
-		)
-	}
 
-	signatureCheckRequest := abci.RequestCheckQuorumSignature{
-		CoreHeight: block.ChainLock.CoreBlockHeight,
-		QuorumType: 1,
-		RequestId: block.ChainLock.RequestId(),
-		Digest: block.ChainLock.CoreBlockHash,
-		Signature: block.ChainLock.Signature,
-	}
-
-	checkQuorumSignatureResponse, err := proxyAppValidationConn.CheckQuorumSignatureSync(signatureCheckRequest)
-	if err != nil {
-		return err
-	}
-
-	if checkQuorumSignatureResponse.Code != 0 {
-		return fmt.Errorf("chain Lock signature deemed invalid by abci application")
-	}
 
 	//We need to query our abci application to make sure the chain lock signature is valid
 

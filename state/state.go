@@ -52,10 +52,12 @@ type State struct {
 	ChainID string
 
 	// LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
-	LastBlockHeight int64
-	LastBlockID     types.BlockID
-	LastBlockTime   time.Time
+	LastBlockHeight     int64
+	LastCoreBlockHeight uint32
+	LastBlockID         types.BlockID
+	LastBlockTime       time.Time
 
+	//Last Chain Lock is the last known chain lock, and does not go to nil if a block had no chain lock
 	LastChainLock types.ChainLock
 
 	// LastValidators is used to validate block.LastCommit.
@@ -89,6 +91,7 @@ func (state State) Copy() State {
 		ChainID: state.ChainID,
 
 		LastBlockHeight: state.LastBlockHeight,
+		LastCoreBlockHeight: state.LastCoreBlockHeight,
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
 
@@ -145,6 +148,7 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	sm.ChainID = state.ChainID
 	sm.LastBlockHeight = state.LastBlockHeight
 
+	sm.LastCoreBlockHeight = state.LastCoreBlockHeight
 	sm.LastCoreChainLock = tmproto.ChainLock(state.LastChainLock)
 
 	sm.LastBlockID = state.LastBlockID.ToProto()
@@ -244,19 +248,23 @@ func (state State) MakeBlock(
 	proposerAddress []byte,
 ) (*types.Block, *types.PartSet) {
 
-	var chainLock types.ChainLock
+	var chainLock *types.ChainLock = nil
 	if state.ConsensusParams.ChainLock.ChainLockHeight > state.LastChainLock.CoreBlockHeight {
-		chainLock = types.ChainLock {
+		chainLock = &types.ChainLock {
 			CoreBlockHeight: state.ConsensusParams.ChainLock.ChainLockHeight,
 			CoreBlockHash: state.ConsensusParams.ChainLock.ChainLockHash,
 			Signature: state.ConsensusParams.ChainLock.Signature,
 		}
-	} else {
-		chainLock = state.LastChainLock
 	}
 
+	var chainLockHeight uint32
+	if chainLock == nil {
+		chainLockHeight = state.LastChainLock.CoreBlockHeight
+	} else {
+		chainLockHeight = chainLock.CoreBlockHeight
+	}
 	// Build base block with block data.
-	block := types.MakeBlock(height, chainLock, txs, commit, evidence)
+	block := types.MakeBlock(height, chainLockHeight, chainLock, txs, commit, evidence)
 
 	// Set time.
 	var timestamp time.Time

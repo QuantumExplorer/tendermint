@@ -43,7 +43,7 @@ type Block struct {
 
 	Header     `json:"header"`
 	Data       `json:"data"`
-	ChainLock  ChainLock    `json:"chain_lock"`
+	ChainLock  *ChainLock    `json:"chain_lock"`
 	Evidence   EvidenceData `json:"evidence"`
 	LastCommit *Commit      `json:"last_commit"`
 }
@@ -63,8 +63,10 @@ func (b *Block) ValidateBasic() error {
 		return fmt.Errorf("invalid header: %w", err)
 	}
 
-	if err := b.ChainLock.ValidateBasic(); err != nil {
-		return fmt.Errorf("invalid chain lock data: %w", err)
+	if b.ChainLock != nil {
+		if err := b.ChainLock.ValidateBasic(); err != nil {
+			return fmt.Errorf("invalid chain lock data: %w", err)
+		}
 	}
 
 
@@ -234,7 +236,7 @@ func (b *Block) ToProto() (*tmproto.Block, error) {
 	pb := new(tmproto.Block)
 
 	pb.Header = *b.Header.ToProto()
-	pb.ChainLock = *b.ChainLock.ToProto()
+	pb.ChainLock = b.ChainLock.ToProto()
 	pb.LastCommit = b.LastCommit.ToProto()
 	pb.Data = b.Data.ToProto()
 
@@ -267,7 +269,7 @@ func BlockFromProto(bp *tmproto.Block) (*Block, error) {
 	b.Data = data
 	b.Evidence.FromProto(&bp.Evidence)
 
-	chainLock, err := ChainLockFromProto(&bp.ChainLock)
+	chainLock, err := ChainLockFromProto(bp.ChainLock)
 	if err != nil {
 		return nil, err
 	}

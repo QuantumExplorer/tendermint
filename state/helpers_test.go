@@ -148,7 +148,7 @@ func genValSet(size int) *types.ValidatorSet {
 func makeHeaderPartsResponsesValPubKeyChange(
 	state sm.State,
 	pubkey crypto.PubKey,
-) (types.Header, types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
+) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
@@ -172,7 +172,7 @@ func makeHeaderPartsResponsesValPubKeyChange(
 func makeHeaderPartsResponsesValPowerChange(
 	state sm.State,
 	power int64,
-) (types.Header, types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
+) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
@@ -196,7 +196,7 @@ func makeHeaderPartsResponsesValPowerChange(
 func makeHeaderPartsResponsesParams(
 	state sm.State,
 	params tmproto.ConsensusParams,
-) (types.Header, types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
+) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{

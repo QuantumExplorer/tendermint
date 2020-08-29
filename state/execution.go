@@ -167,7 +167,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	// Update the state with the block and responses.
-	state, err = updateState(state, blockID, &block.Header, &block.ChainLock, abciResponses, validatorUpdates)
+	state, err = updateState(state, blockID, &block.Header, block.ChainLock, abciResponses, validatorUpdates)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -444,6 +444,10 @@ func updateState(
 	}
 
 	nextVersion := state.Version
+
+	if chainLock == nil {
+		chainLock = &state.LastChainLock
+	}
 
 	// NOTE: the AppHash has not been populated.
 	// It will be filled on state.Save.

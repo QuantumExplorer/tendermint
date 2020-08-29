@@ -76,10 +76,10 @@ func (cl ChainLock) ValidateBasic() error {
 }
 
 // FromProto sets a protobuf Header to the given pointer.
-// It returns an error if the header is invalid.
-func ChainLockFromProto(clp *tmproto.ChainLock) (ChainLock, error) {
+// It returns an error if the chain lock is invalid.
+func ChainLockFromProto(clp *tmproto.ChainLock) (*ChainLock, error) {
 	if clp == nil {
-		return ChainLock{}, errors.New("nil Chain Lock")
+		return nil, nil
 	}
 
 	cl := new(ChainLock)
@@ -87,7 +87,7 @@ func ChainLockFromProto(clp *tmproto.ChainLock) (ChainLock, error) {
 	cl.CoreBlockHash = clp.CoreBlockHash
 	cl.Signature = clp.Signature
 
-	return *cl, cl.ValidateBasic()
+	return cl, cl.ValidateBasic()
 }
 
 func NewMockChainLock() ChainLock {
