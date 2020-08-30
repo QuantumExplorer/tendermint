@@ -29,9 +29,9 @@ func (cl *ChainLock) ToProto() *tmproto.ChainLock {
 
 func (cl *ChainLock) PopulateFromChainLockParams(clp tmproto.ChainLockParams) error {
 
-	cl.CoreBlockHeight = clp.ChainLockHeight
-	cl.CoreBlockHash = clp.ChainLockHash
-	cl.Signature = clp.Signature
+	cl.CoreBlockHeight = clp.NewestChainLock.ChainLockHeight
+	cl.CoreBlockHash = clp.NewestChainLock.ChainLockHash
+	cl.Signature = clp.NewestChainLock.Signature
 
 	return cl.ValidateBasic()
 }
@@ -73,6 +73,20 @@ func (cl ChainLock) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// StringIndented returns a string representation of the header
+func (cl *ChainLock) StringIndented(indent string) string {
+	if cl == nil {
+		return "nil-ChainLock"
+	}
+	return fmt.Sprintf(`ChainLock{
+%s  CoreBlockHeight:   %v
+%s  CoreBlockHash:     %v
+%s  Signature:         %v}`,
+		indent, cl.CoreBlockHeight,
+		indent, cl.CoreBlockHash,
+		indent, cl.Signature )
 }
 
 // FromProto sets a protobuf Header to the given pointer.

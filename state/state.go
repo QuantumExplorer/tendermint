@@ -249,12 +249,10 @@ func (state State) MakeBlock(
 ) (*types.Block, *types.PartSet) {
 
 	var chainLock *types.ChainLock = nil
-	if state.ConsensusParams.ChainLock.ChainLockHeight > state.LastChainLock.CoreBlockHeight {
-		chainLock = &types.ChainLock {
-			CoreBlockHeight: state.ConsensusParams.ChainLock.ChainLockHeight,
-			CoreBlockHash: state.ConsensusParams.ChainLock.ChainLockHash,
-			Signature: state.ConsensusParams.ChainLock.Signature,
-		}
+	if state.ConsensusParams.ChainLock.NewestChainLock.ChainLockHeight > state.LastChainLock.CoreBlockHeight {
+		chainLockFromParams := types.ChainLock{}
+		chainLockFromParams.PopulateFromChainLockParams(state.ConsensusParams.ChainLock)
+		chainLock = &chainLockFromParams
 	}
 
 	var chainLockHeight uint32

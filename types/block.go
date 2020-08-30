@@ -211,8 +211,10 @@ func (b *Block) StringIndented(indent string) string {
 %s  %v
 %s  %v
 %s  %v
+%s  %v
 %s}#%v`,
 		indent, b.Header.StringIndented(indent+"  "),
+		indent, b.ChainLock.StringIndented(indent+"  "),
 		indent, b.Data.StringIndented(indent+"  "),
 		indent, b.Evidence.StringIndented(indent+"  "),
 		indent, b.LastCommit.StringIndented(indent+"  "),

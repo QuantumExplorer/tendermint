@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"github.com/quantumexplorer/tendermint/crypto/ed25519"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -11,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/quantumexplorer/tendermint/crypto"
-	"github.com/quantumexplorer/tendermint/crypto/ed25519"
+	"github.com/quantumexplorer/tendermint/crypto/bls12381"
 	"github.com/quantumexplorer/tendermint/libs/log"
 	"github.com/quantumexplorer/tendermint/privval"
 	"github.com/quantumexplorer/tendermint/types"
@@ -98,7 +99,7 @@ func TestRemoteSignerPublicKeyCheckFailed(t *testing.T) {
 	harnessTest(
 		t,
 		func(th *TestHarness) *privval.SignerServer {
-			return newMockSignerServer(t, th, ed25519.GenPrivKey(), false, false)
+			return newMockSignerServer(t, th, bls12381.GenPrivKey(), false, false)
 		},
 		ErrTestPublicKeyFailed,
 	)
