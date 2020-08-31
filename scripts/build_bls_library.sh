@@ -1,12 +1,12 @@
-GOPATH=${BUILD_DIR}/gopath
-BLS_REPO_PATH="${GOPATH}"/github.com/quantumexplorer/bls-signatures
+PACKAGES_PATH=$(go env GOPATH)
+BLS_REPO_PATH="${PACKAGES_PATH}"/src/github.com/quantumexplorer/bls-signatures
 
-echo $(go env GOPATH)
-echo ${PWD}
+echo "PACKAGES_PATH: ${PACKAGES_PATH}"
+echo "PWD: ${PWD}"
 
 # Cleaning previous build
 rm -rf "${BLS_REPO_PATH}"
-mkdir -pv "${GOPATH}"/github.com/quantumexplorer/
+mkdir -pv "${PACKAGES_PATH}"/github.com/quantumexplorer/
 
 # Cloning bls repo and fetching dependencies
 git clone https://github.com/quantumexplorer/bls-signatures.git "$BLS_REPO_PATH"
