@@ -57,7 +57,6 @@ build:
 .PHONY: build
 
 install:
-	@echo "${GOPATH}"
 	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
 .PHONY: install
 
