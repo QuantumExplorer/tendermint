@@ -32,6 +32,9 @@ endif
 LD_FLAGS += $(LDFLAGS)
 
 all: check bls_bindings_build build test install
+install: bls_bindings_build
+build: bls_bindings_build
+
 .PHONY: all
 
 # The below include contains the tools.
@@ -54,6 +57,7 @@ build:
 .PHONY: build
 
 install:
+	bls_bindings_build
 	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
 .PHONY: install
 
