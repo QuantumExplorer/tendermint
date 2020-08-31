@@ -14,8 +14,8 @@ jobs:
     timeout-minutes: 4
     steps:
       - name: Set GOPATH
-      run: |
-        echo "::set-env name=GOPATH::$(go env GOPATH)"
+        run: |
+          echo "::set-env name=GOPATH::$(go env GOPATH)"
       - name: Set CGO_LDFLAGS
         run: |
           echo "::set-env name=CGO_LDFLAGS::"-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build""
