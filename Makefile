@@ -4,7 +4,7 @@ OUTPUT?=build/tendermint
 BUILD_TAGS?=tendermint
 LD_FLAGS = -X github.com/quantumexplorer/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD`
 CGO_LDFLAGS = "-Lsrc/github.com/quantumexplorer/bls-signatures/build"
-CGO_CXXFLAGS = "-Isrc/github.com/quantumexplorer/bls-signatures/src -I$$GOPATH/src/github.com/quantumexplorer/bls-signatures/contrib/relic/include -I$$GOPATH/src/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include"
+CGO_CXXFLAGS = "-Isrc/github.com/quantumexplorer/bls-signatures/src -Isrc/github.com/quantumexplorer/bls-signatures/contrib/relic/include -Isrc/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include"
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/quantumexplorer/tendermint.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
