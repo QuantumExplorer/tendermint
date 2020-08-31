@@ -169,7 +169,9 @@ format:
 
 lint:
 	@echo "--> Running linter"
-	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) golangci-lint run
+	@export CGO_CXXFLAGS=$(CGO_CXXFLAGS)
+	@export CGO_LDFLAGS=$(CGO_LDFLAGS)
+	@golangci-lint run
 .PHONY: lint
 
 DESTINATION = ./index.html.md
