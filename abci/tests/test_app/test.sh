@@ -3,6 +3,8 @@ set -e
 
 # These tests spawn the counter app and server by execing the ABCI_APP command and run some simple client tests against it
 
+(GOPATH=$(go env GOPATH) && CGO_LDFLAGS="-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build" && CGO_CXXFLAGS="-I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/src -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/contrib/relic/include -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include" && echo "Gopath: $GOPATH") && (cat xaa.txt | xargs go test -mod=readonly -timeout 8m -race -coverprofile=coverage.txt -covermode=atomic)
+
 GOPATH=$(go env GOPATH)
 export CGO_LDFLAGS="-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build"
 export CGO_CXXFLAGS="-I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/src -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/contrib/relic/include -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include"
