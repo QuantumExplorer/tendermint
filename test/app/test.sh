@@ -8,6 +8,7 @@ set -ex
 
 # TODO: install everything
 
+GOPATH=$(go env GOPATH)
 export PATH="$GOBIN:$PATH"
 export TMHOME=$HOME/.tendermint_app
 export CGO_LDFLAGS="-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build"
