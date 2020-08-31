@@ -51,6 +51,9 @@ jobs:
           name: "${{ github.sha }}-aa"
         if: "env.GIT_DIFF != ''"
       - name: test & coverage report creation
+        env:
+          CGO_LDFLAGS: "-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build"
+          CGO_CXXFLAGS: "-I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/src -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/contrib/relic/include -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include"
         run: |
           cat xaa.txt | xargs go test -mod=readonly -timeout 8m -race -coverprofile=coverage.txt -covermode=atomic
         if: "env.GIT_DIFF != ''"
