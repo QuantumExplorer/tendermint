@@ -1,12 +1,13 @@
-PACKAGES_PATH=$(go env GOPATH)
-BLS_REPO_PATH="${PACKAGES_PATH}"/src/github.com/quantumexplorer/bls-signatures
+GOPATH=$(go env GOPATH)
+BLS_REPO_PATH="${GOPATH}"/src/github.com/quantumexplorer/bls-signatures
 
-echo "PACKAGES_PATH: ${PACKAGES_PATH}"
-echo "PWD: ${PWD}"
+# Install packages for bindings
+go get golang.org/x/tools/cmd/goimports
+go get -u golang.org/x/lint/golint
 
 # Cleaning previous build
 rm -rf "${BLS_REPO_PATH}"
-mkdir -pv "${PACKAGES_PATH}"/github.com/quantumexplorer/
+mkdir -pv "${GOPATH}"/github.com/quantumexplorer/
 
 # Cloning bls repo and fetching dependencies
 git clone https://github.com/quantumexplorer/bls-signatures.git "$BLS_REPO_PATH"
