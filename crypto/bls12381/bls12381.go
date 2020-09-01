@@ -54,7 +54,7 @@ func (privKey PrivKey) Bytes() []byte {
 // If these conditions aren't met, Sign will panic or produce an
 // incorrect signature.
 func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
-	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey,false)
+	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey, false)
 	insecureSignature := blsPrivateKey.SignInsecure(msg)
 	return insecureSignature.Serialize(), nil
 }
@@ -63,7 +63,7 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 //
 // Panics if the private key is not initialized.
 func (privKey PrivKey) PubKey() crypto.PubKey {
-	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey,false)
+	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey, false)
 	publicKeyBytes := blsPrivateKey.PublicKey().Serialize()
 	return PubKey(publicKeyBytes)
 }
@@ -141,8 +141,8 @@ func (pubKey PubKey) VerifyBytes(msg []byte, sig []byte) bool {
 		return false
 	}
 	publicKey, _ := bls.PublicKeyFromBytes(pubKey)
-	aggregationInfo := bls.AggregationInfoFromMsg(publicKey,msg)
-	blsSignature, _ := bls.SignatureFromBytesWithAggregationInfo(sig,aggregationInfo)
+	aggregationInfo := bls.AggregationInfoFromMsg(publicKey, msg)
+	blsSignature, _ := bls.SignatureFromBytesWithAggregationInfo(sig, aggregationInfo)
 	return blsSignature.Verify()
 }
 
