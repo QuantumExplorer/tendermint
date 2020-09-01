@@ -57,7 +57,11 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	if len(privKey.Bytes()) != PrivateKeySize {
 		panic(fmt.Sprintf("incorrect private key %d bytes but expected %d bytes", len(privKey.Bytes()), PrivateKeySize))
 	}
-	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey,false)
+	// set modOrder flag to true so that too big random bytes will wrap around and be a valid key
+	blsPrivateKey, err := bls.PrivateKeyFromBytes(privKey, true)
+	if err != nil {
+		return nil, err
+	}
 	insecureSignature := blsPrivateKey.SignInsecure(msg)
 	return insecureSignature.Serialize(), nil
 }
@@ -69,7 +73,13 @@ func (privKey PrivKey) PubKey() crypto.PubKey {
 	if len(privKey.Bytes()) != PrivateKeySize {
 		panic(fmt.Sprintf("incorrect private key %d bytes but expected %d bytes", len(privKey.Bytes()), PrivateKeySize))
 	}
-	blsPrivateKey, _ := bls.PrivateKeyFromBytes(privKey,false)
+	// set modOrder flag to true so that too big random bytes will wrap around and be a valid key
+	blsPrivateKey, err := bls.PrivateKeyFromBytes(privKey, true)
+	if err != nil {
+		// should probably change method sign to return an error but since
+		// that's not available just panic...
+		panic("bad key")
+	}
 	publicKeyBytes := blsPrivateKey.PublicKey().Serialize()
 	return PubKey(publicKeyBytes)
 }
@@ -146,9 +156,17 @@ func (pubKey PubKey) VerifyBytes(msg []byte, sig []byte) bool {
 	if len(sig) != SignatureSize {
 		return false
 	}
-	publicKey, _ := bls.PublicKeyFromBytes(pubKey)
-	aggregationInfo := bls.AggregationInfoFromMsg(publicKey,msg)
-	blsSignature, _ := bls.SignatureFromBytesWithAggregationInfo(sig,aggregationInfo)
+	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+	if err != nil {
+		// maybe log/panic?
+		return false
+	}
+	aggregationInfo := bls.AggregationInfoFromMsg(publicKey, msg)
+	blsSignature, err := bls.SignatureFromBytesWithAggregationInfo(sig, aggregationInfo)
+	if err != nil {
+		// maybe log/panic?
+		return false
+	}
 	return blsSignature.Verify()
 }
 
