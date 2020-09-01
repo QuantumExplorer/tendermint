@@ -33,6 +33,6 @@ func TestBLSAddress(t *testing.T) {
 	privKey := bls12381.PrivKey(decodedPrivateKeyBytes)
 	pubKey := privKey.PubKey()
 	address := pubKey.Address()
-	assert.EqualValues(t,decodedPublicKeyBytes,pubKey)
-	assert.EqualValues(t,decodedAddressBytes,address)
+	assert.EqualValues(t, decodedPublicKeyBytes, pubKey)
+	assert.EqualValues(t, decodedAddressBytes, address)
 }
