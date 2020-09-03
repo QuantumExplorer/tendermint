@@ -2,8 +2,8 @@ GOPATH=$(go env GOPATH)
 BLS_REPO_PATH="${GOPATH}"/src/github.com/quantumexplorer/bls-signatures
 
 # Install packages for bindings
-go get golang.org/x/tools/cmd/goimports
-go get -u golang.org/x/lint/golint
+GO111MODULE=off go get golang.org/x/tools/cmd/goimports
+GO111MODULE=off go get golang.org/x/lint/golint
 
 # Cleaning previous build
 rm -rf "${BLS_REPO_PATH}"

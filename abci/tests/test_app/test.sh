@@ -20,14 +20,14 @@ cd "$DIR"
 echo "RUN COUNTER OVER SOCKET"
 # test golang counter
 echo "$(go env)"
-CGO_CXXFLAGS="$CGO_CXXFLAGS" CGO_LDFLAGS="$CGO_LDFLAGS" ABCI_APP="counter" go run -mod=readonly ./*.go
+ABCI_APP="counter" go run -mod=readonly ./*.go
 echo "----------------------"
 
 
 echo "RUN COUNTER OVER GRPC"
 # test golang counter via grpc
 echo "CGO_CXXFLAGS="$CGO_CXXFLAGS" CGO_LDFLAGS="$CGO_LDFLAGS" ABCI_APP="counter --abci=grpc" ABCI="grpc" go run -mod=readonly ./*.go"
-CGO_CXXFLAGS="$CGO_CXXFLAGS" CGO_LDFLAGS="$CGO_LDFLAGS" ABCI_APP="counter --abci=grpc" ABCI="grpc" go run -mod=readonly ./*.go
+ABCI_APP="counter --abci=grpc" ABCI="grpc" go run -mod=readonly ./*.go
 echo "----------------------"
 
 # test nodejs counter
