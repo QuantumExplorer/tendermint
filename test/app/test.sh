@@ -8,11 +8,8 @@ set -ex
 
 # TODO: install everything
 
-GOPATH=$(go env GOPATH)
 export PATH="$GOBIN:$PATH"
 export TMHOME=$HOME/.tendermint_app
-export CGO_LDFLAGS="-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build"
-export CGO_CXXFLAGS="-I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/src -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/contrib/relic/include -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include"
 
 function kvstore_over_socket(){
     rm -rf $TMHOME
@@ -99,7 +96,7 @@ function counter_over_grpc_grpc() {
     kill -9 $pid_counter $pid_tendermint
 }
 
-case "$1" in
+case "$1" in 
     "kvstore_over_socket")
     kvstore_over_socket
     ;;
