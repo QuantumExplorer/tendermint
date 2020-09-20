@@ -3,8 +3,8 @@ OUTPUT?=build/tendermint
 
 BUILD_TAGS?=tendermint
 LD_FLAGS = -X github.com/quantumexplorer/tendermint/version.GitCommit=`git rev-parse --short=8 HEAD`
-CGO_LDFLAGS = -L$$HOME/Documents/src/go/src/bls-signatures/build
-CGO_CXXFLAGS = "-I$$HOME/Documents/src/go/src/bls-signatures/src -I$$HOME/Documents/src/go/src/bls-signatures/contrib/relic/include -I$$HOME/Documents/src/go/src/bls-signatures/build/contrib/relic/include"
+CGO_LDFLAGS = "-L${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build"
+CGO_CXXFLAGS = "-I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/src -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/contrib/relic/include -I${GOPATH}/src/github.com/quantumexplorer/bls-signatures/build/contrib/relic/include"
 BUILD_FLAGS = -mod=readonly -ldflags "$(LD_FLAGS)"
 HTTPS_GIT := https://github.com/quantumexplorer/tendermint.git
 DOCKER_BUF := docker run -v $(shell pwd):/workspace --workdir /workspace bufbuild/buf
@@ -31,7 +31,10 @@ endif
 # allow users to pass additional flags via the conventional LDFLAGS variable
 LD_FLAGS += $(LDFLAGS)
 
-all: check build test install
+all: check bls_bindings_build build test install
+install: bls_bindings_build
+build: bls_bindings_build
+
 .PHONY: all
 
 # The below include contains the tools.
@@ -39,15 +42,22 @@ include tools.mk
 include tests.mk
 
 ###############################################################################
+###                           Build BLS library                             ###
+###############################################################################
+bls_bindings_build:
+	@sh scripts/build_bls_library.sh
+.PHONY: bls_bindings_build
+
+###############################################################################
 ###                                Build Tendermint                        ###
 ###############################################################################
 
 build:
-	CGO_ENABLED=$(CGO_ENABLED) CGO_LDFLAGS=$(CGO_LDFLAGS) CGO_CXXFLAGS=$(CGO_CXXFLAGS) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
+	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) go build $(BUILD_FLAGS) -tags '$(BUILD_TAGS)' -o $(OUTPUT) ./cmd/tendermint/
 .PHONY: build
 
 install:
-	CGO_ENABLED=$(CGO_ENABLED) CGO_LDFLAGS=$(CGO_LDFLAGS) CGO_CXXFLAGS=$(CGO_CXXFLAGS) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
+	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) go install $(BUILD_FLAGS) -tags $(BUILD_TAGS) ./cmd/tendermint
 .PHONY: install
 
 ###############################################################################
@@ -88,11 +98,11 @@ proto-check-breaking-ci:
 ###############################################################################
 
 build_abci:
-	@go build -mod=readonly -i ./abci/cmd/...
+	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) go build -mod=readonly -i ./abci/cmd/...
 .PHONY: build_abci
 
 install_abci:
-	@go install -mod=readonly ./abci/cmd/...
+	CGO_CXXFLAGS=$(CGO_CXXFLAGS) CGO_LDFLAGS=$(CGO_LDFLAGS) go install -mod=readonly ./abci/cmd/...
 .PHONY: install_abci
 
 ###############################################################################
@@ -159,6 +169,8 @@ format:
 
 lint:
 	@echo "--> Running linter"
+	@export CGO_CXXFLAGS=$(CGO_CXXFLAGS)
+	@export CGO_LDFLAGS=$(CGO_LDFLAGS)
 	@golangci-lint run
 .PHONY: lint
 
