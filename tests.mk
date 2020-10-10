@@ -92,7 +92,7 @@ test_release:
 .PHONY: test_release
 
 test100:
-	@for i in {1..100}; do make test; done
+	@for i in {1..100}; do make test; go clean -testcache; done
 .PHONY: test100
 
 vagrant_test:
