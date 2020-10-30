@@ -460,16 +460,16 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0: {-10, crypto.Ed25519, 1, 0, true, 0},
 		1: {10, crypto.Ed25519, 1, 0, true, 0},
-		2: {973, crypto.Ed25519, 1, 0, true, 0},
-		3: {842, crypto.Ed25519, 1, 0, false, 0},
-		4: {843, crypto.Ed25519, 1, 0, false, 1},
-		5: {954, crypto.Ed25519, 2, 0, false, 1},
-		6: {1053, crypto.Ed25519, 2, 100, false, 0},
-		7: {874, crypto.BLS12381, 1, 0, true, 0},
-		8: {875, crypto.BLS12381, 1, 0, false, 0},
-		9: {876, crypto.BLS12381, 1, 0, false, 1},
-		10: {1020, crypto.BLS12381, 2, 0, false, 1},
-		11: {1119, crypto.BLS12381, 2, 100, false, 0},
+		2: {979, crypto.Ed25519, 1, 0, true, 0},
+		3: {980, crypto.Ed25519, 1, 0, false, 0},
+		4: {981, crypto.Ed25519, 1, 0, false, 1},
+		5: {1092, crypto.Ed25519, 2, 0, false, 1},
+		6: {1191, crypto.Ed25519, 2, 100, false, 0},
+		7: {1012, crypto.BLS12381, 1, 0, true, 0},
+		8: {1013, crypto.BLS12381, 1, 0, false, 0},
+		9: {1014, crypto.BLS12381, 1, 0, false, 1},
+		10: {1158, crypto.BLS12381, 2, 0, false, 1},
+		11: {1257, crypto.BLS12381, 2, 100, false, 0},
 	}
 	//An extra 33 bytes (32 for sig, 1 for proto encoding are needed for BLS compared to edwards per validator
 
@@ -497,18 +497,14 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 		panics      bool
 		result      int64
 	}{
-		0: {-10, 0, crypto.Ed25519,1, true, 0},
-		1: {10, 0, crypto.Ed25519,1, true, 0},
-		2: {983, 0, crypto.Ed25519,1, true, 0},
-		3: {984, 0, crypto.Ed25519,1, false, 0},
-		4: {1428, 1, crypto.Ed25519,1, false, 0},
-		5: {1429, 1, crypto.Ed25519,1, false, 1},
-		6: {-10, 0, crypto.BLS12381,1, true, 0},
-		7: {10, 0, crypto.BLS12381,1, true, 0},
-		8: {1015, 0, crypto.BLS12381,1, true, 0},
-		9: {1016, 0, crypto.BLS12381,1, false, 0},
-		10: {1508, 1, crypto.BLS12381,1, false, 0},
-		11: {1509, 1, crypto.BLS12381,1, false, 1},
+		0: {-10, 1, crypto.Ed25519,1, true, 0},
+		1: {10, 1, crypto.Ed25519,1, true, 0},
+		2: {979, 1, crypto.Ed25519,1, true, 0},
+		3: {980, 1, crypto.Ed25519,1, false, 0},
+		4: {981, 1, crypto.Ed25519,1, false, 1},
+		5: {1012, 1, crypto.BLS12381,1, true, 0},
+		6: {1013, 1, crypto.BLS12381,1, false, 0},
+		7: {1014, 1, crypto.BLS12381,1, false, 1},
 	}
 
 	for i, tc := range testCases {
