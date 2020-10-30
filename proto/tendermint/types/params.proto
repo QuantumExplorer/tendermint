@@ -5,16 +5,18 @@ option go_package = "github.com/tendermint/tendermint/proto/tendermint/types";
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/duration.proto";
+import "tendermint/types/types.proto";
 
 option (gogoproto.equal_all) = true;
 
 // ConsensusParams contains consensus critical parameters that determine the
 // validity of blocks.
 message ConsensusParams {
-  BlockParams     block     = 1 [(gogoproto.nullable) = false];
-  EvidenceParams  evidence  = 2 [(gogoproto.nullable) = false];
-  ValidatorParams validator = 3 [(gogoproto.nullable) = false];
-  VersionParams   version   = 4 [(gogoproto.nullable) = false];
+  BlockParams     block      = 1 [(gogoproto.nullable) = false];
+  ChainLockParams chain_lock = 2 [(gogoproto.nullable) = false];
+  EvidenceParams  evidence   = 3 [(gogoproto.nullable) = false];
+  ValidatorParams validator  = 4 [(gogoproto.nullable) = false];
+  VersionParams   version    = 5 [(gogoproto.nullable) = false];
 }
 
 // BlockParams contains limits on the block size.
@@ -31,6 +33,11 @@ message BlockParams {
   // Not exposed to the application.
   int64 time_iota_ms = 3;
 }
+
+message ChainLockParams {
+  tendermint.types.ChainLock initial_chain_lock = 1 [(gogoproto.nullable) = false];
+}
+
 
 // EvidenceParams determine how we handle evidence of malfeasance.
 message EvidenceParams {
