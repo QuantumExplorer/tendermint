@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -55,7 +56,7 @@ func (p *Proposal) ValidateBasic() error {
 	if p.Height < 0 {
 		return errors.New("negative Height")
 	}
-	if p.CoreChainLockedHeight == 0 {
+	if p.CoreChainLockedHeight == math.MaxUint32 {
 		return errors.New("core height not set")
 	}
 	if p.Round < 0 {

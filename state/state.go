@@ -367,7 +367,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 	var initialChainLock types.ChainLock
 
-	initialChainLock.PopulateFromChainLockParams(genDoc.ConsensusParams.ChainLock)
+	initialChainLock.PopulateFromProto(genDoc.GenesisChainLock)
 
 	return State{
 		Version:       InitStateVersion,

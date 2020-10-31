@@ -40,7 +40,7 @@ type GenesisDoc struct {
 	GenesisTime      time.Time                `json:"genesis_time"`
 	ChainID          string                   `json:"chain_id"`
 	InitialHeight    int64                    `json:"initial_height"`
-	GenesisChainLock tmproto.ChainLock        `json:"genesis_chain_lock"`
+	GenesisChainLock *tmproto.ChainLock       `json:"genesis_chain_lock"`
 	ConsensusParams  *tmproto.ConsensusParams `json:"consensus_params,omitempty"`
 	Validators       []GenesisValidator       `json:"validators,omitempty"`
 	AppHash          tmbytes.HexBytes         `json:"app_hash"`

@@ -159,6 +159,10 @@ func (blockExec *BlockExecutor) ApplyBlock(
 
 	// validate the validator updates and convert to tendermint types
 	abciValUpdates := abciResponses.EndBlock.ValidatorUpdates
+	nextChainLock, err := types.ChainLockFromProto(abciResponses.EndBlock.NextChainLockUpdate)
+	if err != nil {
+		return state, 0, fmt.Errorf("error in chain lock from proto: %v", err)
+	}
 	err = validateValidatorUpdates(abciValUpdates, state.ConsensusParams.Validator)
 	if err != nil {
 		return state, 0, fmt.Errorf("error in validator updates: %v", err)
@@ -172,7 +176,7 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	}
 
 	// Update the state with the block and responses.
-	state, err = updateState(state, blockID, &block.Header, block.ChainLock, abciResponses, validatorUpdates)
+	state, err = updateState(state, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -401,7 +405,8 @@ func updateState(
 	state State,
 	blockID types.BlockID,
 	header *types.Header,
-	chainLock *types.ChainLock,
+	lastChainLock *types.ChainLock,
+	nextChainLock *types.ChainLock,
 	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
 ) (State, error) {
@@ -443,8 +448,12 @@ func updateState(
 
 	nextVersion := state.Version
 
-	if chainLock == nil {
-		chainLock = &state.LastChainLock
+	if lastChainLock == nil {
+		lastChainLock = &state.LastChainLock
+	}
+
+	if nextChainLock == nil {
+		nextChainLock = &state.NextChainLock
 	}
 
 	// NOTE: the AppHash has not been populated.
@@ -456,8 +465,8 @@ func updateState(
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
 		LastBlockTime:                    header.Time,
-		LastChainLock: 					  *chainLock,
-		NextChainLock:                    state.NextChainLock.Copy(),
+		LastChainLock: 					  *lastChainLock,
+		NextChainLock:                    *nextChainLock,
 		NextValidators:                   nValSet,
 		Validators:                       state.NextValidators.Copy(),
 		LastValidators:                   state.Validators.Copy(),

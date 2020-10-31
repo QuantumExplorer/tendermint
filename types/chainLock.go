@@ -36,11 +36,15 @@ func (cl ChainLock) Copy() ChainLock {
 	}
 }
 
-func (cl *ChainLock) PopulateFromChainLockParams(clp tmproto.ChainLockParams) error {
+func (cl *ChainLock) PopulateFromProto(clp *tmproto.ChainLock) error {
 
-	cl.CoreBlockHeight = clp.InitialChainLock.CoreBlockHeight
-	cl.CoreBlockHash = clp.InitialChainLock.CoreBlockHash
-	cl.Signature = clp.InitialChainLock.Signature
+	if clp == nil {
+		return fmt.Errorf("chain lock is empty")
+	}
+
+	cl.CoreBlockHeight = clp.CoreBlockHeight
+	cl.CoreBlockHash = clp.CoreBlockHash
+	cl.Signature = clp.Signature
 
 	return cl.ValidateBasic()
 }
