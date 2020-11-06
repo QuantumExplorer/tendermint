@@ -157,16 +157,16 @@ func TestSignerProposal(t *testing.T) {
 
 func TestSignerVote(t *testing.T) {
 	for _, tc := range getSignerTestCases(t) {
-		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
-		valAddr := tmrand.Bytes(crypto.AddressSize)
+		stateHash := tmrand.Bytes(tmhash.Size)
+		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		want := &types.Vote{
 			Type:             tmproto.PrecommitType,
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
 		}
 
@@ -175,8 +175,8 @@ func TestSignerVote(t *testing.T) {
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
 		}
 
@@ -195,22 +195,23 @@ func TestSignerVote(t *testing.T) {
 		require.NoError(t, tc.mockPV.SignVote(tc.chainID, want.ToProto()))
 		require.NoError(t, tc.signerClient.SignVote(tc.chainID, have.ToProto()))
 
-		assert.Equal(t, want.Signature, have.Signature)
+		assert.Equal(t, want.BlockSignature, have.BlockSignature)
+		assert.Equal(t, want.StateSignature, have.StateSignature)
 	}
 }
 
 func TestSignerVoteResetDeadline(t *testing.T) {
 	for _, tc := range getSignerTestCases(t) {
-		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
-		valAddr := tmrand.Bytes(crypto.AddressSize)
+		stateHash := tmrand.Bytes(tmhash.Size)
+		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		want := &types.Vote{
 			Type:             tmproto.PrecommitType,
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
 		}
 
@@ -219,8 +220,8 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
 		}
 
@@ -240,7 +241,8 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 
 		require.NoError(t, tc.mockPV.SignVote(tc.chainID, want.ToProto()))
 		require.NoError(t, tc.signerClient.SignVote(tc.chainID, have.ToProto()))
-		assert.Equal(t, want.Signature, have.Signature)
+		assert.Equal(t, want.BlockSignature, have.BlockSignature)
+		assert.Equal(t, want.StateSignature, have.StateSignature)
 
 		// TODO(jleni): Clarify what is actually being tested
 
@@ -249,22 +251,23 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 
 		require.NoError(t, tc.mockPV.SignVote(tc.chainID, want.ToProto()))
 		require.NoError(t, tc.signerClient.SignVote(tc.chainID, have.ToProto()))
-		assert.Equal(t, want.Signature, have.Signature)
+		assert.Equal(t, want.BlockSignature, have.BlockSignature)
+		assert.Equal(t, want.StateSignature, have.StateSignature)
 	}
 }
 
 func TestSignerVoteKeepAlive(t *testing.T) {
 	for _, tc := range getSignerTestCases(t) {
-		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
-		valAddr := tmrand.Bytes(crypto.AddressSize)
+		stateHash := tmrand.Bytes(tmhash.Size)
+		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		want := &types.Vote{
 			Type:             tmproto.PrecommitType,
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
 		}
 
@@ -273,8 +276,8 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
 		}
 
@@ -302,7 +305,8 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 		require.NoError(t, tc.mockPV.SignVote(tc.chainID, want.ToProto()))
 		require.NoError(t, tc.signerClient.SignVote(tc.chainID, have.ToProto()))
 
-		assert.Equal(t, want.Signature, have.Signature)
+		assert.Equal(t, want.BlockSignature, have.BlockSignature)
+		assert.Equal(t, want.StateSignature, have.StateSignature)
 	}
 }
 
@@ -324,7 +328,6 @@ func TestSignerSignProposalErrors(t *testing.T) {
 			}
 		})
 
-		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		proposal := &types.Proposal{
 			Type:      tmproto.ProposalType,
@@ -333,7 +336,6 @@ func TestSignerSignProposalErrors(t *testing.T) {
 			Round:     2,
 			POLRound:  2,
 			BlockID:   types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp: ts,
 			Signature: []byte("signature"),
 		}
 
@@ -350,18 +352,19 @@ func TestSignerSignProposalErrors(t *testing.T) {
 
 func TestSignerSignVoteErrors(t *testing.T) {
 	for _, tc := range getSignerTestCases(t) {
-		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
-		valAddr := tmrand.Bytes(crypto.AddressSize)
+		stateHash := tmrand.Bytes(tmhash.Size)
+		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		vote := &types.Vote{
 			Type:             tmproto.PrecommitType,
 			Height:           1,
 			Round:            2,
 			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp:        ts,
-			ValidatorAddress: valAddr,
+			StateID:          types.StateID{LastAppHash: stateHash},
+			ValidatorProTxHash: valProTxHash,
 			ValidatorIndex:   1,
-			Signature:        []byte("signature"),
+			BlockSignature:   []byte("signature"),
+			StateSignature:   []byte("stateSignature"),
 		}
 
 		// Replace signer service privval with one that always fails
@@ -432,8 +435,7 @@ func TestSignerUnexpectedResponse(t *testing.T) {
 			}
 		})
 
-		ts := time.Now()
-		want := &types.Vote{Timestamp: ts, Type: tmproto.PrecommitType}
+		want := &types.Vote{Type: tmproto.PrecommitType}
 
 		e := tc.signerClient.SignVote(tc.chainID, want.ToProto())
 		assert.EqualError(t, e, "empty response")

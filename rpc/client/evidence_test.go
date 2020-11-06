@@ -36,10 +36,16 @@ func newEvidence(t *testing.T, val *privval.FilePV,
 	v := vote.ToProto()
 	v2 := vote2.ToProto()
 
-	vote.Signature, err = val.Key.PrivKey.Sign(types.VoteSignBytes(chainID, v))
+	vote.BlockSignature, err = val.Key.PrivKey.Sign(types.VoteBlockSignBytes(chainID, v))
 	require.NoError(t, err)
 
-	vote2.Signature, err = val.Key.PrivKey.Sign(types.VoteSignBytes(chainID, v2))
+	vote2.BlockSignature, err = val.Key.PrivKey.Sign(types.VoteBlockSignBytes(chainID, v2))
+	require.NoError(t, err)
+
+	vote.StateSignature, err = val.Key.PrivKey.Sign(types.VoteStateSignBytes(chainID, v))
+	require.NoError(t, err)
+
+	vote2.StateSignature, err = val.Key.PrivKey.Sign(types.VoteStateSignBytes(chainID, v2))
 	require.NoError(t, err)
 
 	return types.NewDuplicateVoteEvidence(vote, vote2)
@@ -51,18 +57,20 @@ func makeEvidences(
 	chainID string,
 ) (correct *types.DuplicateVoteEvidence, fakes []*types.DuplicateVoteEvidence) {
 	vote := types.Vote{
-		ValidatorAddress: val.Key.Address,
+		ValidatorProTxHash: val.Key.ProTxHash,
 		ValidatorIndex:   0,
 		Height:           1,
 		Round:            0,
 		Type:             tmproto.PrevoteType,
-		Timestamp:        defaultTestTime,
 		BlockID: types.BlockID{
 			Hash: tmhash.Sum(tmrand.Bytes(tmhash.Size)),
 			PartSetHeader: types.PartSetHeader{
 				Total: 1000,
 				Hash:  tmhash.Sum([]byte("partset")),
 			},
+		},
+		StateID: types.StateID{
+			LastAppHash: tmhash.Sum(tmrand.Bytes(tmhash.Size)),
 		},
 	}
 
@@ -75,7 +83,7 @@ func makeEvidences(
 	// different address
 	{
 		v := vote2
-		v.ValidatorAddress = []byte("some_address")
+		v.ValidatorProTxHash = []byte("some_pro_tx_hash")
 		fakes = append(fakes, newEvidence(t, val, &vote, &v, chainID))
 	}
 

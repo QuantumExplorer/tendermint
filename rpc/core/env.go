@@ -79,6 +79,7 @@ type Environment struct {
 	P2PTransport   transport
 
 	// objects
+	ProTxHash        crypto.ProTxHash
 	PubKey           crypto.PubKey
 	GenDoc           *types.GenesisDoc // cache the genesis structure
 	TxIndexer        txindex.TxIndexer

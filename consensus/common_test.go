@@ -91,23 +91,23 @@ func (vs *validatorStub) signVote(
 	hash []byte,
 	header types.PartSetHeader) (*types.Vote, error) {
 
-	pubKey, err := vs.PrivValidator.GetPubKey()
+	proTxHash, err := vs.PrivValidator.GetProTxHash()
 	if err != nil {
-		return nil, fmt.Errorf("can't get pubkey: %w", err)
+		return nil, fmt.Errorf("can't get proTxHash: %w", err)
 	}
 
 	vote := &types.Vote{
-		ValidatorIndex:   vs.Index,
-		ValidatorAddress: pubKey.Address(),
-		Height:           vs.Height,
-		Round:            vs.Round,
-		Timestamp:        tmtime.Now(),
-		Type:             voteType,
-		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
+		ValidatorIndex:     vs.Index,
+		ValidatorProTxHash: proTxHash,
+		Height:             vs.Height,
+		Round:              vs.Round,
+		Type:               voteType,
+		BlockID:            types.BlockID{Hash: hash, PartSetHeader: header},
 	}
 	v := vote.ToProto()
 	err = vs.PrivValidator.SignVote(config.ChainID(), v)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 
 	return vote, err
 }
@@ -231,11 +231,10 @@ func signAddVotes(
 
 func validatePrevote(t *testing.T, cs *State, round int32, privVal *validatorStub, blockHash []byte) {
 	prevotes := cs.Votes.Prevotes(round)
-	pubKey, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	require.NoError(t, err)
-	address := pubKey.Address()
 	var vote *types.Vote
-	if vote = prevotes.GetByAddress(address); vote == nil {
+	if vote = prevotes.GetByProTxHash(proTxHash); vote == nil {
 		panic("Failed to find prevote from validator")
 	}
 	if blockHash == nil {
@@ -251,11 +250,10 @@ func validatePrevote(t *testing.T, cs *State, round int32, privVal *validatorStu
 
 func validateLastPrecommit(t *testing.T, cs *State, privVal *validatorStub, blockHash []byte) {
 	votes := cs.LastCommit
-	pv, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	require.NoError(t, err)
-	address := pv.Address()
 	var vote *types.Vote
-	if vote = votes.GetByAddress(address); vote == nil {
+	if vote = votes.GetByProTxHash(proTxHash); vote == nil {
 		panic("Failed to find precommit from validator")
 	}
 	if !bytes.Equal(vote.BlockID.Hash, blockHash) {
@@ -273,11 +271,10 @@ func validatePrecommit(
 	lockedBlockHash []byte,
 ) {
 	precommits := cs.Votes.Precommits(thisRound)
-	pv, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	require.NoError(t, err)
-	address := pv.Address()
 	var vote *types.Vote
-	if vote = precommits.GetByAddress(address); vote == nil {
+	if vote = precommits.GetByProTxHash(proTxHash); vote == nil {
 		panic("Failed to find precommit from validator")
 	}
 
@@ -328,7 +325,7 @@ func validatePrevoteAndPrecommit(
 	cs.mtx.Unlock()
 }
 
-func subscribeToVoter(cs *State, addr []byte) <-chan tmpubsub.Message {
+func subscribeToVoter(cs *State, proTxHash []byte) <-chan tmpubsub.Message {
 	votesSub, err := cs.eventBus.SubscribeUnbuffered(context.Background(), testSubscriber, types.EventQueryVote)
 	if err != nil {
 		panic(fmt.Sprintf("failed to subscribe %s to %v", testSubscriber, types.EventQueryVote))
@@ -338,7 +335,7 @@ func subscribeToVoter(cs *State, addr []byte) <-chan tmpubsub.Message {
 		for msg := range votesSub.Out() {
 			vote := msg.Data().(types.EventDataVote)
 			// we only fire for our own votes
-			if bytes.Equal(addr, vote.Vote.ValidatorAddress) {
+			if bytes.Equal(proTxHash, vote.Vote.ValidatorProTxHash) {
 				ch <- msg
 			}
 		}
@@ -784,6 +781,7 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
 			Power:  val.VotingPower,
+			ProTxHash: val.ProTxHash,
 		}
 		privValidators[i] = privVal
 	}

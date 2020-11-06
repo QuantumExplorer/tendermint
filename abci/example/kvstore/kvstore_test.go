@@ -142,8 +142,8 @@ func TestValUpdates(t *testing.T) {
 	// add some validators
 	v1, v2 = vals[nInit], vals[nInit+1]
 	diff := []types.ValidatorUpdate{v1, v2}
-	tx1 := MakeValSetChangeTx(v1.PubKey, v1.Power)
-	tx2 := MakeValSetChangeTx(v2.PubKey, v2.Power)
+	tx1 := MakeValSetChangeTx(v1.ProTxHash, v1.PubKey, v1.Power)
+	tx2 := MakeValSetChangeTx(v2.ProTxHash, v2.PubKey, v2.Power)
 
 	makeApplyBlock(t, kvstore, 1, diff, tx1, tx2)
 
@@ -156,9 +156,9 @@ func TestValUpdates(t *testing.T) {
 	v2.Power = 0
 	v3.Power = 0
 	diff = []types.ValidatorUpdate{v1, v2, v3}
-	tx1 = MakeValSetChangeTx(v1.PubKey, v1.Power)
-	tx2 = MakeValSetChangeTx(v2.PubKey, v2.Power)
-	tx3 := MakeValSetChangeTx(v3.PubKey, v3.Power)
+	tx1 = MakeValSetChangeTx(v1.ProTxHash, v1.PubKey, v1.Power)
+	tx2 = MakeValSetChangeTx(v2.ProTxHash, v2.PubKey, v2.Power)
+	tx3 := MakeValSetChangeTx(v3.ProTxHash, v3.PubKey, v3.Power)
 
 	makeApplyBlock(t, kvstore, 2, diff, tx1, tx2, tx3)
 
@@ -174,7 +174,7 @@ func TestValUpdates(t *testing.T) {
 		v1.Power = 5
 	}
 	diff = []types.ValidatorUpdate{v1}
-	tx1 = MakeValSetChangeTx(v1.PubKey, v1.Power)
+	tx1 = MakeValSetChangeTx(v1.ProTxHash, v1.PubKey, v1.Power)
 
 	makeApplyBlock(t, kvstore, 3, diff, tx1)
 

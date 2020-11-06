@@ -25,7 +25,7 @@ func Ed25519ValidatorUpdate(pk []byte, power int64) ValidatorUpdate {
 	}
 }
 
-func BLS12381ValidatorUpdate(pk []byte, power int64) ValidatorUpdate {
+func BLS12381ValidatorUpdate(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 	pke := bls12381.PubKey(pk)
 	pkp, err := cryptoenc.PubKeyToProto(pke)
 	if err != nil {
@@ -36,5 +36,6 @@ func BLS12381ValidatorUpdate(pk []byte, power int64) ValidatorUpdate {
 		// Address:
 		PubKey: pkp,
 		Power:  power,
+		ProTxHash: proTxHash,
 	}
 }

@@ -158,7 +158,7 @@ func (evpool *Pool) AddEvidenceFromConsensus(ev types.Evidence, time time.Time, 
 
 	switch ev := ev.(type) {
 	case *types.DuplicateVoteEvidence:
-		_, val := valSet.GetByAddress(ev.VoteA.ValidatorAddress)
+		_, val := valSet.GetByProTxHash(ev.VoteA.ValidatorProTxHash)
 		vals = append(vals, val)
 		totalPower = valSet.TotalVotingPower()
 	default:
@@ -412,7 +412,7 @@ func (evpool *Pool) fastCheck(ev types.Evidence) bool {
 	OUTER:
 		for _, sig := range lcae.ConflictingBlock.Commit.Signatures {
 			for _, val := range evInfo.Validators {
-				if bytes.Equal(val.Address, sig.ValidatorAddress) {
+				if bytes.Equal(val.ProTxHash, sig.ValidatorProTxHash) {
 					continue OUTER
 				}
 			}

@@ -42,8 +42,9 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	// we are simulating a duplicate vote attack where all the validators in the conflictingVals set
 	// vote twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 1, voteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -61,9 +62,10 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 		Commit: &types.Commit{},
 	}
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(trustedHeader.AppHash)
 	vals, privVals := types.RandValidatorSet(3, 8)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), vals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, privVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, privVals)
 	require.NoError(t, err)
 	trustedSignedHeader := &types.SignedHeader{
 		Header: trustedHeader,
@@ -105,9 +107,9 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 	assert.Equal(t, 1, len(pendingEvs))
 
-	pubKey, err := newPrivVal.GetPubKey()
+	proTxHash, err := newPrivVal.GetProTxHash()
 	require.NoError(t, err)
-	lastCommit := makeCommit(state.LastBlockHeight, pubKey.Address())
+	lastCommit := makeCommit(state.LastBlockHeight, proTxHash)
 	chainLock := types.NewMockChainLock(1)
 	block := types.MakeBlock(state.LastBlockHeight, chainLock.CoreBlockHeight, &chainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 
@@ -145,8 +147,9 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	// we are simulating a duplicate vote attack where all the validators in the conflictingVals set
 	// except the last validator vote twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 1, voteSet, conflictingPrivVals[:4], defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 1, voteSet, conflictingPrivVals[:4])
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -160,8 +163,9 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(trustedHeader.AppHash)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, conflictingPrivVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	trustedSignedHeader := &types.SignedHeader{
 		Header: trustedHeader,
@@ -210,9 +214,9 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 	assert.Equal(t, 1, len(pendingEvs))
 
-	pubKey, err := conflictingPrivVals[0].GetPubKey()
+	proTxHash, err := conflictingPrivVals[0].GetProTxHash()
 	require.NoError(t, err)
-	lastCommit := makeCommit(state.LastBlockHeight, pubKey.Address())
+	lastCommit := makeCommit(state.LastBlockHeight, proTxHash)
 	chainLock := types.NewMockChainLock(1)
 	block := types.MakeBlock(state.LastBlockHeight, chainLock.CoreBlockHeight, &chainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 
@@ -252,8 +256,9 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	// we are simulating an amnesia attack where all the validators in the conflictingVals set
 	// except the last validator vote twice. However this time the commits are of different rounds.
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 0, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 0, voteSet, conflictingPrivVals, defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 0, voteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -267,8 +272,9 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(trustedHeader.AppHash)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, conflictingPrivVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	trustedSignedHeader := &types.SignedHeader{
 		Header: trustedHeader,
@@ -308,9 +314,9 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 	assert.Equal(t, 1, len(pendingEvs))
 
-	pubKey, err := conflictingPrivVals[0].GetPubKey()
+	proTxHash, err := conflictingPrivVals[0].GetProTxHash()
 	require.NoError(t, err)
-	lastCommit := makeCommit(state.LastBlockHeight, pubKey.Address())
+	lastCommit := makeCommit(state.LastBlockHeight, proTxHash)
 	chainLock := types.NewMockChainLock(1)
 	block := types.MakeBlock(state.LastBlockHeight, chainLock.CoreBlockHeight, &chainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 
@@ -340,32 +346,32 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	blockID3 := makeBlockID([]byte("blockhash"), 10000, []byte("partshash"))
 	blockID4 := makeBlockID([]byte("blockhash"), 10000, []byte("partshash2"))
 
+	stateID := makeStateID([]byte("lastapphash"))
+
 	const chainID = "mychain"
 
-	vote1 := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime)
+	vote1 := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID)
 	v1 := vote1.ToProto()
 	err := val.SignVote(chainID, v1)
 	require.NoError(t, err)
-	badVote := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime)
+	badVote := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID)
 	bv := badVote.ToProto()
 	err = val2.SignVote(chainID, bv)
 	require.NoError(t, err)
 
-	vote1.Signature = v1.Signature
-	badVote.Signature = bv.Signature
+	vote1.BlockSignature = v1.BlockSignature
+	badVote.BlockSignature = bv.BlockSignature
 
 	cases := []voteData{
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, defaultEvidenceTime), true}, // different block ids
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID3, defaultEvidenceTime), true},
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID4, defaultEvidenceTime), true},
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime), false},     // wrong block id
-		{vote1, makeVote(t, val, "mychain2", 0, 10, 2, 1, blockID2, defaultEvidenceTime), false}, // wrong chain id
-		{vote1, makeVote(t, val, chainID, 0, 11, 2, 1, blockID2, defaultEvidenceTime), false},    // wrong height
-		{vote1, makeVote(t, val, chainID, 0, 10, 3, 1, blockID2, defaultEvidenceTime), false},    // wrong round
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 2, blockID2, defaultEvidenceTime), false},    // wrong step
-		{vote1, makeVote(t, val2, chainID, 0, 10, 2, 1, blockID2, defaultEvidenceTime), false},   // wrong validator
-		// a different vote time doesn't matter
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)), true},
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, stateID), true}, // different block ids
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID3, stateID), true},
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID4, stateID), true},
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID), false},     // wrong block id
+		{vote1, makeVote(t, val, "mychain2", 0, 10, 2, 1, blockID2, stateID), false}, // wrong chain id
+		{vote1, makeVote(t, val, chainID, 0, 11, 2, 1, blockID2, stateID), false},    // wrong height
+		{vote1, makeVote(t, val, chainID, 0, 10, 3, 1, blockID2, stateID), false},    // wrong round
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 2, blockID2, stateID), false},    // wrong step
+		{vote1, makeVote(t, val2, chainID, 0, 10, 2, 1, blockID2, stateID), false},   // wrong validator
 		{vote1, badVote, false}, // signed by wrong key
 	}
 
@@ -405,17 +411,17 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 
 func makeVote(
 	t *testing.T, val types.PrivValidator, chainID string, valIndex int32, height int64,
-	round int32, step int, blockID types.BlockID, time time.Time) *types.Vote {
-	pubKey, err := val.GetPubKey()
+	round int32, step int, blockID types.BlockID, stateID types.StateID) *types.Vote {
+	proTxHash, err := val.GetProTxHash()
 	require.NoError(t, err)
 	v := &types.Vote{
-		ValidatorAddress: pubKey.Address(),
+		ValidatorProTxHash: proTxHash,
 		ValidatorIndex:   valIndex,
 		Height:           height,
 		Round:            round,
 		Type:             tmproto.SignedMsgType(step),
 		BlockID:          blockID,
-		Timestamp:        time,
+		StateID:          stateID,
 	}
 
 	vpb := v.ToProto()
@@ -423,7 +429,8 @@ func makeVote(
 	if err != nil {
 		panic(err)
 	}
-	v.Signature = vpb.Signature
+	v.BlockSignature = vpb.BlockSignature
+	v.StateSignature = vpb.StateSignature
 	return v
 }
 
@@ -442,7 +449,7 @@ func makeHeaderRandom(height int64) *types.Header {
 		AppHash:            crypto.CRandBytes(tmhash.Size),
 		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
-		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+		ProposerProTxHash:  crypto.CRandBytes(crypto.DefaultHashSize),
 	}
 }
 
@@ -461,3 +468,14 @@ func makeBlockID(hash []byte, partSetSize uint32, partSetHash []byte) types.Bloc
 		},
 	}
 }
+
+func makeStateID(lastAppHash []byte) types.StateID {
+	var (
+		ah   = make([]byte, tmhash.Size)
+	)
+	copy(ah, lastAppHash)
+	return types.StateID{
+		LastAppHash: ah,
+	}
+}
+

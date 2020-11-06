@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/tendermint/tendermint/crypto"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -32,7 +31,7 @@ func MaxVoteBytesForKeyType(keyType crypto.KeyType) int64 {
 var (
 	ErrVoteUnexpectedStep            = errors.New("unexpected step")
 	ErrVoteInvalidValidatorIndex     = errors.New("invalid validator index")
-	ErrVoteInvalidValidatorAddress   = errors.New("invalid validator address")
+	ErrVoteInvalidValidatorProTxHash = errors.New("invalid validator pro_tx_hash")
 	ErrVoteInvalidSignature          = errors.New("invalid signature")
 	ErrVoteInvalidBlockHash          = errors.New("invalid block hash")
 	ErrVoteNonDeterministicSignature = errors.New("non-deterministic signature")
@@ -45,7 +44,7 @@ type ErrVoteConflictingVotes struct {
 }
 
 func (err *ErrVoteConflictingVotes) Error() string {
-	return fmt.Sprintf("conflicting votes from validator %X", err.VoteA.ValidatorAddress)
+	return fmt.Sprintf("conflicting votes from validator %X", err.VoteA.ValidatorProTxHash)
 }
 
 func NewConflictingVoteError(vote1, vote2 *Vote) *ErrVoteConflictingVotes {
@@ -58,17 +57,20 @@ func NewConflictingVoteError(vote1, vote2 *Vote) *ErrVoteConflictingVotes {
 // Address is hex bytes.
 type Address = crypto.Address
 
+type ProTxHash = crypto.ProTxHash
+
 // Vote represents a prevote, precommit, or commit vote from validators for
 // consensus.
 type Vote struct {
-	Type             tmproto.SignedMsgType `json:"type"`
-	Height           int64                 `json:"height"`
-	Round            int32                 `json:"round"`    // assume there will not be greater than 2_147_483_647 rounds
-	BlockID          BlockID               `json:"block_id"` // zero if vote is nil.
-	Timestamp        time.Time             `json:"timestamp"`
-	ValidatorAddress Address               `json:"validator_address"`
-	ValidatorIndex   int32                 `json:"validator_index"`
-	Signature        []byte                `json:"signature"`
+	Type               tmproto.SignedMsgType `json:"type"`
+	Height             int64                 `json:"height"`
+	Round              int32                 `json:"round"`    // assume there will not be greater than 2_147_483_647 rounds
+	BlockID            BlockID               `json:"block_id"` // zero if vote is nil.
+	StateID			   StateID			     `json:"state_id"`
+	ValidatorProTxHash ProTxHash             `json:"validator_pro_tx_hash"`
+	ValidatorIndex     int32                 `json:"validator_index"`
+	BlockSignature     []byte                `json:"block_signature"`
+	StateSignature     []byte                `json:"state_signature"`
 }
 
 // CommitSig converts the Vote to a CommitSig.
@@ -88,14 +90,14 @@ func (vote *Vote) CommitSig() CommitSig {
 	}
 
 	return CommitSig{
-		BlockIDFlag:      blockIDFlag,
-		ValidatorAddress: vote.ValidatorAddress,
-		Timestamp:        vote.Timestamp,
-		Signature:        vote.Signature,
+		BlockIDFlag:           blockIDFlag,
+		ValidatorProTxHash:    vote.ValidatorProTxHash,
+		BlockSignature:        vote.BlockSignature,
+		StateSignature:        vote.StateSignature,
 	}
 }
 
-// VoteSignBytes returns the proto-encoding of the canonicalized Vote, for
+// VoteBlockSignBytes returns the proto-encoding of the canonicalized Vote, for
 // signing. Panics is the marshaling fails.
 //
 // The encoded Protobuf message is varint length-prefixed (using MarshalDelimited)
@@ -103,8 +105,26 @@ func (vote *Vote) CommitSig() CommitSig {
 // devices that rely on this encoding.
 //
 // See CanonicalizeVote
-func VoteSignBytes(chainID string, vote *tmproto.Vote) []byte {
+func VoteBlockSignBytes(chainID string, vote *tmproto.Vote) []byte {
 	pb := CanonicalizeVote(chainID, vote)
+	bz, err := protoio.MarshalDelimited(&pb)
+	if err != nil {
+		panic(err)
+	}
+
+	return bz
+}
+
+// VoteStateSignBytes returns the proto-encoding of the canonicalized last app hash state, for
+// signing. Panics is the marshaling fails.
+//
+// The encoded Protobuf message is varint length-prefixed (using MarshalDelimited)
+// for backwards-compatibility with the Amino encoding, due to e.g. hardware
+// devices that rely on this encoding.
+//
+// See CanonicalizeVote
+func VoteStateSignBytes(chainID string, vote *tmproto.Vote) []byte {
+	pb := CanonicalizeStateVote(vote)
 	bz, err := protoio.MarshalDelimited(&pb)
 	if err != nil {
 		panic(err)
@@ -144,25 +164,31 @@ func (vote *Vote) String() string {
 		panic("Unknown vote type")
 	}
 
-	return fmt.Sprintf("Vote{%v:%X %v/%02d/%v(%v) %X %X @ %s}",
+	return fmt.Sprintf("Vote{%v:%X %v/%02d/%v(%v) %X %X %X %X}",
 		vote.ValidatorIndex,
-		tmbytes.Fingerprint(vote.ValidatorAddress),
+		tmbytes.Fingerprint(vote.ValidatorProTxHash),
 		vote.Height,
 		vote.Round,
 		vote.Type,
 		typeString,
 		tmbytes.Fingerprint(vote.BlockID.Hash),
-		tmbytes.Fingerprint(vote.Signature),
-		CanonicalTime(vote.Timestamp),
+		tmbytes.Fingerprint(vote.BlockSignature),
+		tmbytes.Fingerprint(vote.StateID.LastAppHash),
+		tmbytes.Fingerprint(vote.StateSignature),
 	)
 }
 
-func (vote *Vote) Verify(chainID string, pubKey crypto.PubKey) error {
-	if !bytes.Equal(pubKey.Address(), vote.ValidatorAddress) {
-		return ErrVoteInvalidValidatorAddress
+func (vote *Vote) Verify(chainID string, pubKey crypto.PubKey, proTxHash crypto.ProTxHash) error {
+	if !bytes.Equal(proTxHash, vote.ValidatorProTxHash) {
+		return ErrVoteInvalidValidatorProTxHash
 	}
 	v := vote.ToProto()
-	if !pubKey.VerifySignature(VoteSignBytes(chainID, v), vote.Signature) {
+	voteBlockSignBytes := VoteBlockSignBytes(chainID, v)
+	voteStateSignBytes := VoteStateSignBytes(chainID, v)
+	if !pubKey.VerifySignature(voteBlockSignBytes, vote.BlockSignature) {
+		return ErrVoteInvalidSignature
+	}
+	if !pubKey.VerifySignature(voteStateSignBytes, vote.StateSignature) {
 		return ErrVoteInvalidSignature
 	}
 	return nil
@@ -188,27 +214,39 @@ func (vote *Vote) ValidateBasic() error {
 		return fmt.Errorf("wrong BlockID: %v", err)
 	}
 
+	if err := vote.StateID.ValidateBasic(); err != nil {
+		return fmt.Errorf("wrong StateID: %v", err)
+	}
+
 	// BlockID.ValidateBasic would not err if we for instance have an empty hash but a
 	// non-empty PartsSetHeader:
 	if !vote.BlockID.IsZero() && !vote.BlockID.IsComplete() {
 		return fmt.Errorf("blockID must be either empty or complete, got: %v", vote.BlockID)
 	}
 
-	if len(vote.ValidatorAddress) != crypto.AddressSize {
-		return fmt.Errorf("expected ValidatorAddress size to be %d bytes, got %d bytes",
-			crypto.AddressSize,
-			len(vote.ValidatorAddress),
+	if len(vote.ValidatorProTxHash) != crypto.DefaultHashSize {
+		return fmt.Errorf("expected ValidatorProTxHash size to be %d bytes, got %d bytes",
+			crypto.DefaultHashSize,
+			len(vote.ValidatorProTxHash),
 		)
 	}
 	if vote.ValidatorIndex < 0 {
 		return errors.New("negative ValidatorIndex")
 	}
-	if len(vote.Signature) == 0 {
-		return errors.New("signature is missing")
+	if len(vote.BlockSignature) == 0 {
+		return errors.New("block signature is missing")
 	}
 
-	if len(vote.Signature) > MaxSignatureSize {
-		return fmt.Errorf("signature is too big (max: %d)", MaxSignatureSize)
+	if len(vote.BlockSignature) > MaxSignatureSize {
+		return fmt.Errorf("block signature is too big (max: %d)", MaxSignatureSize)
+	}
+
+	if len(vote.StateSignature) == 0 {
+		return errors.New("state signature is missing")
+	}
+
+	if len(vote.StateSignature) > MaxSignatureSize {
+		return fmt.Errorf("state signature is too big (max: %d)", MaxSignatureSize)
 	}
 
 	return nil
@@ -222,14 +260,15 @@ func (vote *Vote) ToProto() *tmproto.Vote {
 	}
 
 	return &tmproto.Vote{
-		Type:             vote.Type,
-		Height:           vote.Height,
-		Round:            vote.Round,
-		BlockID:          vote.BlockID.ToProto(),
-		Timestamp:        vote.Timestamp,
-		ValidatorAddress: vote.ValidatorAddress,
-		ValidatorIndex:   vote.ValidatorIndex,
-		Signature:        vote.Signature,
+		Type:               vote.Type,
+		Height:             vote.Height,
+		Round:              vote.Round,
+		BlockID:            vote.BlockID.ToProto(),
+		StateID:            vote.StateID.ToProto(),
+		ValidatorProTxHash: vote.ValidatorProTxHash,
+		ValidatorIndex:     vote.ValidatorIndex,
+		BlockSignature:     vote.BlockSignature,
+		StateSignature:     vote.StateSignature,
 	}
 }
 
@@ -245,15 +284,21 @@ func VoteFromProto(pv *tmproto.Vote) (*Vote, error) {
 		return nil, err
 	}
 
+	stateID, err := StateIDFromProto(&pv.StateID)
+	if err != nil {
+		return nil, err
+	}
+
 	vote := new(Vote)
 	vote.Type = pv.Type
 	vote.Height = pv.Height
 	vote.Round = pv.Round
 	vote.BlockID = *blockID
-	vote.Timestamp = pv.Timestamp
-	vote.ValidatorAddress = pv.ValidatorAddress
+	vote.StateID = *stateID
+	vote.ValidatorProTxHash = pv.ValidatorProTxHash
 	vote.ValidatorIndex = pv.ValidatorIndex
-	vote.Signature = pv.Signature
+	vote.BlockSignature = pv.BlockSignature
+	vote.StateSignature = pv.StateSignature
 
 	return vote, vote.ValidateBasic()
 }

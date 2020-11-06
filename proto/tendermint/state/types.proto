@@ -51,6 +51,9 @@ message State {
   google.protobuf.Timestamp last_block_time = 6
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 
+  tendermint.types.StateID last_state_id     = 17
+  [(gogoproto.nullable) = false, (gogoproto.customname) = "LastStateID"];
+
   tendermint.types.ChainLock last_chain_lock = 7 [(gogoproto.nullable) = false];
   tendermint.types.ChainLock next_chain_lock = 8 [(gogoproto.nullable) = false];
 

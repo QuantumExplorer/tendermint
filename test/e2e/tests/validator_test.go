@@ -56,15 +56,15 @@ func TestValidator_Propose(t *testing.T) {
 		if node.Mode != e2e.ModeValidator {
 			return
 		}
-		address := node.Key.PubKey().Address()
+		proTxHash := node.ProTxHash
 		valSchedule := newValidatorSchedule(*node.Testnet)
 
 		expectCount := 0
 		proposeCount := 0
 		for _, block := range blocks {
-			if bytes.Equal(valSchedule.Set.Proposer.Address, address) {
+			if bytes.Equal(valSchedule.Set.Proposer.Address, proTxHash) {
 				expectCount++
-				if bytes.Equal(block.ProposerAddress, address) {
+				if bytes.Equal(block.ProposerProTxHash, proTxHash) {
 					proposeCount++
 				}
 			}
@@ -86,7 +86,7 @@ func TestValidator_Sign(t *testing.T) {
 		if node.Mode != e2e.ModeValidator {
 			return
 		}
-		address := node.Key.PubKey().Address()
+		proTxHash := node.ProTxHash
 		valSchedule := newValidatorSchedule(*node.Testnet)
 
 		expectCount := 0
@@ -94,12 +94,12 @@ func TestValidator_Sign(t *testing.T) {
 		for _, block := range blocks[1:] { // Skip first block, since it has no signatures
 			signed := false
 			for _, sig := range block.LastCommit.Signatures {
-				if bytes.Equal(sig.ValidatorAddress, address) {
+				if bytes.Equal(sig.ValidatorProTxHash, proTxHash) {
 					signed = true
 					break
 				}
 			}
-			if valSchedule.Set.HasAddress(address) {
+			if valSchedule.Set.HasProTxHash(proTxHash) {
 				expectCount++
 				if signed {
 					signCount++
@@ -156,7 +156,7 @@ func (s *validatorSchedule) Increment(heights int64) {
 func makeVals(valMap map[*e2e.Node]int64) []*types.Validator {
 	vals := make([]*types.Validator, 0, len(valMap))
 	for node, power := range valMap {
-		vals = append(vals, types.NewValidator(node.Key.PubKey(), power))
+		vals = append(vals, types.NewValidator(node.Key.PubKey(), power, node.ProTxHash))
 	}
 	return vals
 }

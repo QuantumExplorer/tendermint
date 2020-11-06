@@ -36,6 +36,7 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
 			Power:  val.VotingPower,
+			ProTxHash: val.ProTxHash,
 		}
 		privValidators[i] = privVal
 	}
@@ -52,27 +53,29 @@ func makeVote(
 	t *testing.T,
 	header *types.Header,
 	blockID types.BlockID,
+	stateID types.StateID,
 	valset *types.ValidatorSet,
 	privVal types.PrivValidator) *types.Vote {
 
-	pubKey, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	require.NoError(t, err)
 
-	valIdx, _ := valset.GetByAddress(pubKey.Address())
+	valIdx, _ := valset.GetByProTxHash(proTxHash)
 	vote := &types.Vote{
-		ValidatorAddress: pubKey.Address(),
-		ValidatorIndex:   valIdx,
-		Height:           header.Height,
-		Round:            1,
-		Timestamp:        tmtime.Now(),
-		Type:             tmproto.PrecommitType,
-		BlockID:          blockID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     valIdx,
+		Height:             header.Height,
+		Round:              1,
+		Type:               tmproto.PrecommitType,
+		BlockID:            blockID,
+		StateID:            stateID,
 	}
 
 	vpb := vote.ToProto()
 
 	_ = privVal.SignVote(header.ChainID, vpb)
-	vote.Signature = vpb.Signature
+	vote.BlockSignature = vpb.BlockSignature
+	vote.StateSignature = vpb.StateSignature
 
 	return vote
 }
@@ -124,13 +127,13 @@ func newBlockchainReactor(
 
 	// let's add some blocks in
 	for blockHeight := int64(1); blockHeight <= maxBlockHeight; blockHeight++ {
-		lastCommit := types.NewCommit(blockHeight-1, 1, types.BlockID{}, nil)
+		lastCommit := types.NewCommit(blockHeight-1, 1, types.BlockID{}, types.StateID{}, nil)
 		if blockHeight > 1 {
 			lastBlockMeta := blockStore.LoadBlockMeta(blockHeight - 1)
 			lastBlock := blockStore.LoadBlock(blockHeight - 1)
 
-			vote := makeVote(t, &lastBlock.Header, lastBlockMeta.BlockID, state.Validators, privVals[0])
-			lastCommit = types.NewCommit(vote.Height, vote.Round, lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
+			vote := makeVote(t, &lastBlock.Header, lastBlockMeta.BlockID, lastBlockMeta.StateID, state.Validators, privVals[0])
+			lastCommit = types.NewCommit(vote.Height, vote.Round, lastBlockMeta.BlockID, lastBlockMeta.StateID, []types.CommitSig{vote.CommitSig()})
 		}
 
 		thisBlock := makeBlock(blockHeight, state, lastCommit)
@@ -356,7 +359,7 @@ func makeTxs(height int64) (txs []types.Tx) {
 }
 
 func makeBlock(height int64, state sm.State, lastCommit *types.Commit) *types.Block {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, state.Validators.GetProposer().Address)
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, state.Validators.GetProposer().ProTxHash)
 	return block
 }
 

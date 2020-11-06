@@ -67,6 +67,7 @@ type State struct {
 	// privValidator pubkey, memoized for the duration of one block
 	// to avoid extra requests to HSM
 	privValidatorPubKey crypto.PubKey
+	privValidatorProTxHash crypto.ProTxHash
 
 	// information about about added votes and block parts are written on this channel
 	// so statistics can be computed by reactor
@@ -432,6 +433,7 @@ var (
 	ErrSignatureFoundInPastBlocks = errors.New("found signature from the same key")
 
 	errPubKeyIsNotSet = errors.New("pubkey is not set. Look for \"Can't get private validator pubkey\" errors")
+	errProTxHashIsNotSet = errors.New("proTxHash is not set. Look for \"Can't get private validator proTxHash\" errors")
 )
 
 //-----------------------------------------------------------------------------
@@ -548,8 +550,8 @@ func (cs *State) SetPrivValidator(priv types.PrivValidator) {
 
 	cs.privValidator = priv
 
-	if err := cs.updatePrivValidatorPubKey(); err != nil {
-		cs.Logger.Error("Can't get private validator pubkey", "err", err)
+	if err := cs.updatePrivValidatorPubKeyAndProTxHash(); err != nil {
+		cs.Logger.Error("Can't get private validator pubkey and proTxHash", "err", err)
 	}
 }
 
@@ -1177,8 +1179,8 @@ func (cs *State) needProofBlock(height int64) bool {
 	return !bytes.Equal(cs.state.AppHash, lastBlockMeta.Header.AppHash)
 }
 
-func (cs *State) isProposer(address []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().Address, address)
+func (cs *State) isProposer(proTxHash []byte) bool {
+	return bytes.Equal(cs.Validators.GetProposer().ProTxHash, proTxHash)
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int32) {
@@ -1256,7 +1258,7 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	case cs.Height == cs.state.InitialHeight:
 		// We're creating a proposal for the first block.
 		// The commit is empty, but not nil.
-		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
+		commit = types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
 	case cs.LastCommit.HasTwoThirdsMajority():
 		// Make the commit from LastCommit
 		commit = cs.LastCommit.MakeCommit()
@@ -1271,9 +1273,16 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", errPubKeyIsNotSet))
 		return
 	}
-	proposerAddr := cs.privValidatorPubKey.Address()
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr)
+	if cs.privValidatorProTxHash == nil {
+		// If this node is a validator & proposer in the current round, it will
+		// miss the opportunity to create a block.
+		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", errProTxHashIsNotSet))
+		return
+	}
+	proposerProTxHash := cs.privValidatorProTxHash
+
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerProTxHash)
 }
 
 // Enter: any +2/3 prevotes at next round.
@@ -1536,7 +1545,7 @@ func (cs *State) finalizeCommit(height int64) {
 	fail.Fail() // XXX
 
 	// Private validator might have changed it's key pair => refetch pubkey.
-	if err := cs.updatePrivValidatorPubKey(); err != nil {
+	if err := cs.updatePrivValidatorPubKeyAndProTxHash(); err != nil {
 		cs.Logger.Error("Can't get private validator pubkey", "err", err)
 	}
 
@@ -1630,7 +1639,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	)
 	for _, ev := range block.Evidence.Evidence {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
-			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
+			if _, val := cs.Validators.GetByProTxHash(dve.VoteA.ValidatorProTxHash); val != nil {
 				byzantineValidatorsCount++
 				byzantineValidatorsPower += val.VotingPower
 			}
@@ -1756,7 +1765,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 				return false, errPubKeyIsNotSet
 			}
 
-			if bytes.Equal(vote.ValidatorAddress, cs.privValidatorPubKey.Address()) {
+			if bytes.Equal(vote.ValidatorProTxHash, cs.privValidatorProTxHash) {
 				cs.Logger.Error(
 					"Found conflicting vote from ourselves. Did you unsafe_reset a validator?",
 					"height",
@@ -1771,7 +1780,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			if voteErr.VoteA.Height == cs.state.InitialHeight {
 				timestamp = cs.state.LastBlockTime // genesis time
 			} else {
-				timestamp = sm.MedianTime(cs.LastCommit.MakeCommit(), cs.LastValidators)
+				timestamp = cs.RoundState.Proposal.Timestamp
 			}
 			evidenceErr := cs.evpool.AddEvidenceFromConsensus(
 				types.NewDuplicateVoteEvidence(voteErr.VoteA, voteErr.VoteB), timestamp, cs.Validators)
@@ -1811,21 +1820,21 @@ func (cs *State) signVote(
 	if cs.privValidatorPubKey == nil {
 		return nil, errPubKeyIsNotSet
 	}
-	addr := cs.privValidatorPubKey.Address()
-	valIdx, _ := cs.Validators.GetByAddress(addr)
+	proTxHash := cs.privValidatorProTxHash
+	valIdx, _ := cs.Validators.GetByProTxHash(proTxHash)
 
 	vote := &types.Vote{
-		ValidatorAddress: addr,
+		ValidatorProTxHash: proTxHash,
 		ValidatorIndex:   valIdx,
 		Height:           cs.Height,
 		Round:            cs.Round,
-		Timestamp:        cs.voteTime(),
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
+		StateID:          types.StateID{LastAppHash: cs.state.AppHash},
 	}
 	v := vote.ToProto()
 	err := cs.privValidator.SignVote(cs.state.ChainID, v)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
 
 	return vote, err
 }
@@ -1862,7 +1871,7 @@ func (cs *State) signAddVote(msgType tmproto.SignedMsgType, hash []byte, header 
 	}
 
 	// If the node not in the validator set, do nothing.
-	if !cs.Validators.HasAddress(cs.privValidatorPubKey.Address()) {
+	if !cs.Validators.HasProTxHash(cs.privValidatorProTxHash) {
 		return nil
 	}
 
@@ -1882,7 +1891,7 @@ func (cs *State) signAddVote(msgType tmproto.SignedMsgType, hash []byte, header 
 // updatePrivValidatorPubKey get's the private validator public key and
 // memoizes it. This func returns an error if the private validator is not
 // responding or responds with an error.
-func (cs *State) updatePrivValidatorPubKey() error {
+func (cs *State) updatePrivValidatorPubKeyAndProTxHash() error {
 	if cs.privValidator == nil {
 		return nil
 	}
@@ -1891,14 +1900,19 @@ func (cs *State) updatePrivValidatorPubKey() error {
 	if err != nil {
 		return err
 	}
+	proTxHash, err := cs.privValidator.GetProTxHash()
+	if err != nil {
+		return err
+	}
 	cs.privValidatorPubKey = pubKey
+	cs.privValidatorProTxHash = proTxHash
 	return nil
 }
 
 // look back to check existence of the node's consensus votes before joining consensus
 func (cs *State) checkDoubleSigningRisk(height int64) error {
 	if cs.privValidator != nil && cs.privValidatorPubKey != nil && cs.config.DoubleSignCheckHeight > 0 && height > 0 {
-		valAddr := cs.privValidatorPubKey.Address()
+		valProTxHash := cs.privValidatorProTxHash
 		doubleSignCheckHeight := cs.config.DoubleSignCheckHeight
 		if doubleSignCheckHeight > height {
 			doubleSignCheckHeight = height
@@ -1907,7 +1921,7 @@ func (cs *State) checkDoubleSigningRisk(height int64) error {
 			lastCommit := cs.blockStore.LoadSeenCommit(height - i)
 			if lastCommit != nil {
 				for sigIdx, s := range lastCommit.Signatures {
-					if s.BlockIDFlag == types.BlockIDFlagCommit && bytes.Equal(s.ValidatorAddress, valAddr) {
+					if s.BlockIDFlag == types.BlockIDFlagCommit && bytes.Equal(s.ValidatorProTxHash, valProTxHash) {
 						cs.Logger.Info("Found signature from the same key", "sig", s, "idx", sigIdx, "height", height-i)
 						return ErrSignatureFoundInPastBlocks
 					}

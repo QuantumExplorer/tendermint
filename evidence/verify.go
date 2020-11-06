@@ -60,7 +60,7 @@ func (evpool *Pool) verify(evidence types.Evidence) (*info, error) {
 			return nil, fmt.Errorf("verifying duplicate vote evidence: %w", err)
 		}
 
-		_, val := valSet.GetByAddress(ev.VoteA.ValidatorAddress)
+		_, val := valSet.GetByProTxHash(ev.VoteA.ValidatorProTxHash)
 
 		return &info{
 			Evidence:         evidence,
@@ -133,7 +133,7 @@ func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, t
 				" block to be correctly derived yet it wasn't")
 		}
 		// ensure that 2/3 of the validator set did vote for this block
-		if err := e.ConflictingBlock.ValidatorSet.VerifyCommitLight(trustedHeader.ChainID, e.ConflictingBlock.Commit.BlockID,
+		if err := e.ConflictingBlock.ValidatorSet.VerifyCommitLight(trustedHeader.ChainID, e.ConflictingBlock.Commit.BlockID, e.ConflictingBlock.Commit.StateID,
 			e.ConflictingBlock.Height, e.ConflictingBlock.Commit); err != nil {
 			return fmt.Errorf("invalid commit from conflicting block: %w", err)
 		}
@@ -154,10 +154,11 @@ func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, t
 //      - the block ID's must be different
 //      - The signatures must both be valid
 func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet *types.ValidatorSet) error {
-	_, val := valSet.GetByAddress(e.VoteA.ValidatorAddress)
+	_, val := valSet.GetByProTxHash(e.VoteA.ValidatorProTxHash)
 	if val == nil {
-		return fmt.Errorf("address %X was not a validator at height %d", e.VoteA.ValidatorAddress, e.Height())
+		return fmt.Errorf("proTxHash %X was not a validator at height %d", e.VoteA.ValidatorProTxHash, e.Height())
 	}
+	proTxHash := val.ProTxHash
 	pubKey := val.PubKey
 
 	// H/R/S must be the same
@@ -170,10 +171,10 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet 
 	}
 
 	// Address must be the same
-	if !bytes.Equal(e.VoteA.ValidatorAddress, e.VoteB.ValidatorAddress) {
+	if !bytes.Equal(e.VoteA.ValidatorProTxHash, e.VoteB.ValidatorProTxHash) {
 		return fmt.Errorf("validator addresses do not match: %X vs %X",
-			e.VoteA.ValidatorAddress,
-			e.VoteB.ValidatorAddress,
+			e.VoteA.ValidatorProTxHash,
+			e.VoteB.ValidatorProTxHash,
 		)
 	}
 
@@ -185,19 +186,17 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet 
 		)
 	}
 
-	// pubkey must match address (this should already be true, sanity check)
-	addr := e.VoteA.ValidatorAddress
-	if !bytes.Equal(pubKey.Address(), addr) {
-		return fmt.Errorf("address (%X) doesn't match pubkey (%v - %X)",
-			addr, pubKey, pubKey.Address())
+	// proTxHash must match address (this should already be true, sanity check)
+	if !bytes.Equal(proTxHash, e.VoteA.ValidatorProTxHash) {
+		return fmt.Errorf("proTxHash (%X) doesn't match pubkey (%v)", e.VoteA.ValidatorProTxHash, proTxHash)
 	}
 	va := e.VoteA.ToProto()
 	vb := e.VoteB.ToProto()
 	// Signatures must be valid
-	if !pubKey.VerifySignature(types.VoteSignBytes(chainID, va), e.VoteA.Signature) {
+	if !pubKey.VerifySignature(types.VoteBlockSignBytes(chainID, va), e.VoteA.BlockSignature) {
 		return fmt.Errorf("verifying VoteA: %w", types.ErrVoteInvalidSignature)
 	}
-	if !pubKey.VerifySignature(types.VoteSignBytes(chainID, vb), e.VoteB.Signature) {
+	if !pubKey.VerifySignature(types.VoteBlockSignBytes(chainID, vb), e.VoteB.BlockSignature) {
 		return fmt.Errorf("verifying VoteB: %w", types.ErrVoteInvalidSignature)
 	}
 
@@ -232,7 +231,7 @@ func getMaliciousValidators(evidence *types.LightClientAttackEvidence, commonVal
 				continue
 			}
 
-			_, val := commonVals.GetByAddress(commitSig.ValidatorAddress)
+			_, val := commonVals.GetByProTxHash(commitSig.ValidatorProTxHash)
 			if val == nil {
 				// validator wasn't in the common validator set
 				continue
@@ -256,7 +255,7 @@ func getMaliciousValidators(evidence *types.LightClientAttackEvidence, commonVal
 				continue
 			}
 
-			_, val := evidence.ConflictingBlock.ValidatorSet.GetByAddress(sigA.ValidatorAddress)
+			_, val := evidence.ConflictingBlock.ValidatorSet.GetByProTxHash(sigA.ValidatorProTxHash)
 			validators = append(validators, val)
 		}
 		return validators, equivocationType

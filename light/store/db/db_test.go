@@ -188,7 +188,7 @@ func randLightBlock(height int64) *types.LightBlock {
 				AppHash:            crypto.CRandBytes(tmhash.Size),
 				LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 				EvidenceHash:       crypto.CRandBytes(tmhash.Size),
-				ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+				ProposerProTxHash:  crypto.CRandBytes(crypto.DefaultHashSize),
 			},
 			Commit: &types.Commit{},
 		},

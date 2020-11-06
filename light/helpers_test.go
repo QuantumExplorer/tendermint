@@ -10,7 +10,6 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 	"github.com/tendermint/tendermint/version"
 )
 
@@ -74,7 +73,7 @@ func (pkz privKeys) Extend(n int) privKeys {
 func (pkz privKeys) ToValidators(init, inc int64) *types.ValidatorSet {
 	res := make([]*types.Validator, len(pkz))
 	for i, k := range pkz {
-		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc)
+		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc, crypto.CRandBytes(32))
 	}
 	return types.NewValidatorSet(res)
 }
@@ -91,39 +90,55 @@ func (pkz privKeys) signHeader(header *types.Header, valSet *types.ValidatorSet,
 		PartSetHeader: types.PartSetHeader{Total: 1, Hash: crypto.CRandBytes(32)},
 	}
 
+	stateID := types.StateID{
+		LastAppHash: header.AppHash,
+	}
+
 	// Fill in the votes we want.
 	for i := first; i < last && i < len(pkz); i++ {
-		vote := makeVote(header, valSet, pkz[i], blockID)
+		vote := makeVote(header, valSet, pkz[i], blockID, stateID)
 		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
 	}
 
-	return types.NewCommit(header.Height, 1, blockID, commitSigs)
+	return types.NewCommit(header.Height, 1, blockID, stateID, commitSigs)
 }
 
 func makeVote(header *types.Header, valset *types.ValidatorSet,
-	key crypto.PrivKey, blockID types.BlockID) *types.Vote {
+	key crypto.PrivKey, blockID types.BlockID, stateID types.StateID) *types.Vote {
 
 	addr := key.PubKey().Address()
-	idx, _ := valset.GetByAddress(addr)
+	idx, val := valset.GetByAddress(addr)
+	if val == nil {
+		panic("val must exist")
+	}
+	proTxHash := val.ProTxHash
 	vote := &types.Vote{
-		ValidatorAddress: addr,
-		ValidatorIndex:   idx,
-		Height:           header.Height,
-		Round:            1,
-		Timestamp:        tmtime.Now(),
-		Type:             tmproto.PrecommitType,
-		BlockID:          blockID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     idx,
+		Height:             header.Height,
+		Round:              1,
+		Type:               tmproto.PrecommitType,
+		BlockID:            blockID,
+		StateID:            stateID,
 	}
 
 	v := vote.ToProto()
 	// Sign it
-	signBytes := types.VoteSignBytes(header.ChainID, v)
+	signBytes := types.VoteBlockSignBytes(header.ChainID, v)
 	sig, err := key.Sign(signBytes)
 	if err != nil {
 		panic(err)
 	}
 
-	vote.Signature = sig
+	// Sign it
+	stateSignBytes := types.VoteStateSignBytes(header.ChainID, v)
+	sigState, err := key.Sign(stateSignBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	vote.BlockSignature = sig
+	vote.StateSignature = sigState
 
 	return vote
 }
@@ -144,7 +159,7 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 		AppHash:            appHash,
 		ConsensusHash:      consHash,
 		LastResultsHash:    resHash,
-		ProposerAddress:    valset.Validators[0].Address,
+		ProposerProTxHash:    valset.Validators[0].ProTxHash,
 	}
 }
 

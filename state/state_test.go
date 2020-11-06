@@ -3,6 +3,7 @@ package state_test
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"math"
 	"math/big"
@@ -110,7 +111,7 @@ func TestABCIResponsesSaveLoad1(t *testing.T) {
 	abciResponses.DeliverTxs[0] = &abci.ResponseDeliverTx{Data: []byte("foo"), Events: nil}
 	abciResponses.DeliverTxs[1] = &abci.ResponseDeliverTx{Data: []byte("bar"), Log: "ok", Events: nil}
 	abciResponses.EndBlock = &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{
-		types.TM2PB.NewValidatorUpdate(bls12381.GenPrivKey().PubKey(), 10),
+		types.TM2PB.NewValidatorUpdate(bls12381.GenPrivKey().PubKey(), 10, make([]byte, 32)),
 	}}
 
 	err := stateStore.SaveABCIResponses(block.Height, abciResponses)
@@ -368,8 +369,9 @@ func TestProposerFrequency(t *testing.T) {
 			totalVotePower += votePower
 			privVal := types.NewMockPV()
 			pubKey, err := privVal.GetPubKey()
+			proTxHash := tmrand.Bytes(32)
 			require.NoError(t, err)
-			val := types.NewValidator(pubKey, votePower)
+			val := types.NewValidator(pubKey, votePower, proTxHash)
 			val.ProposerPriority = tmrand.Int64()
 			vals[j] = val
 		}
@@ -386,7 +388,8 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 	totalVotePower := int64(0)
 	for i := 0; i < size; i++ {
 		totalVotePower += powers[i]
-		val := types.NewValidator(bls12381.GenPrivKey().PubKey(), powers[i])
+		proTxHash := tmrand.Bytes(32)
+		val := types.NewValidator(bls12381.GenPrivKey().PubKey(), powers[i], proTxHash)
 		val.ProposerPriority = tmrand.Int64()
 		vals[i] = val
 	}
@@ -406,7 +409,7 @@ func testProposerFreq(t *testing.T, caseNum int, valSet *types.ValidatorSet) {
 	freqs := make([]int, N)
 	for i := 0; i < runs; i++ {
 		prop := valSet.GetProposer()
-		idx, _ := valSet.GetByAddress(prop.Address)
+		idx, _ := valSet.GetByProTxHash(prop.ProTxHash)
 		freqs[idx]++
 		valSet.IncrementProposerPriority(1)
 	}
@@ -437,8 +440,9 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 	val1VotingPower := int64(10)
+	val1ProTxHash := crypto.RandProTxHash()
 	val1PubKey := bls12381.GenPrivKey().PubKey()
-	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
+	val1 := &types.Validator{ProTxHash: val1ProTxHash, Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
 
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
 	state.NextValidators = state.Validators
@@ -463,20 +467,21 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	assert.Equal(t, 0+val1VotingPower-curTotal, updatedState.NextValidators.Validators[0].ProposerPriority)
 
 	// add a validator
+	val2ProTxHash := crypto.RandProTxHash()
 	val2PubKey := bls12381.GenPrivKey().PubKey()
 	val2VotingPower := int64(100)
 	fvp, err := cryptoenc.PubKeyToProto(val2PubKey)
 	require.NoError(t, err)
 
-	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val2VotingPower}
+	updateAddVal := abci.ValidatorUpdate{ProTxHash: val2ProTxHash, PubKey: fvp, Power: val2VotingPower}
 	validatorUpdates, err = types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{updateAddVal})
 	assert.NoError(t, err)
 	updatedState2, err := sm.UpdateState(updatedState, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates)
 	assert.NoError(t, err)
 
 	require.Equal(t, len(updatedState2.NextValidators.Validators), 2)
-	_, updatedVal1 := updatedState2.NextValidators.GetByAddress(val1PubKey.Address())
-	_, addedVal2 := updatedState2.NextValidators.GetByAddress(val2PubKey.Address())
+	_, updatedVal1 := updatedState2.NextValidators.GetByProTxHash(val1ProTxHash)
+	_, addedVal2 := updatedState2.NextValidators.GetByProTxHash(val2ProTxHash)
 
 	// adding a validator should not lead to a ProposerPriority equal to zero (unless the combination of averaging and
 	// incrementing would cause so; which is not the case here)
@@ -504,7 +509,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	// Updating a validator does not reset the ProposerPriority to zero:
 	// 1. Add - Val2 VotingPower change to 1 =>
 	updatedVotingPowVal2 := int64(1)
-	updateVal := abci.ValidatorUpdate{PubKey: fvp, Power: updatedVotingPowVal2}
+	updateVal := abci.ValidatorUpdate{ProTxHash: val2ProTxHash, PubKey: fvp, Power: updatedVotingPowVal2}
 	validatorUpdates, err = types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{updateVal})
 	assert.NoError(t, err)
 
@@ -514,10 +519,10 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	assert.NoError(t, err)
 
 	require.Equal(t, len(updatedState3.NextValidators.Validators), 2)
-	_, prevVal1 := updatedState3.Validators.GetByAddress(val1PubKey.Address())
-	_, prevVal2 := updatedState3.Validators.GetByAddress(val2PubKey.Address())
-	_, updatedVal1 = updatedState3.NextValidators.GetByAddress(val1PubKey.Address())
-	_, updatedVal2 := updatedState3.NextValidators.GetByAddress(val2PubKey.Address())
+	_, prevVal1 := updatedState3.Validators.GetByProTxHash(val1ProTxHash)
+	_, prevVal2 := updatedState3.Validators.GetByProTxHash(val2ProTxHash)
+	_, updatedVal1 = updatedState3.NextValidators.GetByProTxHash(val1ProTxHash)
+	_, updatedVal2 := updatedState3.NextValidators.GetByProTxHash(val2ProTxHash)
 
 	// 2. Scale
 	// old prios: v1(10):-38, v2(1):39
@@ -553,8 +558,9 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 	val1VotingPower := int64(10)
+	val1ProTxHash := crypto.RandProTxHash()
 	val1PubKey := bls12381.GenPrivKey().PubKey()
-	val1 := &types.Validator{Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
+	val1 := &types.Validator{ProTxHash: val1ProTxHash, Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
 
 	// reset state validators to above validator
 	state.Validators = types.NewValidatorSet([]*types.Validator{val1})
@@ -582,12 +588,14 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	wantVal1Prio := 0 + val1VotingPower - totalPower
 	assert.Equal(t, wantVal1Prio, updatedState.NextValidators.Validators[0].ProposerPriority)
 	assert.Equal(t, val1PubKey.Address(), updatedState.NextValidators.Proposer.Address)
+	assert.Equal(t, val1ProTxHash, updatedState.NextValidators.Proposer.ProTxHash)
 
 	// add a validator with the same voting power as the first
+	val2ProTxHash := crypto.RandProTxHash()
 	val2PubKey := bls12381.GenPrivKey().PubKey()
 	fvp, err := cryptoenc.PubKeyToProto(val2PubKey)
 	require.NoError(t, err)
-	updateAddVal := abci.ValidatorUpdate{PubKey: fvp, Power: val1VotingPower}
+	updateAddVal := abci.ValidatorUpdate{ProTxHash: val2ProTxHash, PubKey: fvp, Power: val1VotingPower}
 	validatorUpdates, err = types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{updateAddVal})
 	assert.NoError(t, err)
 
@@ -603,9 +611,14 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	assert.Equal(t, updatedState2.Validators.Proposer.Address, val1PubKey.Address())
 	assert.Equal(t, updatedState2.NextValidators.Proposer.Address, val1PubKey.Address())
 
-	_, updatedVal1 := updatedState2.NextValidators.GetByAddress(val1PubKey.Address())
-	_, oldVal1 := updatedState2.Validators.GetByAddress(val1PubKey.Address())
-	_, updatedVal2 := updatedState2.NextValidators.GetByAddress(val2PubKey.Address())
+	assert.Equal(t, val1ProTxHash, updatedState.NextValidators.Proposer.ProTxHash)
+	assert.Equal(t, updatedState2.Validators.Proposer.ProTxHash, updatedState2.NextValidators.Proposer.ProTxHash)
+	assert.Equal(t, updatedState2.Validators.Proposer.ProTxHash, val1ProTxHash)
+	assert.Equal(t, updatedState2.NextValidators.Proposer.ProTxHash, val1ProTxHash)
+
+	_, updatedVal1 := updatedState2.NextValidators.GetByProTxHash(val1ProTxHash)
+	_, oldVal1 := updatedState2.Validators.GetByProTxHash(val1ProTxHash)
+	_, updatedVal2 := updatedState2.NextValidators.GetByProTxHash(val2ProTxHash)
 
 	// 1. Add
 	val2VotingPower := val1VotingPower
@@ -642,11 +655,11 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	assert.Equal(t, updatedState3.Validators.Proposer.Address, updatedState3.NextValidators.Proposer.Address)
 
 	assert.Equal(t, updatedState3.Validators, updatedState2.NextValidators)
-	_, updatedVal1 = updatedState3.NextValidators.GetByAddress(val1PubKey.Address())
-	_, updatedVal2 = updatedState3.NextValidators.GetByAddress(val2PubKey.Address())
+	_, updatedVal1 = updatedState3.NextValidators.GetByProTxHash(val1ProTxHash)
+	_, updatedVal2 = updatedState3.NextValidators.GetByProTxHash(val2ProTxHash)
 
 	// val1 will still be proposer:
-	assert.Equal(t, val1PubKey.Address(), updatedState3.NextValidators.Proposer.Address)
+	assert.Equal(t, val1ProTxHash, updatedState3.NextValidators.Proposer.ProTxHash)
 
 	// check if expected proposer prio is matched:
 	// Increment
@@ -711,14 +724,16 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 		)
 		assert.Equal(t, oldState.Validators.Proposer.Address, updatedState.NextValidators.Proposer.Address, "iter: %v", i)
 
-		_, updatedVal1 = updatedState.NextValidators.GetByAddress(val1PubKey.Address())
-		_, updatedVal2 = updatedState.NextValidators.GetByAddress(val2PubKey.Address())
+		_, updatedVal1 = updatedState.NextValidators.GetByProTxHash(val1ProTxHash)
+		_, updatedVal2 = updatedState.NextValidators.GetByProTxHash(val2ProTxHash)
 
 		if i%2 == 0 {
+			assert.Equal(t, updatedState.Validators.Proposer.ProTxHash, val2ProTxHash)
 			assert.Equal(t, updatedState.Validators.Proposer.Address, val2PubKey.Address())
 			assert.Equal(t, expectedVal1Prio, updatedVal1.ProposerPriority) // -19
 			assert.Equal(t, expectedVal2Prio, updatedVal2.ProposerPriority) // 0
 		} else {
+			assert.Equal(t, updatedState.Validators.Proposer.ProTxHash, val1ProTxHash)
 			assert.Equal(t, updatedState.Validators.Proposer.Address, val1PubKey.Address())
 			assert.Equal(t, expectedVal1Prio2, updatedVal1.ProposerPriority) // -9
 			assert.Equal(t, expectedVal2Prio2, updatedVal2.ProposerPriority) // -10
@@ -734,11 +749,13 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 	genesisVotingPower := types.MaxTotalVotingPower / 1000
 	genesisPubKey := bls12381.GenPrivKey().PubKey()
+	genesisProTxHash := crypto.RandProTxHash()
 	// fmt.Println("genesis addr: ", genesisPubKey.Address())
 	genesisVal := &types.Validator{
 		Address:     genesisPubKey.Address(),
 		PubKey:      genesisPubKey,
 		VotingPower: genesisVotingPower,
+		ProTxHash: genesisProTxHash,
 	}
 	// reset state validators to above validator
 	state.Validators = types.NewValidatorSet([]*types.Validator{genesisVal})
@@ -779,9 +796,10 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// see: https://github.com/tendermint/tendermint/issues/2960
 	firstAddedValPubKey := bls12381.GenPrivKey().PubKey()
 	firstAddedValVotingPower := int64(10)
+	firstAddedProTxHash := crypto.RandProTxHash()
 	fvp, err := cryptoenc.PubKeyToProto(firstAddedValPubKey)
 	require.NoError(t, err)
-	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValVotingPower}
+	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValVotingPower, ProTxHash: firstAddedProTxHash}
 	validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{firstAddedVal})
 	assert.NoError(t, err)
 	abciResponses := &tmstate.ABCIResponses{
@@ -817,10 +835,10 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 	// set oldState to state before above iteration
 	oldState = updatedState
-	_, oldGenesisVal := oldState.NextValidators.GetByAddress(genesisVal.Address)
-	_, newGenesisVal := state.NextValidators.GetByAddress(genesisVal.Address)
-	_, addedOldVal := oldState.NextValidators.GetByAddress(firstAddedValPubKey.Address())
-	_, addedNewVal := state.NextValidators.GetByAddress(firstAddedValPubKey.Address())
+	_, oldGenesisVal := oldState.NextValidators.GetByProTxHash(genesisVal.ProTxHash)
+	_, newGenesisVal := state.NextValidators.GetByProTxHash(genesisVal.ProTxHash)
+	_, addedOldVal := oldState.NextValidators.GetByProTxHash(firstAddedProTxHash)
+	_, addedNewVal := state.NextValidators.GetByProTxHash(firstAddedProTxHash)
 	// expect large negative proposer priority for both (genesis validator decreased, 2nd validator increased):
 	assert.True(t, oldGenesisVal.ProposerPriority > newGenesisVal.ProposerPriority)
 	assert.True(t, addedOldVal.ProposerPriority < addedNewVal.ProposerPriority)
@@ -830,7 +848,8 @@ func TestLargeGenesisValidator(t *testing.T) {
 		addedPubKey := bls12381.GenPrivKey().PubKey()
 		ap, err := cryptoenc.PubKeyToProto(addedPubKey)
 		require.NoError(t, err)
-		addedVal := abci.ValidatorUpdate{PubKey: ap, Power: firstAddedValVotingPower}
+		addedProTxHash := crypto.RandProTxHash()
+		addedVal := abci.ValidatorUpdate{PubKey: ap, Power: firstAddedValVotingPower, ProTxHash: addedProTxHash}
 		validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{addedVal})
 		assert.NoError(t, err)
 
@@ -848,7 +867,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// remove genesis validator:
 	gp, err := cryptoenc.PubKeyToProto(genesisPubKey)
 	require.NoError(t, err)
-	removeGenesisVal := abci.ValidatorUpdate{PubKey: gp, Power: 0}
+	removeGenesisVal := abci.ValidatorUpdate{PubKey: gp, Power: 0, ProTxHash: genesisProTxHash}
 	abciResponses = &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
 		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{removeGenesisVal}},
@@ -979,7 +998,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	v0, err := stateStore.LoadValidators(nextHeight)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v0.Size())
-	index, val := v0.GetByAddress(pubkeyOld.Address())
+	index, val := v0.GetByProTxHash(pubkeyOld.Address())
 	assert.NotNil(t, val)
 	if index < 0 {
 		t.Fatal("expected to find old validator")
@@ -989,7 +1008,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	v1, err := stateStore.LoadValidators(nextHeight + 1)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v1.Size())
-	index, val = v1.GetByAddress(pubkey.Address())
+	index, val = v1.GetByProTxHash(pubkey.Address())
 	assert.NotNil(t, val)
 	if index < 0 {
 		t.Fatal("expected to find newly added validator")
@@ -1000,13 +1019,13 @@ func TestStateMakeBlock(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	proposerAddress := state.Validators.GetProposer().Address
+	proposerProTxHash := state.Validators.GetProposer().ProTxHash
 	stateVersion := state.Version.Consensus
 	block := makeBlock(state, 2)
 
 	// test we set some fields
 	assert.Equal(t, stateVersion, block.Version)
-	assert.Equal(t, proposerAddress, block.ProposerAddress)
+	assert.Equal(t, proposerProTxHash, block.ProposerProTxHash)
 }
 
 // TestConsensusParamsChangesSaveLoad tests saving and loading consensus params

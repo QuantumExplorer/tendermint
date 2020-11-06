@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"strings"
 	"time"
 
@@ -388,28 +389,29 @@ func NewMockDuplicateVoteEvidence(height int64, time time.Time, chainID string) 
 
 func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	pv PrivValidator, chainID string) *DuplicateVoteEvidence {
-	pubKey, _ := pv.GetPubKey()
-	voteA := makeMockVote(height, 0, 0, pubKey.Address(), randBlockID(), time)
+	proTxHash, _ := pv.GetProTxHash()
+	voteA := makeMockVote(height, 0, 0, proTxHash, randBlockID())
 	vA := voteA.ToProto()
 	_ = pv.SignVote(chainID, vA)
-	voteA.Signature = vA.Signature
-	voteB := makeMockVote(height, 0, 0, pubKey.Address(), randBlockID(), time)
+	voteA.BlockSignature = vA.BlockSignature
+	voteA.StateSignature = vA.StateSignature
+	voteB := makeMockVote(height, 0, 0, proTxHash, randBlockID())
 	vB := voteB.ToProto()
 	_ = pv.SignVote(chainID, vB)
-	voteB.Signature = vB.Signature
+	voteB.BlockSignature = vB.BlockSignature
+	voteB.StateSignature = vB.StateSignature
 	return NewDuplicateVoteEvidence(voteA, voteB)
 }
 
-func makeMockVote(height int64, round, index int32, addr Address,
-	blockID BlockID, time time.Time) *Vote {
+func makeMockVote(height int64, round, index int32, proTxHash crypto.ProTxHash,
+	blockID BlockID) *Vote {
 	return &Vote{
-		Type:             tmproto.SignedMsgType(2),
-		Height:           height,
-		Round:            round,
-		BlockID:          blockID,
-		Timestamp:        time,
-		ValidatorAddress: addr,
-		ValidatorIndex:   index,
+		Type:               tmproto.SignedMsgType(2),
+		Height:             height,
+		Round:              round,
+		BlockID:            blockID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     index,
 	}
 }
 

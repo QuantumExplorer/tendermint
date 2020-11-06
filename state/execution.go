@@ -98,7 +98,7 @@ func (blockExec *BlockExecutor) SetEventBus(eventBus types.BlockEventPublisher) 
 func (blockExec *BlockExecutor) CreateProposalBlock(
 	height int64,
 	state State, commit *types.Commit,
-	proposerAddr []byte,
+	proposerProTxHash []byte,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
@@ -111,7 +111,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
-	return state.MakeBlock(height, txs, commit, evidence, proposerAddr)
+	return state.MakeBlock(height, txs, commit, evidence, proposerProTxHash)
 }
 
 // ValidateBlock validates the given block against the given state.
@@ -396,6 +396,16 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 			return fmt.Errorf("validator %v is using pubkey %s, which is unsupported for consensus",
 				valUpdate, pk.TypeIdentifier())
 		}
+
+		if valUpdate.ProTxHash == nil {
+			return fmt.Errorf("validator %v does not have a protxhash, which is needed for consensus",
+				valUpdate)
+		}
+
+		if len(valUpdate.ProTxHash) != 32 {
+			return fmt.Errorf("validator %v is using protxhash %s, which is not the required length",
+				valUpdate, valUpdate.ProTxHash)
+		}
 	}
 	return nil
 }
@@ -468,6 +478,7 @@ func updateState(
 		InitialHeight:                    state.InitialHeight,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
+		LastStateID:                      types.StateID{state.AppHash},
 		LastBlockTime:                    header.Time,
 		LastChainLock: 					  *lastChainLock,
 		NextChainLock:                    *nextChainLock,

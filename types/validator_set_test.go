@@ -3,19 +3,16 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"math"
 	"sort"
 	"strings"
 	"testing"
 	"testing/quick"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -31,8 +28,8 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
 
 	assert.EqualValues(t, vset, vset.Copy())
-	assert.False(t, vset.HasAddress([]byte("some val")))
-	idx, val := vset.GetByAddress([]byte("some val"))
+	assert.False(t, vset.HasProTxHash([]byte("some val")))
+	idx, val := vset.GetByProTxHash([]byte("some val"))
 	assert.EqualValues(t, -1, idx)
 	assert.Nil(t, val)
 	addr, val := vset.GetByIndex(-100)
@@ -54,8 +51,8 @@ func TestValidatorSetBasic(t *testing.T) {
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
 
-	assert.True(t, vset.HasAddress(val.Address))
-	idx, _ = vset.GetByAddress(val.Address)
+	assert.True(t, vset.HasProTxHash(val.Address))
+	idx, _ = vset.GetByProTxHash(val.Address)
 	assert.EqualValues(t, 0, idx)
 	addr, _ = vset.GetByIndex(0)
 	assert.Equal(t, []byte(val.Address), addr)
@@ -64,17 +61,18 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.NotNil(t, vset.Hash())
 	assert.NotPanics(t, func() { vset.IncrementProposerPriority(1) })
 	assert.Equal(t, val.Address, vset.GetProposer().Address)
+	assert.Equal(t, val.ProTxHash, vset.GetProposer().ProTxHash)
 
 	// update
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
-	_, val = vset.GetByAddress(val.Address)
+	_, val = vset.GetByProTxHash(val.Address)
 	val.VotingPower += 100
 	proposerPriority := val.ProposerPriority
 
 	val.ProposerPriority = 0
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
-	_, val = vset.GetByAddress(val.Address)
+	_, val = vset.GetByProTxHash(val.Address)
 	assert.Equal(t, proposerPriority, val.ProposerPriority)
 
 }
@@ -155,9 +153,9 @@ func TestCopy(t *testing.T) {
 // Test that IncrementProposerPriority requires positive times.
 func TestIncrementProposerPriorityPositiveTimes(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidator([]byte("foo"), 1000),
-		newValidator([]byte("bar"), 300),
-		newValidator([]byte("baz"), 330),
+		newValidatorWithRandProTxHash([]byte("foo"), 1000),
+		newValidatorWithRandProTxHash([]byte("bar"), 300),
+		newValidatorWithRandProTxHash([]byte("baz"), 330),
 	})
 
 	assert.Panics(t, func() { vset.IncrementProposerPriority(-1) })
@@ -171,7 +169,7 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		privKey := bls12381.GenPrivKey()
 		pubKey := privKey.PubKey()
-		val := NewValidator(pubKey, 10)
+		val := NewValidator(pubKey, 10, crypto.CRandBytes(32))
 		err := vset.UpdateWithChangeSet([]*Validator{val})
 		if err != nil {
 			panic("Failed to add validator")
@@ -188,9 +186,9 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 
 func TestProposerSelection1(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidator([]byte("foo"), 1000),
-		newValidator([]byte("bar"), 300),
-		newValidator([]byte("baz"), 330),
+		newValidatorWithRandProTxHash([]byte("foo"), 1000),
+		newValidatorWithRandProTxHash([]byte("bar"), 300),
+		newValidatorWithRandProTxHash([]byte("baz"), 330),
 	})
 	var proposers []string
 	for i := 0; i < 99; i++ {
@@ -214,7 +212,7 @@ func TestProposerSelection2(t *testing.T) {
 	addr2 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
 
 	// when all voting power is same, we go in order of addresses
-	val0, val1, val2 := newValidator(addr0, 100), newValidator(addr1, 100), newValidator(addr2, 100)
+	val0, val1, val2 := newValidatorWithRandProTxHash(addr0, 100), newValidatorWithRandProTxHash(addr1, 100), newValidatorWithRandProTxHash(addr2, 100)
 	valList := []*Validator{val0, val1, val2}
 	vals := NewValidatorSet(valList)
 	for i := 0; i < len(valList)*5; i++ {
@@ -227,7 +225,7 @@ func TestProposerSelection2(t *testing.T) {
 	}
 
 	// One validator has more than the others, but not enough to propose twice in a row
-	*val2 = *newValidator(addr2, 400)
+	*val2 = *newValidatorWithRandProTxHash(addr2, 400)
 	vals = NewValidatorSet(valList)
 	// vals.IncrementProposerPriority(1)
 	prop := vals.GetProposer()
@@ -241,7 +239,7 @@ func TestProposerSelection2(t *testing.T) {
 	}
 
 	// One validator has more than the others, and enough to be proposer twice in a row
-	*val2 = *newValidator(addr2, 401)
+	*val2 = *newValidatorWithRandProTxHash(addr2, 401)
 	vals = NewValidatorSet(valList)
 	prop = vals.GetProposer()
 	if !bytes.Equal(prop.Address, addr2) {
@@ -259,7 +257,7 @@ func TestProposerSelection2(t *testing.T) {
 	}
 
 	// each validator should be the proposer a proportional number of times
-	val0, val1, val2 = newValidator(addr0, 4), newValidator(addr1, 5), newValidator(addr2, 3)
+	val0, val1, val2 = newValidatorWithRandProTxHash(addr0, 4), newValidatorWithRandProTxHash(addr1, 5), newValidatorWithRandProTxHash(addr2, 3)
 	valList = []*Validator{val0, val1, val2}
 	propCount := make([]int, 3)
 	vals = NewValidatorSet(valList)
@@ -302,10 +300,10 @@ func TestProposerSelection2(t *testing.T) {
 
 func TestProposerSelection3(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidator([]byte("avalidator_address12"), 1),
-		newValidator([]byte("bvalidator_address12"), 1),
-		newValidator([]byte("cvalidator_address12"), 1),
-		newValidator([]byte("dvalidator_address12"), 1),
+		newValidatorWithRandProTxHash([]byte("avalidator_address12"), 1),
+		newValidatorWithRandProTxHash([]byte("bvalidator_address12"), 1),
+		newValidatorWithRandProTxHash([]byte("cvalidator_address12"), 1),
+		newValidatorWithRandProTxHash([]byte("dvalidator_address12"), 1),
 	})
 
 	proposerOrder := make([]*Validator, 4)
@@ -325,8 +323,8 @@ func TestProposerSelection3(t *testing.T) {
 		j int32
 	)
 	for ; i < 10000; i++ {
-		got := vset.GetProposer().Address
-		expected := proposerOrder[j%4].Address
+		got := vset.GetProposer().ProTxHash
+		expected := proposerOrder[j%4].ProTxHash
 		if !bytes.Equal(got, expected) {
 			t.Fatalf(fmt.Sprintf("vset.Proposer (%X) does not match expected proposer (%X) for (%d, %d)", got, expected, i, j))
 		}
@@ -363,8 +361,19 @@ func TestProposerSelection3(t *testing.T) {
 	}
 }
 
-func newValidator(address []byte, power int64) *Validator {
-	return &Validator{Address: address, VotingPower: power}
+func newValidatorWithRandProTxHash(address []byte, power int64) *Validator {
+	return &Validator{Address: address, VotingPower: power, ProTxHash: crypto.CRandBytes(32)}
+}
+
+func newValidatorWithProTxHashFromAddress(address []byte, power int64) *Validator {
+	return &Validator{Address: address, VotingPower: power, ProTxHash: crypto.Sha256(address)}
+}
+
+func newValidator(address []byte, power int64, proTxHash []byte) *Validator {
+	if len(proTxHash) != 32 {
+		panic("proTxHash wrong length")
+	}
+	return &Validator{Address: address, VotingPower: power, ProTxHash: proTxHash}
 }
 
 func randPubKey() crypto.PubKey {
@@ -376,7 +385,7 @@ func randPubKey() crypto.PubKey {
 func randValidator(totalVotingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/VotingPower to stay in the
 	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64(MaxTotalVotingPower-totalVotingPower)))
+	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64(MaxTotalVotingPower-totalVotingPower)), crypto.CRandBytes(32))
 	val.ProposerPriority = tmrand.Int64() % (MaxTotalVotingPower - totalVotingPower)
 	return val
 }
@@ -505,7 +514,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 		// work on copy to have the old ProposerPriorities:
 		newVset := tc.vs.CopyIncrementProposerPriority(tc.times)
 		for _, val := range tc.vs.Validators {
-			_, updatedVal := newVset.GetByAddress(val.Address)
+			_, updatedVal := newVset.GetByProTxHash(val.Address)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)
 		}
 	}
@@ -624,7 +633,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 	for i, tc := range tcs {
 		tc.vals.IncrementProposerPriority(tc.times)
 
-		assert.Equal(t, tc.wantProposer.Address, tc.vals.GetProposer().Address,
+		assert.Equal(t, tc.wantProposer.ProTxHash, tc.vals.GetProposer().ProTxHash,
 			"test case: %v",
 			i)
 
@@ -668,60 +677,68 @@ func TestSafeSubClip(t *testing.T) {
 // verification.
 func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	var (
-		privKey = ed25519.GenPrivKey()
+		proTxHash = crypto.CRandBytes(crypto.DefaultHashSize)
+		privKey = bls12381.GenPrivKey()
 		pubKey  = privKey.PubKey()
-		v1      = NewValidator(pubKey, 1000)
+		v1      = NewValidator(pubKey, 1000, proTxHash)
 		vset    = NewValidatorSet([]*Validator{v1})
 
 		chainID = "Lalande21185"
 	)
 
 	vote := examplePrecommit()
-	vote.ValidatorAddress = pubKey.Address()
+	vote.ValidatorProTxHash = proTxHash
 	v := vote.ToProto()
-	sig, err := privKey.Sign(VoteSignBytes(chainID, v))
+	blockSig, err := privKey.Sign(VoteBlockSignBytes(chainID, v))
 	require.NoError(t, err)
-	vote.Signature = sig
+	stateSig, err := privKey.Sign(VoteStateSignBytes(chainID, v))
+	require.NoError(t, err)
+	vote.BlockSignature = blockSig
+	vote.StateSignature = stateSig
 
-	commit := NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote.CommitSig()})
+	commit := NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote.CommitSig()})
 
 	vote2 := *vote
-	sig2, err := privKey.Sign(VoteSignBytes("EpsilonEridani", v))
+	blockSig2, err := privKey.Sign(VoteBlockSignBytes("EpsilonEridani", v))
 	require.NoError(t, err)
-	vote2.Signature = sig2
+	stateSig2, err := privKey.Sign(VoteStateSignBytes("EpsilonEridani", v))
+	require.NoError(t, err)
+	vote2.BlockSignature = blockSig2
+	vote2.StateSignature = stateSig2
 
 	testCases := []struct {
 		description string
 		chainID     string
 		blockID     BlockID
+		stateID     StateID
 		height      int64
 		commit      *Commit
 		expErr      bool
 	}{
-		{"good", chainID, vote.BlockID, vote.Height, commit, false},
+		{"good", chainID, vote.BlockID, vote.StateID, vote.Height, commit, false},
 
-		{"wrong signature (#0)", "EpsilonEridani", vote.BlockID, vote.Height, commit, true},
-		{"wrong block ID", chainID, makeBlockIDRandom(), vote.Height, commit, true},
-		{"wrong height", chainID, vote.BlockID, vote.Height - 1, commit, true},
+		{"wrong block signature (#0)", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
+		{"wrong block ID", chainID, makeBlockIDRandom(), vote.StateID, vote.Height, commit, true},
+		{"wrong height", chainID, vote.BlockID, vote.StateID, vote.Height - 1, commit, true},
 
-		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{}), true},
+		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.StateID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{}), true},
 
-		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID,
+		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.StateID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID,
 				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
+		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.StateID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"wrong signature (#0)", chainID, vote.BlockID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, []CommitSig{vote2.CommitSig()}), true},
+		{"wrong block signature (#0)", chainID, vote.BlockID, vote.StateID, vote.Height,
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}), true},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.description, func(t *testing.T) {
-			err := vset.VerifyCommit(tc.chainID, tc.blockID, tc.height, tc.commit)
+			err := vset.VerifyCommit(tc.chainID, tc.blockID, tc.stateID, tc.height, tc.commit)
 			if tc.expErr {
 				if assert.Error(t, err, "VerifyCommit") {
 					assert.Contains(t, err.Error(), tc.description, "VerifyCommit")
@@ -730,7 +747,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 				assert.NoError(t, err, "VerifyCommit")
 			}
 
-			err = vset.VerifyCommitLight(tc.chainID, tc.blockID, tc.height, tc.commit)
+			err = vset.VerifyCommitLight(tc.chainID, tc.blockID, tc.stateID, tc.height, tc.commit)
 			if tc.expErr {
 				if assert.Error(t, err, "VerifyCommitLight") {
 					assert.Contains(t, err.Error(), tc.description, "VerifyCommitLight")
@@ -747,10 +764,11 @@ func TestValidatorSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
 		chainID = "test_chain_id"
 		h       = int64(3)
 		blockID = makeBlockIDRandom()
+		stateID = makeStateIDRandom()
 	)
 
 	voteSet, valSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
-	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
+	commit, err := MakeCommit(blockID, stateID, h, 0, voteSet, vals)
 	require.NoError(t, err)
 
 	// malleate 4th signature
@@ -758,12 +776,13 @@ func TestValidatorSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
 	v := vote.ToProto()
 	err = vals[3].SignVote("CentaurusA", v)
 	require.NoError(t, err)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 	commit.Signatures[3] = vote.CommitSig()
 
-	err = valSet.VerifyCommit(chainID, blockID, h, commit)
+	err = valSet.VerifyCommit(chainID, blockID, stateID, h, commit)
 	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "wrong signature (#3)")
+		assert.Contains(t, err.Error(), "wrong block signature (#3)")
 	}
 }
 
@@ -772,10 +791,11 @@ func TestValidatorSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSign
 		chainID = "test_chain_id"
 		h       = int64(3)
 		blockID = makeBlockIDRandom()
+		stateID = makeStateIDRandom()
 	)
 
 	voteSet, valSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
-	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
+	commit, err := MakeCommit(blockID, stateID, h, 0, voteSet, vals)
 	require.NoError(t, err)
 
 	// malleate 4th signature (3 signatures are enough for 2/3+)
@@ -783,10 +803,11 @@ func TestValidatorSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSign
 	v := vote.ToProto()
 	err = vals[3].SignVote("CentaurusA", v)
 	require.NoError(t, err)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 	commit.Signatures[3] = vote.CommitSig()
 
-	err = valSet.VerifyCommitLight(chainID, blockID, h, commit)
+	err = valSet.VerifyCommitLight(chainID, blockID, stateID, h, commit)
 	assert.NoError(t, err)
 }
 
@@ -795,10 +816,11 @@ func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotin
 		chainID = "test_chain_id"
 		h       = int64(3)
 		blockID = makeBlockIDRandom()
+		stateID = makeStateIDRandom()
 	)
 
 	voteSet, valSet, vals := randVoteSet(h, 0, tmproto.PrecommitType, 4, 10)
-	commit, err := MakeCommit(blockID, h, 0, voteSet, vals, time.Now())
+	commit, err := MakeCommit(blockID, stateID, h, 0, voteSet, vals)
 	require.NoError(t, err)
 
 	// malleate 3rd signature (2 signatures are enough for 1/3+ trust level)
@@ -806,7 +828,8 @@ func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotin
 	v := vote.ToProto()
 	err = vals[2].SignVote("CentaurusA", v)
 	require.NoError(t, err)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 	commit.Signatures[2] = vote.CommitSig()
 
 	err = valSet.VerifyCommitLightTrusting(chainID, commit, tmmath.Fraction{Numerator: 1, Denominator: 3})
@@ -824,15 +847,15 @@ func TestEmptySet(t *testing.T) {
 	valSet.GetProposer()
 
 	// Add to empty set
-	v1 := newValidator([]byte("v1"), 100)
-	v2 := newValidator([]byte("v2"), 100)
+	v1 := newValidatorWithRandProTxHash([]byte("v1"), 100)
+	v2 := newValidatorWithRandProTxHash([]byte("v2"), 100)
 	valList = []*Validator{v1, v2}
 	assert.NoError(t, valSet.UpdateWithChangeSet(valList))
 	verifyValidatorSet(t, valSet)
 
 	// Delete all validators from set
-	v1 = newValidator([]byte("v1"), 0)
-	v2 = newValidator([]byte("v2"), 0)
+	v1 = newValidatorWithRandProTxHash([]byte("v1"), 0)
+	v2 = newValidatorWithRandProTxHash([]byte("v2"), 0)
 	delList := []*Validator{v1, v2}
 	assert.Error(t, valSet.UpdateWithChangeSet(delList))
 
@@ -843,30 +866,30 @@ func TestEmptySet(t *testing.T) {
 
 func TestUpdatesForNewValidatorSet(t *testing.T) {
 
-	v1 := newValidator([]byte("v1"), 100)
-	v2 := newValidator([]byte("v2"), 100)
+	v1 := newValidatorWithRandProTxHash([]byte("v1"), 100)
+	v2 := newValidatorWithRandProTxHash([]byte("v2"), 100)
 	valList := []*Validator{v1, v2}
 	valSet := NewValidatorSet(valList)
 	verifyValidatorSet(t, valSet)
 
 	// Verify duplicates are caught in NewValidatorSet() and it panics
-	v111 := newValidator([]byte("v1"), 100)
-	v112 := newValidator([]byte("v1"), 123)
-	v113 := newValidator([]byte("v1"), 234)
+	v111 := newValidatorWithRandProTxHash([]byte("v1"), 100)
+	v112 := newValidatorWithRandProTxHash([]byte("v1"), 123)
+	v113 := newValidatorWithRandProTxHash([]byte("v1"), 234)
 	valList = []*Validator{v111, v112, v113}
 	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 	// Verify set including validator with voting power 0 cannot be created
-	v1 = newValidator([]byte("v1"), 0)
-	v2 = newValidator([]byte("v2"), 22)
-	v3 := newValidator([]byte("v3"), 33)
+	v1 = newValidatorWithRandProTxHash([]byte("v1"), 0)
+	v2 = newValidatorWithRandProTxHash([]byte("v2"), 22)
+	v3 := newValidatorWithRandProTxHash([]byte("v3"), 33)
 	valList = []*Validator{v1, v2, v3}
 	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 	// Verify set including validator with negative voting power cannot be created
-	v1 = newValidator([]byte("v1"), 10)
-	v2 = newValidator([]byte("v2"), -20)
-	v3 = newValidator([]byte("v3"), 30)
+	v1 = newValidatorWithRandProTxHash([]byte("v1"), 10)
+	v2 = newValidatorWithRandProTxHash([]byte("v2"), -20)
+	v3 = newValidatorWithRandProTxHash([]byte("v3"), 30)
 	valList = []*Validator{v1, v2, v3}
 	assert.Panics(t, func() { NewValidatorSet(valList) })
 
@@ -892,7 +915,7 @@ func permutation(valList []testVal) []testVal {
 func createNewValidatorList(testValList []testVal) []*Validator {
 	valList := make([]*Validator, 0, len(testValList))
 	for _, val := range testValList {
-		valList = append(valList, newValidator([]byte(val.name), val.power))
+		valList = append(valList, newValidatorWithProTxHashFromAddress([]byte(val.name), val.power))
 	}
 	return valList
 }
@@ -1519,8 +1542,9 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 	var (
 		blockID                       = makeBlockIDRandom()
+		stateID                       = makeStateIDRandom()
 		voteSet, originalValset, vals = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
-		commit, err                   = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+		commit, err                   = MakeCommit(blockID, stateID, 1, 1, voteSet, vals)
 		newValSet, _                  = RandValidatorSet(2, 1)
 	)
 	require.NoError(t, err)
@@ -1560,8 +1584,9 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 func TestValidatorSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
 	var (
 		blockID               = makeBlockIDRandom()
+		stateID               = makeStateIDRandom()
 		voteSet, valSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalVotingPower)
-		commit, err           = MakeCommit(blockID, 1, 1, voteSet, vals, time.Now())
+		commit, err           = MakeCommit(blockID, stateID, 1, 1, voteSet, vals)
 	)
 	require.NoError(t, err)
 
@@ -1692,7 +1717,7 @@ func BenchmarkUpdates(b *testing.B) {
 	// Init with n validators
 	vs := make([]*Validator, n)
 	for j := 0; j < n; j++ {
-		vs[j] = newValidator([]byte(fmt.Sprintf("v%d", j)), 100)
+		vs[j] = newValidatorWithRandProTxHash([]byte(fmt.Sprintf("v%d", j)), 100)
 	}
 	valSet := NewValidatorSet(vs)
 	l := len(valSet.Validators)
@@ -1700,7 +1725,7 @@ func BenchmarkUpdates(b *testing.B) {
 	// Make m new validators
 	newValList := make([]*Validator, m)
 	for j := 0; j < m; j++ {
-		newValList[j] = newValidator([]byte(fmt.Sprintf("v%d", j+l)), 1000)
+		newValList[j] = newValidatorWithRandProTxHash([]byte(fmt.Sprintf("v%d", j+l)), 1000)
 	}
 	b.ResetTimer()
 

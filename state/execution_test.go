@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"context"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
@@ -19,7 +20,6 @@ import (
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/state/mocks"
 	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 var (
@@ -68,17 +68,17 @@ func TestBeginBlockValidators(t *testing.T) {
 	prevHash := state.LastBlockID.Hash
 	prevParts := types.PartSetHeader{}
 	prevBlockID := types.BlockID{Hash: prevHash, PartSetHeader: prevParts}
+	prevStateID := state.LastStateID
 
 	var (
-		now        = tmtime.Now()
 		commitSig0 = types.NewCommitSigForBlock(
 			[]byte("Signature1"),
-			state.Validators.Validators[0].Address,
-			now)
+			[]byte("StateSignature1"),
+			state.Validators.Validators[0].Address)
 		commitSig1 = types.NewCommitSigForBlock(
 			[]byte("Signature2"),
-			state.Validators.Validators[1].Address,
-			now)
+			[]byte("StateSignature1"),
+			state.Validators.Validators[1].Address)
 		absentSig = types.NewCommitSigAbsent()
 	)
 
@@ -93,10 +93,10 @@ func TestBeginBlockValidators(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
+		lastCommit := types.NewCommit(1, 0, prevBlockID, prevStateID, tc.lastCommitSigs)
 
 		// block for height 2
-		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address)
+		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().ProTxHash)
 
 		_, err = sm.ExecCommitBlock(proxyApp.Consensus(), block, log.TestingLogger(), stateStore, 1)
 		require.Nil(t, err, tc.desc)
@@ -174,6 +174,9 @@ func TestValidateValidatorUpdates(t *testing.T) {
 	pk2, err := cryptoenc.PubKeyToProto(pubkey2)
 	assert.NoError(t, err)
 
+	proTxHash1 := crypto.CRandBytes(32)
+	proTxHash2 := crypto.CRandBytes(32)
+
 	defaultValidatorParams := tmproto.ValidatorParams{PubKeyTypes: []string{types.ABCIPubKeyTypeBLS12381}}
 
 	testCases := []struct {
@@ -186,25 +189,25 @@ func TestValidateValidatorUpdates(t *testing.T) {
 	}{
 		{
 			"adding a validator is OK",
-			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 20}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 20, ProTxHash: proTxHash2}},
 			defaultValidatorParams,
 			false,
 		},
 		{
 			"updating a validator is OK",
-			[]abci.ValidatorUpdate{{PubKey: pk1, Power: 20}},
+			[]abci.ValidatorUpdate{{PubKey: pk1, Power: 20, ProTxHash: proTxHash1}},
 			defaultValidatorParams,
 			false,
 		},
 		{
 			"removing a validator is OK",
-			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0, ProTxHash: proTxHash2}},
 			defaultValidatorParams,
 			false,
 		},
 		{
 			"adding a validator with negative power results in error",
-			[]abci.ValidatorUpdate{{PubKey: pk2, Power: -100}},
+			[]abci.ValidatorUpdate{{PubKey: pk2, Power: -100, ProTxHash: proTxHash2}},
 			defaultValidatorParams,
 			true,
 		},
@@ -224,10 +227,12 @@ func TestValidateValidatorUpdates(t *testing.T) {
 }
 
 func TestUpdateValidators(t *testing.T) {
+	proTxHash1 := crypto.CRandBytes(32)
 	pubkey1 := bls12381.GenPrivKey().PubKey()
-	val1 := types.NewValidator(pubkey1, 10)
+	val1 := types.NewValidator(pubkey1, 10, proTxHash1)
+	proTxHash2 := crypto.CRandBytes(32)
 	pubkey2 := bls12381.GenPrivKey().PubKey()
-	val2 := types.NewValidator(pubkey2, 20)
+	val2 := types.NewValidator(pubkey2, 20, proTxHash2)
 
 	pk, err := cryptoenc.PubKeyToProto(pubkey1)
 	require.NoError(t, err)
@@ -246,28 +251,28 @@ func TestUpdateValidators(t *testing.T) {
 		{
 			"adding a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1}),
-			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 20}},
+			[]abci.ValidatorUpdate{{ProTxHash: proTxHash2, PubKey: pk2, Power: 20}},
 			types.NewValidatorSet([]*types.Validator{val1, val2}),
 			false,
 		},
 		{
 			"updating a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1}),
-			[]abci.ValidatorUpdate{{PubKey: pk, Power: 20}},
-			types.NewValidatorSet([]*types.Validator{types.NewValidator(pubkey1, 20)}),
+			[]abci.ValidatorUpdate{{ProTxHash: proTxHash1, PubKey: pk, Power: 20}},
+			types.NewValidatorSet([]*types.Validator{types.NewValidator(pubkey1, 20, crypto.CRandBytes(32))}),
 			false,
 		},
 		{
 			"removing a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1, val2}),
-			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
+			[]abci.ValidatorUpdate{{ProTxHash: proTxHash2, PubKey: pk2, Power: 0}},
 			types.NewValidatorSet([]*types.Validator{val1}),
 			false,
 		},
 		{
 			"removing a non-existing validator results in error",
 			types.NewValidatorSet([]*types.Validator{val1}),
-			[]abci.ValidatorUpdate{{PubKey: pk2, Power: 0}},
+			[]abci.ValidatorUpdate{{ProTxHash: proTxHash2, PubKey: pk2, Power: 0}},
 			types.NewValidatorSet([]*types.Validator{val1}),
 			true,
 		},
@@ -334,18 +339,19 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	block := makeBlock(state, 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
+	proTxHash := crypto.CRandBytes(32)
 	pubkey := bls12381.GenPrivKey().PubKey()
 	pk, err := cryptoenc.PubKeyToProto(pubkey)
 	require.NoError(t, err)
 	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{PubKey: pk, Power: 10},
+		{PubKey: pk, Power: 10, ProTxHash: proTxHash},
 	}
 
 	state, _, err = blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
 	// test new validator was added to NextValidators
 	if assert.Equal(t, state.Validators.Size()+1, state.NextValidators.Size()) {
-		idx, _ := state.NextValidators.GetByAddress(pubkey.Address())
+		idx, _ := state.NextValidators.GetByProTxHash(proTxHash)
 		if idx < 0 {
 			t.Fatalf("can't find address %v in the set %v", pubkey.Address(), state.NextValidators)
 		}
@@ -391,11 +397,11 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 	block := makeBlock(state, 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-	vp, err := cryptoenc.PubKeyToProto(state.Validators.Validators[0].PubKey)
+	proTxHash := state.Validators.Validators[0].ProTxHash
 	require.NoError(t, err)
 	// Remove the only validator
 	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{PubKey: vp, Power: 0},
+		{ProTxHash: proTxHash, Power: 0},
 	}
 
 	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })

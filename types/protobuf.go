@@ -61,8 +61,8 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 		AppHash:            header.AppHash,
 		LastResultsHash:    header.LastResultsHash,
 
-		EvidenceHash:    header.EvidenceHash,
-		ProposerAddress: header.ProposerAddress,
+		EvidenceHash:      header.EvidenceHash,
+		ProposerProTxHash: header.ProposerProTxHash,
 	}
 }
 
@@ -70,6 +70,7 @@ func (tm2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
 		Address: val.PubKey.Address(),
 		Power:   val.VotingPower,
+		ProTxHash: val.ProTxHash,
 	}
 }
 
@@ -96,6 +97,7 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 	return abci.ValidatorUpdate{
 		PubKey: pk,
 		Power:  val.VotingPower,
+		ProTxHash: val.ProTxHash,
 	}
 }
 
@@ -143,7 +145,7 @@ func (tm2pb) Evidence(ev Evidence, valSet *ValidatorSet) abci.Evidence {
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.ValidatorUpdate {
+func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64, proTxHash []byte) abci.ValidatorUpdate {
 	pubkeyABCI, err := cryptoenc.PubKeyToProto(pubkey)
 	if err != nil {
 		panic(err)
@@ -151,6 +153,7 @@ func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.Validato
 	return abci.ValidatorUpdate{
 		PubKey: pubkeyABCI,
 		Power:  power,
+		ProTxHash: proTxHash,
 	}
 }
 
@@ -169,7 +172,7 @@ func (pb2tm) ValidatorUpdates(vals []abci.ValidatorUpdate) ([]*Validator, error)
 		if err != nil {
 			return nil, err
 		}
-		tmVals[i] = NewValidator(pub, v.Power)
+		tmVals[i] = NewValidator(pub, v.Power, v.ProTxHash)
 	}
 	return tmVals, nil
 }

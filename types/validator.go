@@ -15,21 +15,27 @@ import (
 // Volatile state for each Validator
 // NOTE: The ProposerPriority is not included in Validator.Hash();
 // make sure to update that method if changes are made here
+// The ProTxHash is part of Dash additions required for BLS threshold signatures
 type Validator struct {
 	Address     Address       `json:"address"`
 	PubKey      crypto.PubKey `json:"pub_key"`
 	VotingPower int64         `json:"voting_power"`
+	ProTxHash   ProTxHash        `json:"pro_tx_hash"`
 
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
 // NewValidator returns a new validator with the given pubkey and voting power.
-func NewValidator(pubKey crypto.PubKey, votingPower int64) *Validator {
+func NewValidator(pubKey crypto.PubKey, votingPower int64, proTxHash []byte) *Validator {
+	if len(proTxHash) != 32 {
+		panic("proTxHash wrong length")
+	}
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
 		VotingPower:      votingPower,
 		ProposerPriority: 0,
+		ProTxHash:        proTxHash,
 	}
 }
 
@@ -40,6 +46,10 @@ func (v *Validator) ValidateBasic() error {
 	}
 	if v.PubKey == nil {
 		return errors.New("validator does not have a public key")
+	}
+
+	if v.ProTxHash == nil {
+		return errors.New("no protx hash")
 	}
 
 	if v.VotingPower < 0 {
@@ -93,9 +103,10 @@ func (v *Validator) String() string {
 	if v == nil {
 		return "nil-Validator"
 	}
-	return fmt.Sprintf("Validator{%v %v VP:%v A:%v}",
+	return fmt.Sprintf("Validator{%v %v %v VP:%v A:%v}",
 		v.Address,
 		v.PubKey,
+		v.ProTxHash,
 		v.VotingPower,
 		v.ProposerPriority)
 }
@@ -143,11 +154,16 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 		return nil, err
 	}
 
+	if v.ProTxHash == nil {
+		return nil, errors.New("the validator must have a proTxHash")
+	}
+
 	vp := tmproto.Validator{
 		Address:          v.Address,
 		PubKey:           pk,
 		VotingPower:      v.VotingPower,
 		ProposerPriority: v.ProposerPriority,
+		ProTxHash: 		  v.ProTxHash,
 	}
 
 	return &vp, nil
@@ -169,6 +185,7 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 	v.PubKey = pk
 	v.VotingPower = vp.GetVotingPower()
 	v.ProposerPriority = vp.GetProposerPriority()
+	v.ProTxHash = vp.ProTxHash
 
 	return v, nil
 }
@@ -184,10 +201,14 @@ func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
 	if randPower {
 		votePower += int64(tmrand.Uint32())
 	}
+	proTxHash, err := privVal.GetProTxHash()
+	if err != nil {
+		panic(fmt.Errorf("could not retrieve proTxHash %w", err))
+	}
 	pubKey, err := privVal.GetPubKey()
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
 	}
-	val := NewValidator(pubKey, votePower)
+	val := NewValidator(pubKey, votePower, proTxHash)
 	return val, privVal
 }

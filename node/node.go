@@ -967,6 +967,10 @@ func (n *Node) OnStop() {
 
 // ConfigureRPC makes sure RPC has all the objects it needs to operate.
 func (n *Node) ConfigureRPC() error {
+	proTxHash, err := n.privValidator.GetProTxHash()
+	if err != nil {
+		return fmt.Errorf("can't get proTxHash: %w", err)
+	}
 	pubKey, err := n.privValidator.GetPubKey()
 	if err != nil {
 		return fmt.Errorf("can't get pubkey: %w", err)
@@ -982,6 +986,7 @@ func (n *Node) ConfigureRPC() error {
 		P2PPeers:       n.sw,
 		P2PTransport:   n,
 
+		ProTxHash:        proTxHash,
 		PubKey:           pubKey,
 		GenDoc:           n.genesisDoc,
 		TxIndexer:        n.txIndexer,

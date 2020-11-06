@@ -90,6 +90,27 @@ func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
 	return pk, nil
 }
 
+func (sc *SignerClient) GetProTxHash() (crypto.ProTxHash, error) {
+	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.ProTxHashRequest{ChainId: sc.chainID}))
+	if err != nil {
+		return nil, fmt.Errorf("send: %w", err)
+	}
+
+	resp := response.GetProTxHashResponse()
+	if resp == nil {
+		return nil, ErrUnexpectedResponse
+	}
+	if resp.Error != nil {
+		return nil, &RemoteSignerError{Code: int(resp.Error.Code), Description: resp.Error.Description}
+	}
+
+	if len(resp.ProTxHash) != 32 {
+		return nil, fmt.Errorf("proTxHash is invalid size")
+	}
+
+	return resp.ProTxHash, nil
+}
+
 // SignVote requests a remote signer to sign a vote
 func (sc *SignerClient) SignVote(chainID string, vote *tmproto.Vote) error {
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.SignVoteRequest{Vote: vote, ChainId: chainID}))
