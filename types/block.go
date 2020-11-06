@@ -629,6 +629,14 @@ type CommitSig struct {
 	Signature        []byte      `json:"signature"`
 }
 
+// CommitSig is a part of the Vote included in a Commit.
+type AggregateCommitSig struct {
+	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
+	ValidatorAddress Address     `json:"validator_address"`
+	Timestamp        time.Time   `json:"timestamp"`
+	Signature        []byte      `json:"signature"`
+}
+
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
 func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) CommitSig {
 	return CommitSig{
@@ -792,6 +800,7 @@ type Commit struct {
 	Round      int32       `json:"round"`
 	BlockID    BlockID     `json:"block_id"`
 	Signatures []CommitSig `json:"signatures"`
+	AggregateSignature CommitSig
 
 	// Memoized in first call to corresponding method.
 	// NOTE: can't memoize in constructor because constructor isn't used for

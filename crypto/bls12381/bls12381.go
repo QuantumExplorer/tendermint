@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"crypto/subtle"
 	"fmt"
-	"io"
-
 	bls "github.com/xdustinface/bls-signatures/go-bindings"
+	"io"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -129,6 +128,21 @@ func GenPrivKeyFromSecret(secret []byte) PrivKey {
 	seed := crypto.Sha256(secret) // Not Ripemd160 because we want 32 bytes.
 
 	return PrivKey(bls.PrivateKeyFromSeed(seed).Serialize())
+}
+
+//BLS Ids are the Pro_tx_hashes from validators
+func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte) ([]byte, error) {
+	var sigShares []*bls.InsecureSignature
+	// Create and validate sigShares for each member and populate BLS-IDs from members into ids
+	for _, sigShareData := range sigSharesData {
+		sigShare, error := bls.InsecureSignatureFromBytes(sigShareData)
+		if error != nil {
+			return nil, error
+		}
+		sigShares = append(sigShares, sigShare)
+	}
+	thresholdSignature, error := bls.InsecureSignatureRecover(sigShares, blsIds)
+	return thresholdSignature.Serialize(), error
 }
 
 //-------------------------------------
