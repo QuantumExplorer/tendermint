@@ -10,7 +10,6 @@ import (
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 var config *cfg.Config // NOTE: must be reset for each _test.go file
@@ -62,16 +61,17 @@ func makeVoteHR(t *testing.T, height int64, valIndex, round int32, privVals []ty
 		panic(err)
 	}
 
-	randBytes := tmrand.Bytes(tmhash.Size)
+	randBytes1 := tmrand.Bytes(tmhash.Size)
+	randBytes2 := tmrand.Bytes(tmhash.Size)
 
 	vote := &types.Vote{
 		ValidatorAddress: pubKey.Address(),
 		ValidatorIndex:   valIndex,
 		Height:           height,
 		Round:            round,
-		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
-		BlockID:          types.BlockID{Hash: randBytes, PartSetHeader: types.PartSetHeader{}},
+		BlockID:          types.BlockID{Hash: randBytes1, PartSetHeader: types.PartSetHeader{}},
+		StateID:		  types.StateID{LastAppHash: randBytes2},
 	}
 	chainID := config.ChainID()
 
@@ -81,7 +81,8 @@ func makeVoteHR(t *testing.T, height int64, valIndex, round int32, privVals []ty
 		panic(fmt.Sprintf("Error signing vote: %v", err))
 	}
 
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 
 	return vote
 }

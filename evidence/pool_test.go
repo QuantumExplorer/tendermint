@@ -435,10 +435,10 @@ func makeCommit(height int64, valAddr []byte) *types.Commit {
 	commitSigs := []types.CommitSig{{
 		BlockIDFlag:      types.BlockIDFlagCommit,
 		ValidatorAddress: valAddr,
-		Timestamp:        defaultEvidenceTime,
-		Signature:        []byte("Signature"),
+		BlockSignature:   []byte("BlockSignature"),
+		StateSignature:   []byte("StateSignature"),
 	}}
-	return types.NewCommit(height, 0, types.BlockID{}, commitSigs)
+	return types.NewCommit(height, 0, types.BlockID{}, types.StateID{}, commitSigs)
 }
 
 func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {

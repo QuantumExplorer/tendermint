@@ -127,13 +127,6 @@ func validateBlock(evidencePool EvidencePool, proxyAppQueryConn proxy.AppConnQue
 				state.LastBlockTime,
 			)
 		}
-		medianTime := MedianTime(block.LastCommit, state.LastValidators)
-		if !block.Time.Equal(medianTime) {
-			return fmt.Errorf("invalid block time. Expected %v, got %v",
-				medianTime,
-				block.Time,
-			)
-		}
 
 	case block.Height == state.InitialHeight:
 		genesisTime := state.LastBlockTime

@@ -194,10 +194,10 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet 
 	va := e.VoteA.ToProto()
 	vb := e.VoteB.ToProto()
 	// Signatures must be valid
-	if !pubKey.VerifySignature(types.VoteSignBytes(chainID, va), e.VoteA.Signature) {
+	if !pubKey.VerifySignature(types.VoteBlockSignBytes(chainID, va), e.VoteA.BlockSignature) {
 		return fmt.Errorf("verifying VoteA: %w", types.ErrVoteInvalidSignature)
 	}
-	if !pubKey.VerifySignature(types.VoteSignBytes(chainID, vb), e.VoteB.Signature) {
+	if !pubKey.VerifySignature(types.VoteBlockSignBytes(chainID, vb), e.VoteB.BlockSignature) {
 		return fmt.Errorf("verifying VoteB: %w", types.ErrVoteInvalidSignature)
 	}
 

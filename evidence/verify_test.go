@@ -340,6 +340,8 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	blockID3 := makeBlockID([]byte("blockhash"), 10000, []byte("partshash"))
 	blockID4 := makeBlockID([]byte("blockhash"), 10000, []byte("partshash2"))
 
+	stateID := makeStateID([]byte("lastapphash"))
+
 	const chainID = "mychain"
 
 	vote1 := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime)
@@ -351,21 +353,19 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	err = val2.SignVote(chainID, bv)
 	require.NoError(t, err)
 
-	vote1.Signature = v1.Signature
-	badVote.Signature = bv.Signature
+	vote1.BlockSignature = v1.BlockSignature
+	badVote.BlockSignature = bv.BlockSignature
 
 	cases := []voteData{
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, defaultEvidenceTime), true}, // different block ids
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID3, defaultEvidenceTime), true},
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID4, defaultEvidenceTime), true},
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime), false},     // wrong block id
-		{vote1, makeVote(t, val, "mychain2", 0, 10, 2, 1, blockID2, defaultEvidenceTime), false}, // wrong chain id
-		{vote1, makeVote(t, val, chainID, 0, 11, 2, 1, blockID2, defaultEvidenceTime), false},    // wrong height
-		{vote1, makeVote(t, val, chainID, 0, 10, 3, 1, blockID2, defaultEvidenceTime), false},    // wrong round
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 2, blockID2, defaultEvidenceTime), false},    // wrong step
-		{vote1, makeVote(t, val2, chainID, 0, 10, 2, 1, blockID2, defaultEvidenceTime), false},   // wrong validator
-		// a different vote time doesn't matter
-		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)), true},
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, stateID), true}, // different block ids
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID3, stateID), true},
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID4, stateID), true},
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID), false},     // wrong block id
+		{vote1, makeVote(t, val, "mychain2", 0, 10, 2, 1, blockID2, stateID), false}, // wrong chain id
+		{vote1, makeVote(t, val, chainID, 0, 11, 2, 1, blockID2, stateID), false},    // wrong height
+		{vote1, makeVote(t, val, chainID, 0, 10, 3, 1, blockID2, stateID), false},    // wrong round
+		{vote1, makeVote(t, val, chainID, 0, 10, 2, 2, blockID2, stateID), false},    // wrong step
+		{vote1, makeVote(t, val2, chainID, 0, 10, 2, 1, blockID2, stateID), false},   // wrong validator
 		{vote1, badVote, false}, // signed by wrong key
 	}
 
@@ -405,7 +405,7 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 
 func makeVote(
 	t *testing.T, val types.PrivValidator, chainID string, valIndex int32, height int64,
-	round int32, step int, blockID types.BlockID, time time.Time) *types.Vote {
+	round int32, step int, blockID types.BlockID, stateID types.StateID) *types.Vote {
 	pubKey, err := val.GetPubKey()
 	require.NoError(t, err)
 	v := &types.Vote{
@@ -415,7 +415,7 @@ func makeVote(
 		Round:            round,
 		Type:             tmproto.SignedMsgType(step),
 		BlockID:          blockID,
-		Timestamp:        time,
+		StateID:          stateID,
 	}
 
 	vpb := v.ToProto()
@@ -423,7 +423,8 @@ func makeVote(
 	if err != nil {
 		panic(err)
 	}
-	v.Signature = vpb.Signature
+	v.BlockSignature = vpb.BlockSignature
+	v.StateSignature = vpb.StateSignature
 	return v
 }
 
@@ -461,3 +462,14 @@ func makeBlockID(hash []byte, partSetSize uint32, partSetHash []byte) types.Bloc
 		},
 	}
 }
+
+func makeStateID(lastAppHash []byte) types.StateID {
+	var (
+		ah   = make([]byte, tmhash.Size)
+	)
+	copy(ah, lastAppHash)
+	return types.StateID{
+		LastAppHash: ah,
+	}
+}
+

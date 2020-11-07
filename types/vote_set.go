@@ -70,6 +70,7 @@ type VoteSet struct {
 	votes         []*Vote                // Primary votes to share
 	sum           int64                  // Sum of voting power for seen votes, discounting conflicts
 	maj23         *BlockID               // First 2/3 majority seen
+	stateMaj23    *StateID
 	votesByBlock  map[string]*blockVotes // string(blockHash|blockParts) -> blockVotes
 	peerMaj23s    map[P2PID]BlockID      // Maj23 for each peer
 }
@@ -90,6 +91,7 @@ func NewVoteSet(chainID string, height int64, round int32,
 		votes:         make([]*Vote, valSet.Size()),
 		sum:           0,
 		maj23:         nil,
+		stateMaj23:    nil,
 		votesByBlock:  make(map[string]*blockVotes, valSet.Size()),
 		peerMaj23s:    make(map[P2PID]BlockID),
 	}
@@ -193,7 +195,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 
 	// If we already know of this vote, return false.
 	if existing, ok := voteSet.getVote(valIndex, blockKey); ok {
-		if bytes.Equal(existing.Signature, vote.Signature) {
+		if bytes.Equal(existing.BlockSignature, vote.BlockSignature) && bytes.Equal(existing.StateSignature, vote.StateSignature) {
 			return false, nil // duplicate
 		}
 		return false, fmt.Errorf("existing vote: %v; new vote: %v: %w", existing, vote, ErrVoteNonDeterministicSignature)
@@ -288,7 +290,9 @@ func (voteSet *VoteSet) addVerifiedVote(
 		// Only consider the first quorum reached
 		if voteSet.maj23 == nil {
 			maj23BlockID := vote.BlockID
+			stateMaj23StateID := vote.StateID
 			voteSet.maj23 = &maj23BlockID
+			voteSet.stateMaj23 = &stateMaj23StateID
 			// And also copy votes over to voteSet.votes
 			for i, vote := range votesByBlock.votes {
 				if vote != nil {
@@ -598,7 +602,7 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 		commitSigs[i] = commitSig
 	}
 
-	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, commitSigs)
+	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, *voteSet.stateMaj23, commitSigs)
 }
 
 //--------------------------------------------------------------------------------

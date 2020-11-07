@@ -223,22 +223,19 @@ func TestReactorSelectiveBroadcast(t *testing.T) {
 }
 
 func exampleVote(t byte) *types.Vote {
-	var stamp, err = time.Parse(types.TimeFormat, "2017-12-25T03:00:01.234Z")
-	if err != nil {
-		panic(err)
-	}
-
 	return &types.Vote{
 		Type:      tmproto.SignedMsgType(t),
 		Height:    3,
 		Round:     2,
-		Timestamp: stamp,
 		BlockID: types.BlockID{
 			Hash: tmhash.Sum([]byte("blockID_hash")),
 			PartSetHeader: types.PartSetHeader{
 				Total: 1000000,
 				Hash:  tmhash.Sum([]byte("blockID_part_set_header_hash")),
 			},
+		},
+		StateID: types.StateID{
+			LastAppHash: tmhash.Sum([]byte("stateID_hash")),
 		},
 		ValidatorAddress: crypto.AddressHash([]byte("validator_address")),
 		ValidatorIndex:   56789,

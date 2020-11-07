@@ -52,6 +52,7 @@ func makeVote(
 	t *testing.T,
 	header *types.Header,
 	blockID types.BlockID,
+	stateID types.StateID,
 	valset *types.ValidatorSet,
 	privVal types.PrivValidator) *types.Vote {
 
@@ -64,15 +65,16 @@ func makeVote(
 		ValidatorIndex:   valIdx,
 		Height:           header.Height,
 		Round:            1,
-		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		StateID:          stateID,
 	}
 
 	vpb := vote.ToProto()
 
 	_ = privVal.SignVote(header.ChainID, vpb)
-	vote.Signature = vpb.Signature
+	vote.BlockSignature = vpb.BlockSignature
+	vote.StateSignature = vpb.StateSignature
 
 	return vote
 }
@@ -124,13 +126,13 @@ func newBlockchainReactor(
 
 	// let's add some blocks in
 	for blockHeight := int64(1); blockHeight <= maxBlockHeight; blockHeight++ {
-		lastCommit := types.NewCommit(blockHeight-1, 1, types.BlockID{}, nil)
+		lastCommit := types.NewCommit(blockHeight-1, 1, types.BlockID{}, types.StateID{}, nil)
 		if blockHeight > 1 {
 			lastBlockMeta := blockStore.LoadBlockMeta(blockHeight - 1)
 			lastBlock := blockStore.LoadBlock(blockHeight - 1)
 
-			vote := makeVote(t, &lastBlock.Header, lastBlockMeta.BlockID, state.Validators, privVals[0])
-			lastCommit = types.NewCommit(vote.Height, vote.Round, lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
+			vote := makeVote(t, &lastBlock.Header, lastBlockMeta.BlockID, lastBlockMeta.StateID, state.Validators, privVals[0])
+			lastCommit = types.NewCommit(vote.Height, vote.Round, lastBlockMeta.BlockID, lastBlockMeta.StateID, []types.CommitSig{vote.CommitSig()})
 		}
 
 		thisBlock := makeBlock(blockHeight, state, lastCommit)

@@ -71,23 +71,27 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 
 		// precommit a random block
 		blockHash := bytes.HexBytes(tmrand.Bytes(32))
+		lastAppHash := bytes.HexBytes(tmrand.Bytes(32))
 		precommit := &types.Vote{
 			ValidatorAddress: addr,
 			ValidatorIndex:   valIndex,
 			Height:           cs.Height,
 			Round:            cs.Round,
-			Timestamp:        cs.voteTime(),
 			Type:             tmproto.PrecommitType,
 			BlockID: types.BlockID{
 				Hash:          blockHash,
 				PartSetHeader: types.PartSetHeader{Total: 1, Hash: tmrand.Bytes(32)}},
+			StateID: types.StateID{
+				LastAppHash: lastAppHash,
+			},
 		}
 		p := precommit.ToProto()
 		err = cs.privValidator.SignVote(cs.state.ChainID, p)
 		if err != nil {
 			t.Error(err)
 		}
-		precommit.Signature = p.Signature
+		precommit.BlockSignature = p.BlockSignature
+		precommit.StateSignature = p.StateSignature
 		cs.privValidator = nil // disable priv val so we don't do normal votes
 		cs.mtx.Unlock()
 

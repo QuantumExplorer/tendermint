@@ -1136,7 +1136,7 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 	case cs.Height == cs.state.InitialHeight:
 		// We're creating a proposal for the first block.
 		// The commit is empty, but not nil.
-		commit = types.NewCommit(0, 0, types.BlockID{}, nil)
+		commit = types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
 	case cs.LastCommit.HasTwoThirdsMajority():
 		// Make the commit from LastCommit
 		commit = cs.LastCommit.MakeCommit()
@@ -1742,7 +1742,7 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	p := proposal.ToProto()
 	// Verify signature
 	if !cs.Validators.GetProposer().PubKey.VerifySignature(
-		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature,
+		types.ProposalBlockSignBytes(cs.state.ChainID, p), proposal.Signature,
 	) {
 		return ErrInvalidProposalSignature
 	}
@@ -1878,7 +1878,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			if voteErr.VoteA.Height == cs.state.InitialHeight {
 				timestamp = cs.state.LastBlockTime // genesis time
 			} else {
-				timestamp = sm.MedianTime(cs.LastCommit.MakeCommit(), cs.LastValidators)
+				timestamp = cs.RoundState.Proposal.Timestamp
 			}
 			evidenceErr := cs.evpool.AddEvidenceFromConsensus(
 				types.NewDuplicateVoteEvidence(voteErr.VoteA, voteErr.VoteB), timestamp, cs.Validators)
@@ -2092,13 +2092,14 @@ func (cs *State) signVote(
 		ValidatorIndex:   valIdx,
 		Height:           cs.Height,
 		Round:            cs.Round,
-		Timestamp:        cs.voteTime(),
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
+		StateID: 		  types.StateID{LastAppHash: cs.state.AppHash},
 	}
 	v := vote.ToProto()
 	err := cs.privValidator.SignVote(cs.state.ChainID, v)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 
 	return vote, err
 }

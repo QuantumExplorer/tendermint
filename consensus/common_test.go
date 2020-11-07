@@ -101,13 +101,13 @@ func (vs *validatorStub) signVote(
 		ValidatorAddress: pubKey.Address(),
 		Height:           vs.Height,
 		Round:            vs.Round,
-		Timestamp:        tmtime.Now(),
 		Type:             voteType,
 		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
 	}
 	v := vote.ToProto()
 	err = vs.PrivValidator.SignVote(config.ChainID(), v)
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 
 	return vote, err
 }

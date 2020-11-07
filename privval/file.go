@@ -383,9 +383,11 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	// If they only differ by timestamp, use last timestamp and signature
 	// Otherwise, return error
 	if sameHRS {
-		if bytes.Equal(blockSignBytes, lss.BlockSignBytes) && bytes.Equal(stateSignBytes, lss.StateSignBytes){
-			proposal.BlockSignature = lss.BlockSignBytes
-			proposal.StateSignature = lss.StateSignBytes
+		if bytes.Equal(blockSignBytes, lss.BlockSignBytes) {
+			proposal.Signature = lss.BlockSignBytes
+		} else if timestamp, ok := checkProposalsOnlyDifferByTimestamp(lss.BlockSignBytes, blockSignBytes); ok {
+			proposal.Timestamp = timestamp
+			proposal.Signature = lss.BlockSignBytes
 		} else {
 			err = fmt.Errorf("conflicting data")
 		}
@@ -402,8 +404,7 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 		return err
 	}
 	pv.saveSigned(height, round, step, blockSignBytes, blockSig, stateSignBytes, stateSig)
-	proposal.BlockSignature = blockSig
-	proposal.StateSignature = stateSig
+	proposal.Signature = blockSig
 	return nil
 }
 
@@ -422,26 +423,6 @@ func (pv *FilePV) saveSigned(height int64, round int32, step int8,
 }
 
 //-----------------------------------------------------------------------------------------
-
-// returns the timestamp from the lastSignBytes.
-// returns true if the only difference in the votes is their timestamp.
-func checkVotesOnlyDifferByTimestamp(lastSignBytes, newSignBytes []byte) (time.Time, bool) {
-	var lastVote, newVote tmproto.CanonicalVote
-	if err := protoio.UnmarshalDelimited(lastSignBytes, &lastVote); err != nil {
-		panic(fmt.Sprintf("LastSignBytes cannot be unmarshalled into vote: %v", err))
-	}
-	if err := protoio.UnmarshalDelimited(newSignBytes, &newVote); err != nil {
-		panic(fmt.Sprintf("signBytes cannot be unmarshalled into vote: %v", err))
-	}
-
-	lastTime := lastVote.Timestamp
-	// set the times to the same value and check equality
-	now := tmtime.Now()
-	lastVote.Timestamp = now
-	newVote.Timestamp = now
-
-	return lastTime, proto.Equal(&newVote, &lastVote)
-}
 
 // returns the timestamp from the lastSignBytes.
 // returns true if the only difference in the proposals is their timestamp
