@@ -75,12 +75,22 @@ func (pv MockPV) SignVote(chainID string, vote *tmproto.Vote) error {
 		useChainID = "incorrect-chain-id"
 	}
 
-	signBytes := VoteSignBytes(useChainID, vote)
-	sig, err := pv.PrivKey.Sign(signBytes)
+	blockSignBytes := VoteBlockSignBytes(useChainID, vote)
+	stateSignBytes := VoteStateSignBytes(useChainID, vote)
+
+	blockSignature, err := pv.PrivKey.Sign(blockSignBytes)
 	if err != nil {
 		return err
 	}
-	vote.Signature = sig
+
+	stateSignature, err := pv.PrivKey.Sign(stateSignBytes)
+	if err != nil {
+		return err
+	}
+
+	vote.BlockSignature = blockSignature
+	vote.StateSignature = stateSignature
+
 	return nil
 }
 
@@ -91,12 +101,14 @@ func (pv MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error 
 		useChainID = "incorrect-chain-id"
 	}
 
-	signBytes := ProposalSignBytes(useChainID, proposal)
+	signBytes := ProposalBlockSignBytes(useChainID, proposal)
 	sig, err := pv.PrivKey.Sign(signBytes)
 	if err != nil {
 		return err
 	}
+
 	proposal.Signature = sig
+
 	return nil
 }
 

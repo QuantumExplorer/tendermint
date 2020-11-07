@@ -33,6 +33,8 @@ type PubKey interface {
 	Address() Address
 	Bytes() []byte
 	VerifySignature(msg []byte, sig []byte) bool
+    AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error)
+	VerifyAggregateSignature(msgs [][]byte, sig []byte) bool
 	Equals(PubKey) bool
 	TypeIdentifier() string
 	Type() KeyType

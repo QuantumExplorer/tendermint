@@ -33,6 +33,23 @@ func CanonicalizeBlockID(bid tmproto.BlockID) *tmproto.CanonicalBlockID {
 	return cbid
 }
 
+func CanonicalizeStateID(sid tmproto.StateID) *tmproto.CanonicalStateID {
+	rsid, err := StateIDFromProto(&sid)
+	if err != nil {
+		panic(err)
+	}
+	var csid *tmproto.CanonicalStateID
+	if rsid == nil || rsid.IsZero() {
+		rsid = nil
+	} else {
+		csid = &tmproto.CanonicalStateID{
+			LastAppHash:          sid.LastAppHash,
+		}
+	}
+
+	return csid
+}
+
 // CanonicalizeVote transforms the given PartSetHeader to a CanonicalPartSetHeader.
 func CanonicalizePartSetHeader(psh tmproto.PartSetHeader) tmproto.CanonicalPartSetHeader {
 	return tmproto.CanonicalPartSetHeader(psh)
@@ -46,6 +63,7 @@ func CanonicalizeProposal(chainID string, proposal *tmproto.Proposal) tmproto.Ca
 		Round:     int64(proposal.Round), // encoded as sfixed64
 		POLRound:  int64(proposal.PolRound),
 		BlockID:   CanonicalizeBlockID(proposal.BlockID),
+		StateID:   CanonicalizeStateID(proposal.StateID),
 		Timestamp: proposal.Timestamp,
 		ChainID:   chainID,
 	}
@@ -59,7 +77,7 @@ func CanonicalizeVote(chainID string, vote *tmproto.Vote) tmproto.CanonicalVote 
 		Height:    vote.Height,       // encoded as sfixed64
 		Round:     int64(vote.Round), // encoded as sfixed64
 		BlockID:   CanonicalizeBlockID(vote.BlockID),
-		Timestamp: vote.Timestamp,
+		StateID:   CanonicalizeStateID(vote.StateID),
 		ChainID:   chainID,
 	}
 }

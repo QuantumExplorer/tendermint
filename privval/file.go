@@ -77,8 +77,10 @@ type FilePVLastSignState struct {
 	Height    int64            `json:"height"`
 	Round     int32            `json:"round"`
 	Step      int8             `json:"step"`
-	Signature []byte           `json:"signature,omitempty"`
-	SignBytes tmbytes.HexBytes `json:"signbytes,omitempty"`
+	BlockSignature []byte           `json:"block_signature,omitempty"`
+	BlockSignBytes tmbytes.HexBytes `json:"block_sign_bytes,omitempty"`
+	StateSignature []byte           `json:"state_signature,omitempty"`
+	StateSignBytes tmbytes.HexBytes `json:"state_sign_bytes,omitempty"`
 
 	filePath string
 }
@@ -111,9 +113,15 @@ func (lss *FilePVLastSignState) CheckHRS(height int64, round int32, step int8) (
 					lss.Step,
 				)
 			} else if lss.Step == step {
-				if lss.SignBytes != nil {
-					if lss.Signature == nil {
-						panic("pv: Signature is nil but SignBytes is not!")
+				if lss.BlockSignBytes != nil {
+					if lss.BlockSignature == nil {
+						panic("pv: BlockID Signature is nil but BlockSignBytes is not!")
+					}
+					return true, nil
+				}
+				if lss.StateSignBytes != nil {
+					if lss.StateSignature == nil {
+						panic("pv: StateID Signature is nil but StateSignBytes is not!")
 					}
 					return true, nil
 				}
@@ -277,12 +285,15 @@ func (pv *FilePV) Save() {
 // Reset resets all fields in the FilePV.
 // NOTE: Unsafe!
 func (pv *FilePV) Reset() {
-	var sig []byte
+	var blockSig []byte
+	var stateSig []byte
 	pv.LastSignState.Height = 0
 	pv.LastSignState.Round = 0
 	pv.LastSignState.Step = 0
-	pv.LastSignState.Signature = sig
-	pv.LastSignState.SignBytes = nil
+	pv.LastSignState.BlockSignature = blockSig
+	pv.LastSignState.StateSignature = stateSig
+	pv.LastSignState.BlockSignBytes = nil
+	pv.LastSignState.StateSignBytes = nil
 	pv.Save()
 }
 
@@ -312,7 +323,9 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 		return err
 	}
 
-	signBytes := types.VoteSignBytes(chainID, vote)
+	blockSignBytes := types.VoteBlockSignBytes(chainID, vote)
+
+	stateSignBytes := types.VoteStateSignBytes(chainID, vote)
 
 	// We might crash before writing to the wal,
 	// causing us to try to re-sign for the same HRS.
@@ -320,24 +333,31 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 	// If they only differ by timestamp, use last timestamp and signature
 	// Otherwise, return error
 	if sameHRS {
-		if bytes.Equal(signBytes, lss.SignBytes) {
-			vote.Signature = lss.Signature
-		} else if timestamp, ok := checkVotesOnlyDifferByTimestamp(lss.SignBytes, signBytes); ok {
-			vote.Timestamp = timestamp
-			vote.Signature = lss.Signature
+		if bytes.Equal(blockSignBytes, lss.BlockSignBytes) && bytes.Equal(stateSignBytes, lss.StateSignBytes) {
+			vote.BlockSignature = lss.BlockSignature
+			vote.StateSignature = lss.StateSignature
 		} else {
 			err = fmt.Errorf("conflicting data")
 		}
 		return err
 	}
 
-	// It passed the checks. Sign the vote
-	sig, err := pv.Key.PrivKey.Sign(signBytes)
+
+	sigBlock, err := pv.Key.PrivKey.Sign(blockSignBytes)
 	if err != nil {
 		return err
 	}
-	pv.saveSigned(height, round, step, signBytes, sig)
-	vote.Signature = sig
+
+	sigState, err := pv.Key.PrivKey.Sign(stateSignBytes)
+	if err != nil {
+		return err
+	}
+
+	pv.saveSigned(height, round, step, blockSignBytes, sigBlock, stateSignBytes, sigState)
+
+	vote.BlockSignature = sigBlock
+	vote.StateSignature = sigState
+
 	return nil
 }
 
@@ -354,7 +374,8 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 		return err
 	}
 
-	signBytes := types.ProposalSignBytes(chainID, proposal)
+	blockSignBytes := types.ProposalBlockSignBytes(chainID, proposal)
+	stateSignBytes := types.ProposalStateSignBytes(chainID, proposal)
 
 	// We might crash before writing to the wal,
 	// causing us to try to re-sign for the same HRS.
@@ -362,11 +383,9 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	// If they only differ by timestamp, use last timestamp and signature
 	// Otherwise, return error
 	if sameHRS {
-		if bytes.Equal(signBytes, lss.SignBytes) {
-			proposal.Signature = lss.Signature
-		} else if timestamp, ok := checkProposalsOnlyDifferByTimestamp(lss.SignBytes, signBytes); ok {
-			proposal.Timestamp = timestamp
-			proposal.Signature = lss.Signature
+		if bytes.Equal(blockSignBytes, lss.BlockSignBytes) && bytes.Equal(stateSignBytes, lss.StateSignBytes){
+			proposal.BlockSignature = lss.BlockSignBytes
+			proposal.StateSignature = lss.StateSignBytes
 		} else {
 			err = fmt.Errorf("conflicting data")
 		}
@@ -374,24 +393,31 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	}
 
 	// It passed the checks. Sign the proposal
-	sig, err := pv.Key.PrivKey.Sign(signBytes)
+	blockSig, err := pv.Key.PrivKey.Sign(blockSignBytes)
 	if err != nil {
 		return err
 	}
-	pv.saveSigned(height, round, step, signBytes, sig)
-	proposal.Signature = sig
+	stateSig, err := pv.Key.PrivKey.Sign(stateSignBytes)
+	if err != nil {
+		return err
+	}
+	pv.saveSigned(height, round, step, blockSignBytes, blockSig, stateSignBytes, stateSig)
+	proposal.BlockSignature = blockSig
+	proposal.StateSignature = stateSig
 	return nil
 }
 
 // Persist height/round/step and signature
 func (pv *FilePV) saveSigned(height int64, round int32, step int8,
-	signBytes []byte, sig []byte) {
+	blockSignBytes []byte, blockSig []byte, stateSignBytes []byte, stateSig []byte) {
 
 	pv.LastSignState.Height = height
 	pv.LastSignState.Round = round
 	pv.LastSignState.Step = step
-	pv.LastSignState.Signature = sig
-	pv.LastSignState.SignBytes = signBytes
+	pv.LastSignState.BlockSignature = blockSig
+	pv.LastSignState.BlockSignBytes = blockSignBytes
+	pv.LastSignState.StateSignature = stateSig
+	pv.LastSignState.StateSignBytes = stateSignBytes
 	pv.LastSignState.Save()
 }
 

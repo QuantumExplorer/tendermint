@@ -392,11 +392,11 @@ func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	voteA := makeMockVote(height, 0, 0, pubKey.Address(), randBlockID(), time)
 	vA := voteA.ToProto()
 	_ = pv.SignVote(chainID, vA)
-	voteA.Signature = vA.Signature
+	voteA.BlockSignature = vA.BlockSignature
 	voteB := makeMockVote(height, 0, 0, pubKey.Address(), randBlockID(), time)
 	vB := voteB.ToProto()
 	_ = pv.SignVote(chainID, vB)
-	voteB.Signature = vB.Signature
+	voteB.BlockSignature = vB.BlockSignature
 	return NewDuplicateVoteEvidence(voteA, voteB)
 }
 
@@ -407,7 +407,6 @@ func makeMockVote(height int64, round, index int32, addr Address,
 		Height:           height,
 		Round:            round,
 		BlockID:          blockID,
-		Timestamp:        time,
 		ValidatorAddress: addr,
 		ValidatorIndex:   index,
 	}

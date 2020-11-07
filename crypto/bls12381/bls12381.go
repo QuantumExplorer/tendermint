@@ -165,6 +165,60 @@ func (pubKey PubKey) Bytes() []byte {
 	return []byte(pubKey)
 }
 
+func (pubKey PubKey) AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error) {
+	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+	if err != nil {
+		return nil, err
+	}
+	var aggregationInfos []*bls.AggregationInfo
+	for _, message := range messages {
+		aggregationInfo := bls.AggregationInfoFromMsg(publicKey, message)
+		aggregationInfos = append(aggregationInfos, aggregationInfo)
+	}
+	var sigShares []*bls.Signature
+	for i, sigShareData := range sigSharesData {
+		sigShare, error := bls.SignatureFromBytesWithAggregationInfo(sigShareData, aggregationInfos[i])
+		if error != nil {
+			return nil, error
+		}
+		sigShares = append(sigShares, sigShare)
+	}
+
+	aggregatedSignature, error := bls.SignatureAggregate(sigShares)
+	return aggregatedSignature.Serialize(), error
+}
+
+//func (pubKey PubKey) DeaggregateSignature(signature []byte, messages [][]byte) (*[]bls.Signature, error) {
+//	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//	var aggregationInfos []*bls.AggregationInfo
+//	for _, message := range messages {
+//		aggregationInfo := bls.AggregationInfoFromMsg(publicKey, message)
+//		aggregationInfos = append(aggregationInfos, aggregationInfo)
+//	}
+//	aggregatedInfo := bls.MergeAggregationInfos(aggregationInfos)
+//	insecureBlsSignature, err := bls.InsecureSignatureFromBytes(signature)
+//	if err != nil {
+//		return nil, err
+//	}
+//	blsSignature := bls.SignatureFromInsecureSigWithAggregationInfo(insecureBlsSignature, aggregatedInfo)
+//	blsSignature.DivideBy()
+//	var sigShares []*bls.Signature
+//	for i, sigShareData := range sigSharesData {
+//		sigShare, error := bls.SignatureFromBytesWithAggregationInfo(sigShareData, aggregationInfos[i])
+//		if error != nil {
+//			return nil, error
+//		}
+//		sigShares = append(sigShares, sigShare)
+//	}
+//
+//	aggregatedSignature, error := bls.SignatureAggregate(sigShares)
+//	return aggregatedSignature, error
+//}
+
+
 func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
 	if len(sig) != SignatureSize {
@@ -175,6 +229,36 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 		return false
 	}
 	aggregationInfo := bls.AggregationInfoFromMsg(publicKey, msg)
+	if err != nil {
+		return false
+	}
+	blsSignature, err := bls.SignatureFromBytesWithAggregationInfo(sig, aggregationInfo)
+	if err != nil {
+		// maybe log/panic?
+		return false
+	}
+	return blsSignature.Verify()
+}
+
+func VerifyAggregateSignatureSameMessage(pubKeys []PubKey, msg []byte, sig []byte) bool {
+	return true
+}
+
+func (pubKey PubKey) VerifyAggregateSignature(messages [][]byte, sig []byte) bool {
+	if len(sig) != SignatureSize {
+		return false
+	}
+	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+	if err != nil {
+		return false
+	}
+	var aggregationInfos []*bls.AggregationInfo
+	for _, message := range messages {
+		aggregationInfo := bls.AggregationInfoFromMsg(publicKey, message)
+		aggregationInfos = append(aggregationInfos, aggregationInfo)
+	}
+	aggregationInfo := bls.MergeAggregationInfos(aggregationInfos)
+
 	if err != nil {
 		return false
 	}

@@ -29,10 +29,11 @@ const (
 
 // GenesisValidator is an initial validator.
 type GenesisValidator struct {
-	Address Address       `json:"address"`
-	PubKey  crypto.PubKey `json:"pub_key"`
-	Power   int64         `json:"power"`
-	Name    string        `json:"name"`
+	Address   Address       `json:"address"`
+	PubKey    crypto.PubKey `json:"pub_key"`
+	Power     int64         `json:"power"`
+	Name      string        `json:"name"`
+	ProTxHash []byte        `json:"pro_tx_hash"`
 }
 
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.
@@ -60,7 +61,7 @@ func (genDoc *GenesisDoc) SaveAs(file string) error {
 func (genDoc *GenesisDoc) ValidatorHash() []byte {
 	vals := make([]*Validator, len(genDoc.Validators))
 	for i, v := range genDoc.Validators {
-		vals[i] = NewValidator(v.PubKey, v.Power)
+		vals[i] = NewValidator(v.PubKey, v.Power, v.ProTxHash)
 	}
 	vset := NewValidatorSet(vals)
 	return vset.Hash()
@@ -97,6 +98,9 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 		}
 		if len(v.Address) == 0 {
 			genDoc.Validators[i].Address = v.PubKey.Address()
+		}
+		if len(v.ProTxHash) == 0 {
+			return fmt.Errorf("validators must all contain a pro_tx_hash")
 		}
 	}
 

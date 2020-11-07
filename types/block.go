@@ -625,25 +625,17 @@ const (
 type CommitSig struct {
 	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
 	ValidatorAddress Address     `json:"validator_address"`
-	Timestamp        time.Time   `json:"timestamp"`
-	Signature        []byte      `json:"signature"`
-}
-
-// CommitSig is a part of the Vote included in a Commit.
-type AggregateCommitSig struct {
-	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
-	ValidatorAddress Address     `json:"validator_address"`
-	Timestamp        time.Time   `json:"timestamp"`
-	Signature        []byte      `json:"signature"`
+	BlockSignature        []byte      `json:"block_signature"`
+	StateSignature        []byte      `json:"state_signature"`
 }
 
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
-func NewCommitSigForBlock(signature []byte, valAddr Address, ts time.Time) CommitSig {
+func NewCommitSigForBlock(blockSignature []byte, stateSignature []byte, valAddr Address, ts time.Time) CommitSig {
 	return CommitSig{
 		BlockIDFlag:      BlockIDFlagCommit,
 		ValidatorAddress: valAddr,
-		Timestamp:        ts,
-		Signature:        signature,
+		BlockSignature:   blockSignature,
+		StateSignature:   stateSignature,
 	}
 }
 
@@ -697,11 +689,11 @@ func (cs CommitSig) Absent() bool {
 // 3. block ID flag
 // 4. timestamp
 func (cs CommitSig) String() string {
-	return fmt.Sprintf("CommitSig{%X by %X on %v @ %s}",
-		tmbytes.Fingerprint(cs.Signature),
+	return fmt.Sprintf("CommitSig{%X , %X by %X on %v}",
+		tmbytes.Fingerprint(cs.BlockSignature),
+		tmbytes.Fingerprint(cs.StateSignature),
 		tmbytes.Fingerprint(cs.ValidatorAddress),
-		cs.BlockIDFlag,
-		CanonicalTime(cs.Timestamp))
+		cs.BlockIDFlag)
 }
 
 // BlockID returns the Commit's BlockID if CommitSig indicates signing,
@@ -736,11 +728,11 @@ func (cs CommitSig) ValidateBasic() error {
 		if len(cs.ValidatorAddress) != 0 {
 			return errors.New("validator address is present")
 		}
-		if !cs.Timestamp.IsZero() {
-			return errors.New("time is present")
+		if len(cs.BlockSignature) != 0 {
+			return errors.New("block signature is present")
 		}
-		if len(cs.Signature) != 0 {
-			return errors.New("signature is present")
+		if len(cs.StateSignature) != 0 {
+			return errors.New("state signature is present")
 		}
 	default:
 		if len(cs.ValidatorAddress) != crypto.AddressSize {
@@ -749,12 +741,17 @@ func (cs CommitSig) ValidateBasic() error {
 				len(cs.ValidatorAddress),
 			)
 		}
-		// NOTE: Timestamp validation is subtle and handled elsewhere.
-		if len(cs.Signature) == 0 {
-			return errors.New("signature is missing")
+		if len(cs.BlockSignature) == 0 {
+			return errors.New("block signature is missing")
 		}
-		if len(cs.Signature) > MaxSignatureSize {
-			return fmt.Errorf("signature is too big (max: %d)", MaxSignatureSize)
+		if len(cs.BlockSignature) > MaxSignatureSize {
+			return fmt.Errorf("block signature is too big (max: %d)", MaxSignatureSize)
+		}
+		if len(cs.StateSignature) == 0 {
+			return errors.New("state signature is missing")
+		}
+		if len(cs.StateSignature) > MaxSignatureSize {
+			return fmt.Errorf("state signature is too big (max: %d)", MaxSignatureSize)
 		}
 	}
 
@@ -770,8 +767,8 @@ func (cs *CommitSig) ToProto() *tmproto.CommitSig {
 	return &tmproto.CommitSig{
 		BlockIdFlag:      tmproto.BlockIDFlag(cs.BlockIDFlag),
 		ValidatorAddress: cs.ValidatorAddress,
-		Timestamp:        cs.Timestamp,
-		Signature:        cs.Signature,
+		BlockSignature:   cs.BlockSignature,
+		StateSignature:   cs.StateSignature,
 	}
 }
 
@@ -781,8 +778,8 @@ func (cs *CommitSig) FromProto(csp tmproto.CommitSig) error {
 
 	cs.BlockIDFlag = BlockIDFlag(csp.BlockIdFlag)
 	cs.ValidatorAddress = csp.ValidatorAddress
-	cs.Timestamp = csp.Timestamp
-	cs.Signature = csp.Signature
+	cs.BlockSignature = csp.BlockSignature
+	cs.StateSignature = csp.StateSignature
 
 	return cs.ValidateBasic()
 }
@@ -799,6 +796,7 @@ type Commit struct {
 	Height     int64       `json:"height"`
 	Round      int32       `json:"round"`
 	BlockID    BlockID     `json:"block_id"`
+	StateID	   StateID     `json:"state_id"`
 	Signatures []CommitSig `json:"signatures"`
 	AggregateSignature CommitSig
 
@@ -810,11 +808,12 @@ type Commit struct {
 }
 
 // NewCommit returns a new Commit.
-func NewCommit(height int64, round int32, blockID BlockID, commitSigs []CommitSig) *Commit {
+func NewCommit(height int64, round int32, blockID BlockID, stateID StateID, commitSigs []CommitSig) *Commit {
 	return &Commit{
 		Height:     height,
 		Round:      round,
 		BlockID:    blockID,
+		StateID:    stateID,
 		Signatures: commitSigs,
 	}
 }
@@ -846,25 +845,33 @@ func (commit *Commit) GetVote(valIdx int32) *Vote {
 		Height:           commit.Height,
 		Round:            commit.Round,
 		BlockID:          commitSig.BlockID(commit.BlockID),
-		Timestamp:        commitSig.Timestamp,
 		ValidatorAddress: commitSig.ValidatorAddress,
 		ValidatorIndex:   valIdx,
-		Signature:        commitSig.Signature,
+		BlockSignature:   commitSig.BlockSignature,
+		StateSignature:   commitSig.StateSignature,
 	}
 }
 
-// VoteSignBytes returns the bytes of the Vote corresponding to valIdx for
+// VoteBlockSignBytes returns the bytes of the Vote corresponding to valIdx for
 // signing.
-//
-// The only unique part is the Timestamp - all other fields signed over are
-// otherwise the same for all validators.
 //
 // Panics if valIdx >= commit.Size().
 //
 // See VoteSignBytes
-func (commit *Commit) VoteSignBytes(chainID string, valIdx int32) []byte {
+func (commit *Commit) VoteBlockSignBytes(chainID string, valIdx int32) []byte {
 	v := commit.GetVote(valIdx).ToProto()
-	return VoteSignBytes(chainID, v)
+	return VoteBlockSignBytes(chainID, v)
+}
+
+// VoteStateSignBytes returns the bytes of the State corresponding to valIdx for
+// signing.
+//
+// Panics if valIdx >= commit.Size().
+//
+// See VoteSignBytes
+func (commit *Commit) VoteStateSignBytes(chainID string, valIdx int32) []byte {
+	v := commit.GetVote(valIdx).ToProto()
+	return VoteStateSignBytes(chainID, v)
 }
 
 // Type returns the vote type of the commit, which is always VoteTypePrecommit
@@ -1305,4 +1312,73 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 	blockID.Hash = bID.Hash
 
 	return blockID, blockID.ValidateBasic()
+}
+
+//--------------------------------------------------------------------------------
+
+// StateID
+type StateID struct {
+	LastAppHash          tmbytes.HexBytes `json:"last_app_hash"`
+}
+
+// Equals returns true if the StateID matches the given StateID
+func (stateID StateID) Equals(other StateID) bool {
+	return bytes.Equal(stateID.LastAppHash, other.LastAppHash)
+}
+
+// Key returns a machine-readable string representation of the StateID
+func (stateID StateID) Key() string {
+	return string(stateID.LastAppHash)
+}
+
+// ValidateBasic performs basic validation.
+func (stateID StateID) ValidateBasic() error {
+	// LastAppHash can be empty in case of genesis block.
+	if err := ValidateHash(stateID.LastAppHash); err != nil {
+		return fmt.Errorf("wrong Hash")
+	}
+	return nil
+}
+
+// IsZero returns true if this is the StateID of a nil block.
+func (stateID StateID) IsZero() bool {
+	return len(stateID.LastAppHash) == 0
+}
+
+// IsComplete returns true if this is a valid StateID of a non-nil block.
+func (stateID StateID) IsComplete() bool {
+	return len(stateID.LastAppHash) == tmhash.Size
+}
+
+// String returns a human readable string representation of the StateID.
+//
+// 1. hash
+//
+func (stateID StateID) String() string {
+	return fmt.Sprintf(`%v`, stateID.LastAppHash)
+}
+
+// ToProto converts BlockID to protobuf
+func (stateID *StateID) ToProto() tmproto.StateID {
+	if stateID == nil {
+		return tmproto.StateID{}
+	}
+
+	return tmproto.StateID{
+		LastAppHash:          stateID.LastAppHash,
+	}
+}
+
+// FromProto sets a protobuf BlockID to the given pointer.
+// It returns an error if the block id is invalid.
+func StateIDFromProto(sID *tmproto.StateID) (*StateID, error) {
+	if sID == nil {
+		return nil, errors.New("nil StateID")
+	}
+
+	stateID := new(StateID)
+
+	stateID.LastAppHash = sID.LastAppHash
+
+	return stateID, stateID.ValidateBasic()
 }

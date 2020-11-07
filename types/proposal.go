@@ -113,7 +113,7 @@ func (p *Proposal) String() string {
 // devices that rely on this encoding.
 //
 // See CanonicalizeProposal
-func ProposalSignBytes(chainID string, p *tmproto.Proposal) []byte {
+func ProposalBlockSignBytes(chainID string, p *tmproto.Proposal) []byte {
 	pb := CanonicalizeProposal(chainID, p)
 	bz, err := protoio.MarshalDelimited(&pb)
 	if err != nil {

@@ -25,7 +25,6 @@ func MakeCommit(blockID BlockID, height int64, round int32,
 			Round:            round,
 			Type:             tmproto.PrecommitType,
 			BlockID:          blockID,
-			Timestamp:        now,
 		}
 
 		_, err = signAddVote(validators[i], vote, voteSet)
@@ -43,7 +42,8 @@ func signAddVote(privVal PrivValidator, vote *Vote, voteSet *VoteSet) (signed bo
 	if err != nil {
 		return false, err
 	}
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 	return voteSet.AddVote(vote)
 }
 
@@ -66,7 +66,6 @@ func MakeVote(
 		ValidatorIndex:   idx,
 		Height:           height,
 		Round:            0,
-		Timestamp:        now,
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
 	}
@@ -76,7 +75,8 @@ func MakeVote(
 		return nil, err
 	}
 
-	vote.Signature = v.Signature
+	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 
 	return vote, nil
 }
