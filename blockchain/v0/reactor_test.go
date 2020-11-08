@@ -97,10 +97,10 @@ func newBlockchainReactor(logger log.Logger, genDoc *types.GenesisDoc, privVals 
 			vote, err := types.MakeVote(
 				lastBlock.Header.Height,
 				lastBlockMeta.BlockID,
+				lastBlockMeta.StateID,
 				state.Validators,
 				privVals[0],
 				lastBlock.Header.ChainID,
-				time.Now(),
 			)
 			if err != nil {
 				panic(err)
