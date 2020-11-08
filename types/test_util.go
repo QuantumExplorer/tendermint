@@ -2,8 +2,6 @@ package types
 
 import (
 	"fmt"
-	"time"
-
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	"github.com/tendermint/tendermint/version"
@@ -51,10 +49,10 @@ func signAddVote(privVal PrivValidator, vote *Vote, voteSet *VoteSet) (signed bo
 func MakeVote(
 	height int64,
 	blockID BlockID,
+	stateID StateID,
 	valSet *ValidatorSet,
 	privVal PrivValidator,
 	chainID string,
-	now time.Time,
 ) (*Vote, error) {
 	pubKey, err := privVal.GetPubKey()
 	if err != nil {
@@ -69,6 +67,7 @@ func MakeVote(
 		Round:            0,
 		Type:             tmproto.PrecommitType,
 		BlockID:          blockID,
+		StateID:		  stateID,
 	}
 	v := vote.ToProto()
 

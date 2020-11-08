@@ -17,7 +17,6 @@ import (
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/state/mocks"
 	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 const validationTestsStopHeight int64 = 10
@@ -37,7 +36,7 @@ func TestValidateBlockHeader(t *testing.T) {
 		memmock.Mempool{},
 		sm.EmptyEvidencePool{},
 	)
-	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
 
 	// some bad values
 	wrongHash := tmhash.Sum([]byte("this hash is wrong"))
@@ -89,7 +88,7 @@ func TestValidateBlockHeader(t *testing.T) {
 			A good block passes
 		*/
 		var err error
-		state, _, lastCommit, err = makeAndCommitGoodBlock(state, height, lastCommit, proposerAddr, blockExec, privVals, nil)
+		state, _, _, lastCommit, err = makeAndCommitGoodBlock(state, height, lastCommit, proposerAddr, blockExec, privVals, nil)
 		require.NoError(t, err, "height %d", height)
 	}
 }
@@ -109,8 +108,8 @@ func TestValidateBlockCommit(t *testing.T) {
 		memmock.Mempool{},
 		sm.EmptyEvidencePool{},
 	)
-	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
-	wrongSigsCommit := types.NewCommit(1, 0, types.BlockID{}, nil)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
+	wrongSigsCommit := types.NewCommit(1, 0, types.BlockID{}, types.StateID{}, nil)
 	badPrivVal := types.NewMockPV()
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
@@ -123,16 +122,17 @@ func TestValidateBlockCommit(t *testing.T) {
 			wrongHeightVote, err := types.MakeVote(
 				height,
 				state.LastBlockID,
+				types.StateID{LastAppHash: state.AppHash},
 				state.Validators,
 				privVals[proposerAddr.String()],
 				chainID,
-				time.Now(),
 			)
 			require.NoError(t, err, "height %d", height)
 			wrongHeightCommit := types.NewCommit(
 				wrongHeightVote.Height,
 				wrongHeightVote.Round,
 				state.LastBlockID,
+				types.StateID{LastAppHash: state.AppHash},
 				[]types.CommitSig{wrongHeightVote.CommitSig()},
 			)
 			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proposerAddr)
@@ -158,7 +158,8 @@ func TestValidateBlockCommit(t *testing.T) {
 		*/
 		var err error
 		var blockID types.BlockID
-		state, blockID, lastCommit, err = makeAndCommitGoodBlock(
+		var stateID types.StateID
+		state, blockID, stateID, lastCommit, err = makeAndCommitGoodBlock(
 			state,
 			height,
 			lastCommit,
@@ -174,10 +175,10 @@ func TestValidateBlockCommit(t *testing.T) {
 		*/
 		goodVote, err := types.MakeVote(height,
 			blockID,
+			stateID,
 			state.Validators,
 			privVals[proposerAddr.String()],
 			chainID,
-			time.Now(),
 		)
 		require.NoError(t, err, "height %d", height)
 
@@ -189,9 +190,9 @@ func TestValidateBlockCommit(t *testing.T) {
 			ValidatorIndex:   0,
 			Height:           height,
 			Round:            0,
-			Timestamp:        tmtime.Now(),
 			Type:             tmproto.PrecommitType,
 			BlockID:          blockID,
+			StateID:          stateID,
 		}
 
 		g := goodVote.ToProto()
@@ -202,10 +203,10 @@ func TestValidateBlockCommit(t *testing.T) {
 		err = badPrivVal.SignVote(chainID, b)
 		require.NoError(t, err, "height %d", height)
 
-		goodVote.Signature, badVote.Signature = g.Signature, b.Signature
+		goodVote.BlockSignature, badVote.BlockSignature = g.BlockSignature, b.BlockSignature
 
 		wrongSigsCommit = types.NewCommit(goodVote.Height, goodVote.Round,
-			blockID, []types.CommitSig{goodVote.CommitSig(), badVote.CommitSig()})
+			blockID, stateID, []types.CommitSig{goodVote.CommitSig(), badVote.CommitSig()})
 	}
 }
 
@@ -233,7 +234,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 		memmock.Mempool{},
 		evpool,
 	)
-	lastCommit := types.NewCommit(0, 0, types.BlockID{}, nil)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
 		proposerAddr := state.Validators.GetProposer().Address
@@ -276,7 +277,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 		}
 
 		var err error
-		state, _, lastCommit, err = makeAndCommitGoodBlock(
+		state, _, _, lastCommit, err = makeAndCommitGoodBlock(
 			state,
 			height,
 			lastCommit,

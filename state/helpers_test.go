@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/tendermint/tendermint/crypto/bls12381"
-	"time"
-
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -37,52 +35,53 @@ func makeAndCommitGoodBlock(
 	proposerAddr []byte,
 	blockExec *sm.BlockExecutor,
 	privVals map[string]types.PrivValidator,
-	evidence []types.Evidence) (sm.State, types.BlockID, *types.Commit, error) {
+	evidence []types.Evidence) (sm.State, types.BlockID, types.StateID, *types.Commit, error) {
 	// A good block passes
-	state, blockID, err := makeAndApplyGoodBlock(state, height, lastCommit, proposerAddr, blockExec, evidence)
+	state, blockID, stateID, err := makeAndApplyGoodBlock(state, height, lastCommit, proposerAddr, blockExec, evidence)
 	if err != nil {
-		return state, types.BlockID{}, nil, err
+		return state, types.BlockID{}, types.StateID{}, nil, err
 	}
 
 	// Simulate a lastCommit for this block from all validators for the next height
-	commit, err := makeValidCommit(height, blockID, state.Validators, privVals)
+	commit, err := makeValidCommit(height, blockID, stateID, state.Validators, privVals)
 	if err != nil {
-		return state, types.BlockID{}, nil, err
+		return state, types.BlockID{}, types.StateID{}, nil, err
 	}
-	return state, blockID, commit, nil
+	return state, blockID, stateID, commit, nil
 }
 
 func makeAndApplyGoodBlock(state sm.State, height int64, lastCommit *types.Commit, proposerAddr []byte,
-	blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, error) {
+	blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, types.StateID, error) {
 	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr)
 	if err := blockExec.ValidateBlock(state, block); err != nil {
-		return state, types.BlockID{}, err
+		return state, types.BlockID{}, types.StateID{}, err
 	}
 	blockID := types.BlockID{Hash: block.Hash(),
 		PartSetHeader: types.PartSetHeader{Total: 3, Hash: tmrand.Bytes(32)}}
 	state, _, err := blockExec.ApplyBlock(state, blockID, block)
 	if err != nil {
-		return state, types.BlockID{}, err
+		return state, types.BlockID{}, types.StateID{}, err
 	}
-	return state, blockID, nil
+	return state, blockID, types.StateID{LastAppHash: state.AppHash}, nil
 }
 
 func makeValidCommit(
 	height int64,
 	blockID types.BlockID,
+	stateID types.StateID,
 	vals *types.ValidatorSet,
 	privVals map[string]types.PrivValidator,
 ) (*types.Commit, error) {
 	sigs := make([]types.CommitSig, 0)
 	for i := 0; i < vals.Size(); i++ {
 		_, val := vals.GetByIndex(int32(i))
-		vote, err := types.MakeVote(height, blockID, vals, privVals[val.Address.String()], chainID, time.Now())
+		vote, err := types.MakeVote(height, blockID, stateID, vals, privVals[val.Address.String()], chainID)
 		if err != nil {
 			return nil, err
 		}
 		sigs = append(sigs, vote.CommitSig())
 	}
-	return types.NewCommit(height, 0, blockID, sigs), nil
+	return types.NewCommit(height, 0, blockID, stateID, sigs), nil
 }
 
 // make some bogus txs
@@ -100,13 +99,15 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 		secret := []byte(fmt.Sprintf("test%d", i))
 		pk := bls12381.GenPrivKeyFromSecret(secret)
 		valAddr := pk.PubKey().Address()
+		proTxHash := crypto.CRandBytes(32)
 		vals[i] = types.GenesisValidator{
 			Address: valAddr,
 			PubKey:  pk.PubKey(),
 			Power:   1000,
 			Name:    fmt.Sprintf("test%d", i),
+			ProTxHash: proTxHash,
 		}
-		privVals[valAddr.String()] = types.NewMockPVWithParams(pk, false, false)
+		privVals[valAddr.String()] = types.NewMockPVWithParams(pk, proTxHash, false, false)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
 		ChainID:    chainID,
@@ -145,7 +146,7 @@ func makeBlock(state sm.State, height int64) *types.Block {
 func genValSet(size int) *types.ValidatorSet {
 	vals := make([]*types.Validator, size)
 	for i := 0; i < size; i++ {
-		vals[i] = types.NewValidator(bls12381.GenPrivKey().PubKey(), 10)
+		vals[i] = types.NewValidator(bls12381.GenPrivKey().PubKey(), 10, crypto.CRandBytes(32))
 	}
 	return types.NewValidatorSet(vals)
 }

@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"context"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
@@ -19,7 +20,6 @@ import (
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/state/mocks"
 	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 var (
@@ -68,17 +68,18 @@ func TestBeginBlockValidators(t *testing.T) {
 	prevHash := state.LastBlockID.Hash
 	prevParts := types.PartSetHeader{}
 	prevBlockID := types.BlockID{Hash: prevHash, PartSetHeader: prevParts}
+	prevAppHash := state.AppHash
+	prevStateID := types.StateID{LastAppHash: prevAppHash}
 
 	var (
-		now        = tmtime.Now()
 		commitSig0 = types.NewCommitSigForBlock(
 			[]byte("Signature1"),
-			state.Validators.Validators[0].Address,
-			now)
+			[]byte("StateSignature1"),
+			state.Validators.Validators[0].Address)
 		commitSig1 = types.NewCommitSigForBlock(
 			[]byte("Signature2"),
-			state.Validators.Validators[1].Address,
-			now)
+			[]byte("StateSignature1"),
+			state.Validators.Validators[1].Address)
 		absentSig = types.NewCommitSigAbsent()
 	)
 
@@ -93,7 +94,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		lastCommit := types.NewCommit(1, 0, prevBlockID, tc.lastCommitSigs)
+		lastCommit := types.NewCommit(1, 0, prevBlockID, prevStateID, tc.lastCommitSigs)
 
 		// block for height 2
 		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().Address)
@@ -225,9 +226,9 @@ func TestValidateValidatorUpdates(t *testing.T) {
 
 func TestUpdateValidators(t *testing.T) {
 	pubkey1 := bls12381.GenPrivKey().PubKey()
-	val1 := types.NewValidator(pubkey1, 10)
+	val1 := types.NewValidator(pubkey1, 10, crypto.CRandBytes(32))
 	pubkey2 := bls12381.GenPrivKey().PubKey()
-	val2 := types.NewValidator(pubkey2, 20)
+	val2 := types.NewValidator(pubkey2, 20, crypto.CRandBytes(32))
 
 	pk, err := cryptoenc.PubKeyToProto(pubkey1)
 	require.NoError(t, err)
@@ -254,7 +255,7 @@ func TestUpdateValidators(t *testing.T) {
 			"updating a validator is OK",
 			types.NewValidatorSet([]*types.Validator{val1}),
 			[]abci.ValidatorUpdate{{PubKey: pk, Power: 20}},
-			types.NewValidatorSet([]*types.Validator{types.NewValidator(pubkey1, 20)}),
+			types.NewValidatorSet([]*types.Validator{types.NewValidator(pubkey1, 20, crypto.CRandBytes(32))}),
 			false,
 		},
 		{
