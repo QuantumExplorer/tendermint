@@ -689,7 +689,7 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 		// Validate block signature.
 		voteBlockSignBytes := commit.VoteBlockSignBytes(chainID, int32(idx))
 		if !val.PubKey.VerifySignature(voteBlockSignBytes, commitSig.BlockSignature) {
-			return fmt.Errorf("wrong block signature (#%d): %X", idx, commitSig.BlockSignature)
+			return fmt.Errorf("wrong block signature (#%d): %X / %X", idx, voteBlockSignBytes, commitSig.BlockSignature)
 		}
 
 		// Validate block signature.
@@ -720,7 +720,7 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 //
 // This method is primarily used by the light client and does not check all the
 // signatures.
-func (vals *ValidatorSet) VerifyCommitLight(chainID string, blockID BlockID,
+func (vals *ValidatorSet) VerifyCommitLight(chainID string, blockID BlockID, stateID StateID,
 	height int64, commit *Commit) error {
 
 	if vals.Size() != len(commit.Signatures) {
@@ -734,6 +734,11 @@ func (vals *ValidatorSet) VerifyCommitLight(chainID string, blockID BlockID,
 	if !blockID.Equals(commit.BlockID) {
 		return fmt.Errorf("invalid commit -- wrong block ID: want %v, got %v",
 			blockID, commit.BlockID)
+	}
+
+	if !stateID.Equals(commit.StateID) {
+		return fmt.Errorf("invalid commit -- wrong state ID: want %v, got %v",
+			stateID, commit.StateID)
 	}
 
 	talliedVotingPower := int64(0)
@@ -751,6 +756,7 @@ func (vals *ValidatorSet) VerifyCommitLight(chainID string, blockID BlockID,
 		// Validate block signature.
 		voteBlockSignBytes := commit.VoteBlockSignBytes(chainID, int32(idx))
 		if !val.PubKey.VerifySignature(voteBlockSignBytes, commitSig.BlockSignature) {
+			commit.VoteBlockSignBytes(chainID, int32(idx))
 			return fmt.Errorf("wrong block signature (#%d): %X", idx, commitSig.BlockSignature)
 		}
 

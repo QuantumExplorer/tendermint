@@ -20,9 +20,15 @@ type BlockMeta struct {
 
 // NewBlockMeta returns a new BlockMeta.
 func NewBlockMeta(block *Block, blockParts *PartSet) *BlockMeta {
+	var lastAppHash []byte
+	if block.Header.AppHash == nil {
+		lastAppHash = make([]byte,32)
+	} else {
+		lastAppHash = block.Header.AppHash
+	}
 	return &BlockMeta{
 		BlockID:      BlockID{block.Hash(), blockParts.Header()},
-		StateID:      StateID{LastAppHash: block.Header.AppHash},
+		StateID:      StateID{LastAppHash: lastAppHash},
 		BlockSize:    block.Size(),
 		Header:       block.Header,
 		HasChainLock: block.ChainLock != nil,

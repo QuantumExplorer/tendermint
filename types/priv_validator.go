@@ -83,14 +83,15 @@ func (pv MockPV) SignVote(chainID string, vote *tmproto.Vote) error {
 	if err != nil {
 		return err
 	}
-
-	stateSignature, err := pv.PrivKey.Sign(stateSignBytes)
-	if err != nil {
-		return err
-	}
-
 	vote.BlockSignature = blockSignature
-	vote.StateSignature = stateSignature
+
+	if stateSignBytes != nil {
+		stateSignature, err := pv.PrivKey.Sign(stateSignBytes)
+		if err != nil {
+			return err
+		}
+		vote.StateSignature = stateSignature
+	}
 
 	return nil
 }

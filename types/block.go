@@ -713,6 +713,23 @@ func (cs CommitSig) BlockID(commitBlockID BlockID) BlockID {
 	return blockID
 }
 
+// StateID returns the Commit's StateID if CommitSig indicates signing,
+// otherwise - empty StateID.
+func (cs CommitSig) StateID(commitStateID StateID) StateID {
+	var stateID StateID
+	switch cs.BlockIDFlag {
+	case BlockIDFlagAbsent:
+		stateID = StateID{}
+	case BlockIDFlagCommit:
+		stateID = commitStateID
+	case BlockIDFlagNil:
+		stateID = StateID{}
+	default:
+		panic(fmt.Sprintf("Unknown BlockIDFlag: %v", cs.BlockIDFlag))
+	}
+	return stateID
+}
+
 // ValidateBasic performs basic validation.
 func (cs CommitSig) ValidateBasic() error {
 	switch cs.BlockIDFlag {
@@ -781,6 +798,7 @@ func (cs *CommitSig) FromProto(csp tmproto.CommitSig) error {
 	cs.BlockSignature = csp.BlockSignature
 	cs.StateSignature = csp.StateSignature
 
+	//lets assume if there is no state signature that the commit is for the genesis block
 	return cs.ValidateBasic()
 }
 
@@ -845,6 +863,7 @@ func (commit *Commit) GetVote(valIdx int32) *Vote {
 		Height:           commit.Height,
 		Round:            commit.Round,
 		BlockID:          commitSig.BlockID(commit.BlockID),
+		StateID: 		  commitSig.StateID(commit.StateID),
 		ValidatorAddress: commitSig.ValidatorAddress,
 		ValidatorIndex:   valIdx,
 		BlockSignature:   commitSig.BlockSignature,
@@ -942,6 +961,9 @@ func (commit *Commit) ValidateBasic() error {
 		if commit.BlockID.IsZero() {
 			return errors.New("commit cannot be for nil block")
 		}
+		if commit.StateID.LastAppHash == nil {
+			return errors.New("commit LastAppHash state can not be nil")
+		}
 
 		if len(commit.Signatures) == 0 {
 			return errors.New("no signatures in commit")
@@ -1016,6 +1038,7 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 	c.Height = commit.Height
 	c.Round = commit.Round
 	c.BlockID = commit.BlockID.ToProto()
+	c.StateID = commit.StateID.ToProto()
 
 	return c
 }
@@ -1036,6 +1059,11 @@ func CommitFromProto(cp *tmproto.Commit) (*Commit, error) {
 		return nil, err
 	}
 
+	si, err := StateIDFromProto(&cp.StateID)
+	if err != nil {
+		return nil, err
+	}
+
 	sigs := make([]CommitSig, len(cp.Signatures))
 	for i := range cp.Signatures {
 		if err := sigs[i].FromProto(cp.Signatures[i]); err != nil {
@@ -1047,6 +1075,7 @@ func CommitFromProto(cp *tmproto.Commit) (*Commit, error) {
 	commit.Height = cp.Height
 	commit.Round = cp.Round
 	commit.BlockID = *bi
+	commit.StateID = *si
 
 	return commit, commit.ValidateBasic()
 }
