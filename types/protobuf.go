@@ -96,6 +96,7 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 	return abci.ValidatorUpdate{
 		PubKey: pk,
 		Power:  val.VotingPower,
+		ProTxHash: val.ProTxHash,
 	}
 }
 

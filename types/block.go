@@ -878,7 +878,8 @@ func (commit *Commit) GetVote(valIdx int32) *Vote {
 //
 // See VoteSignBytes
 func (commit *Commit) VoteBlockSignBytes(chainID string, valIdx int32) []byte {
-	v := commit.GetVote(valIdx).ToProto()
+	vote := commit.GetVote(valIdx)
+	v := vote.ToProto()
 	return VoteBlockSignBytes(chainID, v)
 }
 

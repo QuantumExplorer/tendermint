@@ -2,16 +2,14 @@ package v2
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	dbm "github.com/tendermint/tm-db"
 	"net"
 	"os"
 	"sort"
 	"sync"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/behaviour"
@@ -470,6 +468,7 @@ func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower 
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
 			Power:  val.VotingPower,
+			ProTxHash: val.ProTxHash,
 		}
 		privValidators[i] = privVal
 	}
@@ -524,10 +523,10 @@ func newReactorStore(
 			vote, err := types.MakeVote(
 				lastBlock.Header.Height,
 				lastBlockMeta.BlockID,
+				lastBlockMeta.StateID,
 				state.Validators,
 				privVals[0],
 				lastBlock.Header.ChainID,
-				time.Now(),
 			)
 			if err != nil {
 				panic(err)

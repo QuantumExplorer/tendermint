@@ -61,11 +61,11 @@ func TestMsgToProto(t *testing.T) {
 	pv := types.NewMockPV()
 	pk, err := pv.GetPubKey()
 	require.NoError(t, err)
-	val := types.NewValidator(pk, 100)
+	val := types.NewValidator(pk, 100, pv.ProTxHash)
 
 	vote, err := types.MakeVote(
-		1, types.BlockID{}, &types.ValidatorSet{Proposer: val, Validators: []*types.Validator{val}},
-		pv, "chainID", time.Now())
+		1, types.BlockID{}, types.StateID{}, &types.ValidatorSet{Proposer: val, Validators: []*types.Validator{val}},
+		pv, "chainID")
 	require.NoError(t, err)
 	pbVote := vote.ToProto()
 
@@ -328,6 +328,11 @@ func TestConsMsgsVectors(t *testing.T) {
 		Hash:          []byte("add_more_exclamation_marks_code-"),
 		PartSetHeader: psh,
 	}
+
+	si := types.StateID{
+		LastAppHash: make([]byte,32),
+	}
+
 	pbBi := bi.ToProto()
 	bits := bits.NewBitArray(1)
 	pbBits := bits.ToProto()
@@ -362,9 +367,9 @@ func TestConsMsgsVectors(t *testing.T) {
 		ValidatorIndex:   1,
 		Height:           1,
 		Round:            0,
-		Timestamp:        date,
 		Type:             tmproto.PrecommitType,
 		BlockID:          bi,
+		StateID:          si,
 	}
 	vpb := v.ToProto()
 

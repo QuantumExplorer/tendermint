@@ -689,6 +689,7 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID,
 		// Validate block signature.
 		voteBlockSignBytes := commit.VoteBlockSignBytes(chainID, int32(idx))
 		if !val.PubKey.VerifySignature(voteBlockSignBytes, commitSig.BlockSignature) {
+			commit.VoteBlockSignBytes(chainID, int32(idx))
 			return fmt.Errorf("wrong block signature (#%d): %X / %X", idx, voteBlockSignBytes, commitSig.BlockSignature)
 		}
 

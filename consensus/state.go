@@ -2087,6 +2087,15 @@ func (cs *State) signVote(
 	addr := cs.privValidatorPubKey.Address()
 	valIdx, _ := cs.Validators.GetByAddress(addr)
 
+	//Since the block has already been validated the block.lastAppHash must be the state.AppHash
+
+	var lastAppHash []byte
+	if cs.state.AppHash == nil {
+		lastAppHash = make([]byte, 32)
+	} else {
+		lastAppHash = cs.state.AppHash
+	}
+
 	vote := &types.Vote{
 		ValidatorAddress: addr,
 		ValidatorIndex:   valIdx,
@@ -2094,7 +2103,7 @@ func (cs *State) signVote(
 		Round:            cs.Round,
 		Type:             msgType,
 		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
-		StateID: 		  types.StateID{LastAppHash: cs.state.AppHash},
+		StateID: 		  types.StateID{LastAppHash: lastAppHash},
 	}
 	v := vote.ToProto()
 	err := cs.privValidator.SignVote(cs.state.ChainID, v)

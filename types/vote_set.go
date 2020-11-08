@@ -70,7 +70,7 @@ type VoteSet struct {
 	votes         []*Vote                // Primary votes to share
 	sum           int64                  // Sum of voting power for seen votes, discounting conflicts
 	maj23         *BlockID               // First 2/3 majority seen
-	stateMaj23    *StateID
+	stateMaj23    *StateID               // If a 2/3 majority is seen, this is the stateID
 	votesByBlock  map[string]*blockVotes // string(blockHash|blockParts) -> blockVotes
 	peerMaj23s    map[P2PID]BlockID      // Maj23 for each peer
 }
