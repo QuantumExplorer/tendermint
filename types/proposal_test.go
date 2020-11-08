@@ -39,7 +39,7 @@ func init() {
 
 func TestProposalSignable(t *testing.T) {
 	chainID := "test_chain_id"
-	signBytes := ProposalSignBytes(chainID, pbp)
+	signBytes := ProposalBlockSignBytes(chainID, pbp)
 	pb := CanonicalizeProposal(chainID, pbp)
 
 	expected, err := protoio.MarshalDelimited(&pb)
@@ -64,7 +64,7 @@ func TestProposalVerifySignature(t *testing.T) {
 		4, 1,2, 2,
 		BlockID{tmrand.Bytes(tmhash.Size), PartSetHeader{777, tmrand.Bytes(tmhash.Size)}})
 	p := prop.ToProto()
-	signBytes := ProposalSignBytes("test_chain_id", p)
+	signBytes := ProposalBlockSignBytes("test_chain_id", p)
 
 	// sign it
 	err = privVal.SignProposal("test_chain_id", p)
@@ -89,7 +89,7 @@ func TestProposalVerifySignature(t *testing.T) {
 	require.NoError(t, err)
 
 	// verify the transmitted proposal
-	newSignBytes := ProposalSignBytes("test_chain_id", pb)
+	newSignBytes := ProposalBlockSignBytes("test_chain_id", pb)
 	require.Equal(t, string(signBytes), string(newSignBytes))
 	valid = pubKey.VerifySignature(newSignBytes, np.Signature)
 	require.True(t, valid)
@@ -97,7 +97,7 @@ func TestProposalVerifySignature(t *testing.T) {
 
 func BenchmarkProposalWriteSignBytes(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ProposalSignBytes("test_chain_id", pbp)
+		ProposalBlockSignBytes("test_chain_id", pbp)
 	}
 }
 
@@ -119,7 +119,7 @@ func BenchmarkProposalVerifySignature(b *testing.B) {
 	require.NoError(b, err)
 
 	for i := 0; i < b.N; i++ {
-		pubKey.VerifySignature(ProposalSignBytes("test_chain_id", pbp), testProposal.Signature)
+		pubKey.VerifySignature(ProposalBlockSignBytes("test_chain_id", pbp), testProposal.Signature)
 	}
 }
 

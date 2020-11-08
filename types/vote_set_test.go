@@ -10,7 +10,6 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 func TestVoteSet_AddVote_Good(t *testing.T) {
@@ -33,8 +32,8 @@ func TestVoteSet_AddVote_Good(t *testing.T) {
 		Height:           height,
 		Round:            round,
 		Type:             tmproto.PrevoteType,
-		Timestamp:        tmtime.Now(),
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		StateID:          StateID{ LastAppHash: nil},
 	}
 	_, err = signAddVote(val0, vote, voteSet)
 	require.NoError(t, err)
@@ -54,9 +53,9 @@ func TestVoteSet_AddVote_Bad(t *testing.T) {
 		ValidatorIndex:   -1,
 		Height:           height,
 		Round:            round,
-		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrevoteType,
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		StateID:          StateID{ LastAppHash: nil},
 	}
 
 	// val0 votes for nil.
@@ -130,8 +129,8 @@ func TestVoteSet_2_3Majority(t *testing.T) {
 		Height:           height,
 		Round:            round,
 		Type:             tmproto.PrevoteType,
-		Timestamp:        tmtime.Now(),
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		StateID:          StateID{ LastAppHash: nil},
 	}
 	// 6 out of 10 voted for nil.
 	for i := int32(0); i < 6; i++ {
@@ -175,6 +174,7 @@ func TestVoteSet_2_3MajorityRedux(t *testing.T) {
 	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrevoteType, 100, 1)
 
 	blockHash := crypto.CRandBytes(32)
+	stateHash := crypto.CRandBytes(32)
 	blockPartsTotal := uint32(123)
 	blockPartSetHeader := PartSetHeader{blockPartsTotal, crypto.CRandBytes(32)}
 
@@ -183,9 +183,9 @@ func TestVoteSet_2_3MajorityRedux(t *testing.T) {
 		ValidatorIndex:   -1,  // NOTE: must fill in
 		Height:           height,
 		Round:            round,
-		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrevoteType,
 		BlockID:          BlockID{blockHash, blockPartSetHeader},
+		StateID:          StateID{ stateHash},
 	}
 
 	// 66 out of 100 voted for nil.
@@ -280,9 +280,9 @@ func TestVoteSet_Conflicts(t *testing.T) {
 		ValidatorIndex:   -1,
 		Height:           height,
 		Round:            round,
-		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrevoteType,
 		BlockID:          BlockID{nil, PartSetHeader{}},
+		StateID:          StateID{nil},
 	}
 
 	val0, err := privValidators[0].GetPubKey()
@@ -402,15 +402,16 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 	height, round := int64(1), int32(0)
 	voteSet, _, privValidators := randVoteSet(height, round, tmproto.PrecommitType, 10, 1)
 	blockHash, blockPartSetHeader := crypto.CRandBytes(32), PartSetHeader{123, crypto.CRandBytes(32)}
+	stateHash := crypto.CRandBytes(32)
 
 	voteProto := &Vote{
 		ValidatorAddress: nil,
 		ValidatorIndex:   -1,
 		Height:           height,
 		Round:            round,
-		Timestamp:        tmtime.Now(),
 		Type:             tmproto.PrecommitType,
 		BlockID:          BlockID{blockHash, blockPartSetHeader},
+		StateID:          StateID{stateHash},
 	}
 
 	// 6 out of 10 voted for some block.

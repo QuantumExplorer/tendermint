@@ -45,9 +45,10 @@ func voteToStep(vote *tmproto.Vote) int8 {
 
 // FilePVKey stores the immutable part of PrivValidator.
 type FilePVKey struct {
-	Address types.Address  `json:"address"`
-	PubKey  crypto.PubKey  `json:"pub_key"`
-	PrivKey crypto.PrivKey `json:"priv_key"`
+	Address   types.Address  `json:"address"`
+	PubKey    crypto.PubKey  `json:"pub_key"`
+	PrivKey   crypto.PrivKey `json:"priv_key"`
+	ProTxHash []byte 	     `json:"pro_tx_hash"`
 
 	filePath string
 }
@@ -161,12 +162,13 @@ type FilePV struct {
 }
 
 // NewFilePV generates a new validator from the given key and paths.
-func NewFilePV(privKey crypto.PrivKey, keyFilePath, stateFilePath string) *FilePV {
+func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, keyFilePath, stateFilePath string) *FilePV {
 	return &FilePV{
 		Key: FilePVKey{
 			Address:  privKey.PubKey().Address(),
 			PubKey:   privKey.PubKey(),
 			PrivKey:  privKey,
+			ProTxHash: proTxHash,
 			filePath: keyFilePath,
 		},
 		LastSignState: FilePVLastSignState{
@@ -179,7 +181,7 @@ func NewFilePV(privKey crypto.PrivKey, keyFilePath, stateFilePath string) *FileP
 // GenFilePV generates a new validator with randomly generated private key
 // and sets the filePaths, but does not call Save().
 func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	return NewFilePV(bls12381.GenPrivKey(), keyFilePath, stateFilePath)
+	return NewFilePV(bls12381.GenPrivKey(), crypto.CRandBytes(32), keyFilePath, stateFilePath)
 }
 
 // LoadFilePV loads a FilePV from the filePaths.  The FilePV handles double

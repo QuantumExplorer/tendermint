@@ -48,19 +48,20 @@ func (pvs PrivValidatorsByAddress) Swap(i, j int) {
 // Only use it for testing.
 type MockPV struct {
 	PrivKey              crypto.PrivKey
+	ProTxHash			 []byte
 	breakProposalSigning bool
 	breakVoteSigning     bool
 }
 
 func NewMockPV() MockPV {
-	return MockPV{bls12381.GenPrivKey(), false, false}
+	return MockPV{bls12381.GenPrivKey(), crypto.CRandBytes(32), false, false}
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
 // grained control over the operation of the mock validator. This is useful for
 // mocking test failures.
-func NewMockPVWithParams(privKey crypto.PrivKey, breakProposalSigning, breakVoteSigning bool) MockPV {
-	return MockPV{privKey, breakProposalSigning, breakVoteSigning}
+func NewMockPVWithParams(privKey crypto.PrivKey, proTxHash []byte, breakProposalSigning, breakVoteSigning bool) MockPV {
+	return MockPV{privKey, proTxHash, breakProposalSigning, breakVoteSigning}
 }
 
 // Implements PrivValidator.
@@ -152,5 +153,5 @@ func (pv *ErroringMockPV) SignProposal(chainID string, proposal *tmproto.Proposa
 // NewErroringMockPV returns a MockPV that fails on each signing request. Again, for testing only.
 
 func NewErroringMockPV() *ErroringMockPV {
-	return &ErroringMockPV{MockPV{bls12381.GenPrivKey(), false, false}}
+	return &ErroringMockPV{MockPV{bls12381.GenPrivKey(), crypto.CRandBytes(32), false, false}}
 }

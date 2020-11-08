@@ -9,8 +9,8 @@ import (
 	"github.com/tendermint/tendermint/version"
 )
 
-func MakeCommit(blockID BlockID, height int64, round int32,
-	voteSet *VoteSet, validators []PrivValidator, now time.Time) (*Commit, error) {
+func MakeCommit(blockID BlockID, stateID StateID, height int64, round int32,
+	voteSet *VoteSet, validators []PrivValidator) (*Commit, error) {
 
 	// all sign
 	for i := 0; i < len(validators); i++ {
@@ -25,6 +25,7 @@ func MakeCommit(blockID BlockID, height int64, round int32,
 			Round:            round,
 			Type:             tmproto.PrecommitType,
 			BlockID:          blockID,
+			StateID:          stateID,
 		}
 
 		_, err = signAddVote(validators[i], vote, voteSet)

@@ -35,11 +35,10 @@ func makeTestCommit(height int64, timestamp time.Time) *types.Commit {
 	commitSigs := []types.CommitSig{{
 		BlockIDFlag:      types.BlockIDFlagCommit,
 		ValidatorAddress: tmrand.Bytes(crypto.AddressSize),
-		Timestamp:        timestamp,
-		Signature:        []byte("Signature"),
+		BlockSignature:        []byte("BlockSignature"),
 	}}
 	return types.NewCommit(height, 0,
-		types.BlockID{Hash: []byte(""), PartSetHeader: types.PartSetHeader{Hash: []byte(""), Total: 2}}, commitSigs)
+		types.BlockID{Hash: []byte(""), PartSetHeader: types.PartSetHeader{Hash: []byte(""), Total: 2}}, types.StateID{LastAppHash: []byte("")}, commitSigs)
 }
 
 func makeTxs(height int64) (txs []types.Tx) {

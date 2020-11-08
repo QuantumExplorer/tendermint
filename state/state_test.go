@@ -368,8 +368,9 @@ func TestProposerFrequency(t *testing.T) {
 			totalVotePower += votePower
 			privVal := types.NewMockPV()
 			pubKey, err := privVal.GetPubKey()
+			proTxHash := tmrand.Bytes(32)
 			require.NoError(t, err)
-			val := types.NewValidator(pubKey, votePower)
+			val := types.NewValidator(pubKey, votePower, proTxHash)
 			val.ProposerPriority = tmrand.Int64()
 			vals[j] = val
 		}
@@ -386,7 +387,8 @@ func genValSetWithPowers(powers []int64) *types.ValidatorSet {
 	totalVotePower := int64(0)
 	for i := 0; i < size; i++ {
 		totalVotePower += powers[i]
-		val := types.NewValidator(bls12381.GenPrivKey().PubKey(), powers[i])
+		proTxHash := tmrand.Bytes(32)
+		val := types.NewValidator(bls12381.GenPrivKey().PubKey(), powers[i], proTxHash)
 		val.ProposerPriority = tmrand.Int64()
 		vals[i] = val
 	}
