@@ -611,14 +611,11 @@ const (
 )
 
 const (
-	// Max size of commit without any commitSigs -> 82 for BlockID, 8 for Height, 4 for Round.
-	MaxCommitOverheadBytes int64 = 94
-	// Commit sig size is made up of 64 bytes for the signature, 20 bytes for the address,
-	// 1 byte for the flag and 14 bytes for the timestamp
-	MaxCommitSigBytesEd25519 int64 = 109
+	// Max size of commit without any commitSigs -> 82 for BlockID, 82 for StateID, 8 for Height, 4 for Round.
+	MaxCommitOverheadBytes int64 = 176
 	// Commit sig size is made up of 96 bytes for the signature, 20 bytes for the address,
-	// 1 byte for the flag and 14 bytes for the timestamp
-	MaxCommitSigBytesBLS12381 int64 = 141
+	// 1 byte for the flag
+	MaxCommitSigBytesBLS12381 int64 = 220
 )
 
 // CommitSig is a part of the Vote included in a Commit.
@@ -643,10 +640,8 @@ func MaxCommitSigBytesForKeyType(keyType crypto.KeyType) int64 {
 	switch keyType {
 	case crypto.BLS12381:
 		return MaxCommitSigBytesBLS12381
-	case crypto.Ed25519:
-		return MaxCommitSigBytesEd25519
 	default:
-		return MaxCommitSigBytesEd25519
+		return MaxCommitSigBytesBLS12381
 	}
 }
 

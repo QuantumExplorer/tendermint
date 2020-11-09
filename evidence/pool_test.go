@@ -85,7 +85,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 
 	evs, size = pool.PendingEvidence(defaultEvidenceMaxBytes)
 	assert.Equal(t, 1, len(evs))
-	assert.Equal(t, int64(421), size) // check that the size of the single evidence in bytes is correct, bls is 64 more than edwards
+	assert.Equal(t, int64(605), size) // check that the size of the single evidence in bytes is correct, bls is 64 more than edwards
 
 	// shouldn't be able to add evidence twice
 	assert.Error(t, pool.AddEvidence(ev))
@@ -401,7 +401,8 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Store {
 
 	pubKey, _ := privVal.GetPubKey()
-	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey, ProTxHash: privVal.GetProTxHash()}
+    proTxHash, _ := privVal.GetProTxHash()
+	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey, ProTxHash: proTxHash}
 
 	// create validator set and state
 	valSet := &types.ValidatorSet{

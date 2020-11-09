@@ -65,6 +65,7 @@ type Node struct {
 	Testnet          *Testnet
 	Mode             Mode
 	Key              crypto.PrivKey
+	ProTxHash        []byte
 	IP               net.IP
 	ProxyPort        uint32
 	StartAt          int64
@@ -136,6 +137,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 			Name:             name,
 			Testnet:          testnet,
 			Key:              keyGen.Generate(),
+			ProTxHash:        crypto.CRandBytes(32),
 			IP:               ipGen.Next(),
 			ProxyPort:        proxyPortGen.Next(),
 			Mode:             ModeValidator,

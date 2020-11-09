@@ -63,6 +63,25 @@ func (sc *RetrySignerClient) GetPubKey() (crypto.PubKey, error) {
 	return nil, fmt.Errorf("exhausted all attempts to get pubkey: %w", err)
 }
 
+func (sc *RetrySignerClient) GetProTxHash() ([]byte, error) {
+	var (
+		proTxHash  []byte
+		err error
+	)
+	for i := 0; i < sc.retries || sc.retries == 0; i++ {
+		proTxHash, err = sc.next.GetProTxHash()
+		if err == nil {
+			return proTxHash, nil
+		}
+		// If remote signer errors, we don't retry.
+		if _, ok := err.(*RemoteSignerError); ok {
+			return nil, err
+		}
+		time.Sleep(sc.timeout)
+	}
+	return nil, fmt.Errorf("exhausted all attempts to get protxhash: %w", err)
+}
+
 func (sc *RetrySignerClient) SignVote(chainID string, vote *tmproto.Vote) error {
 	var err error
 	for i := 0; i < sc.retries || sc.retries == 0; i++ {

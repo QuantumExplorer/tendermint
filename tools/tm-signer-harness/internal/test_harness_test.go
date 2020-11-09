@@ -28,7 +28,8 @@ const (
   	"priv_key": {
     	"type": "tendermint/PrivKeyBLS12381",
     	"value": "RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70="
-  	}
+  	},
+	"pro_tx_hash": "CLS3a6rb6Z9gM8HgX11Qak9bPROJn8EZodVjwcPgnQM="
 }`
 
 	stateFileContents = `{
@@ -99,7 +100,7 @@ func TestRemoteSignerPublicKeyCheckFailed(t *testing.T) {
 	harnessTest(
 		t,
 		func(th *TestHarness) *privval.SignerServer {
-			return newMockSignerServer(t, th, bls12381.GenPrivKey(), false, false)
+			return newMockSignerServer(t, th, bls12381.GenPrivKey(), crypto.CRandBytes(32), false, false)
 		},
 		ErrTestPublicKeyFailed,
 	)

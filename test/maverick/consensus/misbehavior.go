@@ -381,7 +381,7 @@ func defaultReceiveProposal(cs *State, proposal *types.Proposal) error {
 	p := proposal.ToProto()
 	// Verify signature
 	if !cs.Validators.GetProposer().PubKey.VerifySignature(
-		types.ProposalSignBytes(cs.state.ChainID, p), proposal.Signature) {
+		types.ProposalBlockSignBytes(cs.state.ChainID, p), proposal.Signature) {
 		return ErrInvalidProposalSignature
 	}
 

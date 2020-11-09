@@ -260,6 +260,12 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 	return pv.Key.PubKey, nil
 }
 
+// GetProTxHash returns the pro tx hash of the validator.
+// Implements PrivValidator.
+func (pv *FilePV) GetProTxHash() ([]byte, error) {
+	return pv.Key.ProTxHash, nil
+}
+
 // SignVote signs a canonical representation of the vote, along with the
 // chainID. Implements PrivValidator.
 func (pv *FilePV) SignVote(chainID string, vote *tmproto.Vote) error {

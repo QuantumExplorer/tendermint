@@ -156,7 +156,7 @@ func (s *validatorSchedule) Increment(heights int64) {
 func makeVals(valMap map[*e2e.Node]int64) []*types.Validator {
 	vals := make([]*types.Validator, 0, len(valMap))
 	for node, power := range valMap {
-		vals = append(vals, types.NewValidator(node.Key.PubKey(), power))
+		vals = append(vals, types.NewValidator(node.Key.PubKey(), power, node.ProTxHash))
 	}
 	return vals
 }

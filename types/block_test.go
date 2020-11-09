@@ -312,6 +312,9 @@ func TestMaxCommitBytes(t *testing.T) {
 				Hash:  tmhash.Sum([]byte("blockID_part_set_header_hash")),
 			},
 		},
+		StateID: StateID{
+			LastAppHash: tmhash.Sum([]byte("stateID_hash")),
+		},
 		Signatures: []CommitSig{cs},
 	}
 
