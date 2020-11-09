@@ -97,11 +97,11 @@ func (pubKeyBLS) Type() crypto.KeyType                    { return crypto.BLS123
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := bls12381.GenPrivKey().PubKey()
 
-	abciVal := TM2PB.NewValidatorUpdate(pubkey, 10)
+	abciVal := TM2PB.NewValidatorUpdate(pubkey, 10, crypto.CRandBytes(32))
 	assert.Equal(t, int64(10), abciVal.Power)
 
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(nil, 10) })
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyBLS{}, 10) })
+	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(nil, 10, crypto.CRandBytes(32)) })
+	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyBLS{}, 10, crypto.CRandBytes(32)) })
 }
 
 func TestABCIValidatorWithoutPubKey(t *testing.T) {

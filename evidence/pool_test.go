@@ -259,8 +259,9 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	// for simplicity we are simulating a duplicate vote attack where all the validators in the
 	// conflictingVals set voted twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 1, voteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -274,8 +275,9 @@ func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(conflictingHeader.AppHash)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, conflictingPrivVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, conflictingPrivVals)
 	require.NoError(t, err)
 
 	state := sm.State{
@@ -399,7 +401,7 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Store {
 
 	pubKey, _ := privVal.GetPubKey()
-	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey}
+	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey, ProTxHash: privVal.GetProTxHash()}
 
 	// create validator set and state
 	valSet := &types.ValidatorSet{

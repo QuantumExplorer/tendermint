@@ -531,7 +531,8 @@ var testEd25519GenesisFmt = `{
         "value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="
       },
       "power": "10",
-      "name": ""
+      "name": "",
+      "pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="
     }
   ],
   "app_hash": ""
@@ -566,7 +567,8 @@ var testGenesisFmt = `{
         "value":"F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
       },
       "power": "10",
-      "name": ""
+      "name": "",
+      "pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="
     }
   ],
   "app_hash": ""

@@ -97,8 +97,11 @@ func validateBlock(evidencePool EvidencePool, proxyAppQueryConn proxy.AppConnQue
 		}
 	} else {
 		// LastCommit.Signatures length is checked in VerifyCommit.
+		stateID := types.StateID{
+			LastAppHash: state.AppHash,
+		}
 		if err := state.LastValidators.VerifyCommit(
-			state.ChainID, state.LastBlockID, block.Height-1, block.LastCommit); err != nil {
+			state.ChainID, state.LastBlockID, stateID, block.Height-1, block.LastCommit); err != nil {
 			return err
 		}
 	}

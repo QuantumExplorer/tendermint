@@ -166,8 +166,8 @@ func makeHeaderPartsResponsesValPubKeyChange(
 	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, 0),
-				types.TM2PB.NewValidatorUpdate(pubkey, 10),
+				types.TM2PB.NewValidatorUpdate(val.PubKey, 0, val.ProTxHash),
+				types.TM2PB.NewValidatorUpdate(pubkey, 10, val.ProTxHash),
 			},
 		}
 	}
@@ -191,7 +191,7 @@ func makeHeaderPartsResponsesValPowerChange(
 	if val.VotingPower != power {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, power),
+				types.TM2PB.NewValidatorUpdate(val.PubKey, power, val.ProTxHash),
 			},
 		}
 	}

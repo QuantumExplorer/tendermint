@@ -144,7 +144,7 @@ func (tm2pb) Evidence(ev Evidence, valSet *ValidatorSet) abci.Evidence {
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.ValidatorUpdate {
+func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64, proTxHash []byte) abci.ValidatorUpdate {
 	pubkeyABCI, err := cryptoenc.PubKeyToProto(pubkey)
 	if err != nil {
 		panic(err)
@@ -152,6 +152,7 @@ func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64) abci.Validato
 	return abci.ValidatorUpdate{
 		PubKey: pubkeyABCI,
 		Power:  power,
+		ProTxHash: proTxHash,
 	}
 }
 

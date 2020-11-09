@@ -122,11 +122,8 @@ func VoteBlockSignBytes(chainID string, vote *tmproto.Vote) []byte {
 //
 // See CanonicalizeVote
 func VoteStateSignBytes(chainID string, vote *tmproto.Vote) []byte {
-	if vote.StateID.LastAppHash == nil {
-		return nil
-	}
-	pb := CanonicalizeStateID(vote.StateID)
-	bz, err := protoio.MarshalDelimited(pb)
+	pb := CanonicalizeStateVote(vote)
+	bz, err := protoio.MarshalDelimited(&pb)
 	if err != nil {
 		panic(err)
 	}

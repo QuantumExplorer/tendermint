@@ -2090,7 +2090,9 @@ func (cs *State) signVote(
 	//Since the block has already been validated the block.lastAppHash must be the state.AppHash
 
 	var lastAppHash []byte
-	if cs.state.AppHash == nil {
+	if hash == nil {
+		lastAppHash = nil
+	} else if cs.state.AppHash == nil {
 		lastAppHash = make([]byte, 32)
 	} else {
 		lastAppHash = cs.state.AppHash

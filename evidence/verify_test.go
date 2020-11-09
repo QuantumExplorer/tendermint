@@ -42,8 +42,9 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	// we are simulating a duplicate vote attack where all the validators in the conflictingVals set
 	// vote twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 1, voteSet, conflictingPrivVals, defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 1, voteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -61,9 +62,10 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 		Commit: &types.Commit{},
 	}
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(trustedHeader.AppHash)
 	vals, privVals := types.RandValidatorSet(3, 8)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), vals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, privVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, privVals)
 	require.NoError(t, err)
 	trustedSignedHeader := &types.SignedHeader{
 		Header: trustedHeader,
@@ -145,8 +147,9 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	// we are simulating a duplicate vote attack where all the validators in the conflictingVals set
 	// except the last validator vote twice
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 1, voteSet, conflictingPrivVals[:4], defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 1, voteSet, conflictingPrivVals[:4])
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -160,8 +163,9 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(trustedHeader.AppHash)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, conflictingPrivVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	trustedSignedHeader := &types.SignedHeader{
 		Header: trustedHeader,
@@ -252,8 +256,9 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	// we are simulating an amnesia attack where all the validators in the conflictingVals set
 	// except the last validator vote twice. However this time the commits are of different rounds.
 	blockID := makeBlockID(conflictingHeader.Hash(), 1000, []byte("partshash"))
+	stateID := makeStateID(conflictingHeader.AppHash)
 	voteSet := types.NewVoteSet(evidenceChainID, 10, 0, tmproto.SignedMsgType(2), conflictingVals)
-	commit, err := types.MakeCommit(blockID, 10, 0, voteSet, conflictingPrivVals, defaultEvidenceTime)
+	commit, err := types.MakeCommit(blockID, stateID, 10, 0, voteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	ev := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -267,8 +272,9 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	}
 
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
+	trustedStateID := makeStateID(trustedHeader.AppHash)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), conflictingVals)
-	trustedCommit, err := types.MakeCommit(trustedBlockID, 10, 1, trustedVoteSet, conflictingPrivVals, defaultEvidenceTime)
+	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, conflictingPrivVals)
 	require.NoError(t, err)
 	trustedSignedHeader := &types.SignedHeader{
 		Header: trustedHeader,
@@ -344,11 +350,11 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 
 	const chainID = "mychain"
 
-	vote1 := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime)
+	vote1 := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID)
 	v1 := vote1.ToProto()
 	err := val.SignVote(chainID, v1)
 	require.NoError(t, err)
-	badVote := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, defaultEvidenceTime)
+	badVote := makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID)
 	bv := badVote.ToProto()
 	err = val2.SignVote(chainID, bv)
 	require.NoError(t, err)

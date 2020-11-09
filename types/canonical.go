@@ -40,7 +40,7 @@ func CanonicalizeStateID(sid tmproto.StateID) *tmproto.CanonicalStateID {
 	}
 	var csid *tmproto.CanonicalStateID
 	if rsid == nil || rsid.IsZero() {
-		rsid = nil
+		csid = nil
 	} else {
 		csid = &tmproto.CanonicalStateID{
 			LastAppHash:          sid.LastAppHash,
@@ -79,6 +79,15 @@ func CanonicalizeVote(chainID string, vote *tmproto.Vote) tmproto.CanonicalVote 
 		BlockID:   CanonicalizeBlockID(vote.BlockID),
 		StateID:   CanonicalizeStateID(vote.StateID),
 		ChainID:   chainID,
+	}
+}
+
+// CanonicalizeVote transforms the given Vote to a CanonicalVote, which does
+// not contain ValidatorIndex and ValidatorAddress fields.
+func CanonicalizeStateVote(vote *tmproto.Vote) tmproto.CanonicalStateVote {
+	return tmproto.CanonicalStateVote{
+		Height:    vote.Height,       // encoded as sfixed64
+		StateID:   CanonicalizeStateID(vote.StateID),
 	}
 }
 

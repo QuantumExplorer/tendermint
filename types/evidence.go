@@ -393,10 +393,12 @@ func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	vA := voteA.ToProto()
 	_ = pv.SignVote(chainID, vA)
 	voteA.BlockSignature = vA.BlockSignature
+	voteA.StateSignature = vA.StateSignature
 	voteB := makeMockVote(height, 0, 0, pubKey.Address(), randBlockID(), time)
 	vB := voteB.ToProto()
 	_ = pv.SignVote(chainID, vB)
 	voteB.BlockSignature = vB.BlockSignature
+	voteB.StateSignature = vB.StateSignature
 	return NewDuplicateVoteEvidence(voteA, voteB)
 }
 

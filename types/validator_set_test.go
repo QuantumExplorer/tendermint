@@ -697,34 +697,35 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 		description string
 		chainID     string
 		blockID     BlockID
+		stateID     StateID
 		height      int64
 		commit      *Commit
 		expErr      bool
 	}{
-		{"good", chainID, vote.BlockID, vote.Height, commit, false},
+		{"good", chainID, vote.BlockID, vote.StateID, vote.Height, commit, false},
 
-		{"wrong signature (#0)", "EpsilonEridani", vote.BlockID, vote.Height, commit, true},
-		{"wrong block ID", chainID, makeBlockIDRandom(), vote.Height, commit, true},
-		{"wrong height", chainID, vote.BlockID, vote.Height - 1, commit, true},
+		{"wrong signature (#0)", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
+		{"wrong block ID", chainID, makeBlockIDRandom(), vote.StateID, vote.Height, commit, true},
+		{"wrong height", chainID, vote.BlockID, vote.StateID, vote.Height - 1, commit, true},
 
-		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.Height,
+		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{}), true},
 
-		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.Height,
+		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID,
 				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.Height,
+		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"wrong signature (#0)", chainID, vote.BlockID, vote.Height,
+		{"wrong signature (#0)", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}), true},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.description, func(t *testing.T) {
-			err := vset.VerifyCommit(tc.chainID, tc.blockID, tc.height, tc.commit)
+			err := vset.VerifyCommit(tc.chainID, tc.blockID, tc.stateID, tc.height, tc.commit)
 			if tc.expErr {
 				if assert.Error(t, err, "VerifyCommit") {
 					assert.Contains(t, err.Error(), tc.description, "VerifyCommit")
@@ -733,7 +734,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 				assert.NoError(t, err, "VerifyCommit")
 			}
 
-			err = vset.VerifyCommitLight(tc.chainID, tc.blockID, tc.height, tc.commit)
+			err = vset.VerifyCommitLight(tc.chainID, tc.blockID, tc.stateID, tc.height, tc.commit)
 			if tc.expErr {
 				if assert.Error(t, err, "VerifyCommitLight") {
 					assert.Contains(t, err.Error(), tc.description, "VerifyCommitLight")
@@ -766,7 +767,7 @@ func TestValidatorSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
 	vote.StateSignature = v.StateSignature
 	commit.Signatures[3] = vote.CommitSig()
 
-	err = valSet.VerifyCommit(chainID, blockID, h, commit)
+	err = valSet.VerifyCommit(chainID, blockID, stateID, h, commit)
 	if assert.Error(t, err) {
 		assert.Contains(t, err.Error(), "wrong signature (#3)")
 	}
@@ -793,7 +794,7 @@ func TestValidatorSet_VerifyCommitLight_ReturnsAsSoonAsMajorityOfVotingPowerSign
 	vote.StateSignature = v.StateSignature
 	commit.Signatures[3] = vote.CommitSig()
 
-	err = valSet.VerifyCommitLight(chainID, blockID, h, commit)
+	err = valSet.VerifyCommitLight(chainID, blockID, stateID, h, commit)
 	assert.NoError(t, err)
 }
 
