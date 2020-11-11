@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"strings"
 
 	"github.com/tendermint/tendermint/libs/bits"
@@ -295,6 +296,7 @@ func (voteSet *VoteSet) addVerifiedVote(
 			stateMaj23StateID := vote.StateID
 			voteSet.maj23 = &maj23BlockID
 			voteSet.stateMaj23 = &stateMaj23StateID
+			voteSet.recoverThresholdSigs(votesByBlock)
 			// And also copy votes over to voteSet.votes
 			for i, vote := range votesByBlock.votes {
 				if vote != nil {
@@ -305,6 +307,31 @@ func (voteSet *VoteSet) addVerifiedVote(
 	}
 
 	return true, conflicting
+}
+
+func (voteSet *VoteSet) recoverThresholdSigs(blockVotes *blockVotes) error {
+	var blockSigs [][]byte
+	var stateSigs [][]byte
+	var blsIDs [][]byte
+	for _, vote := range blockVotes.votes {
+		if vote != nil {
+			blockSigs = append(blockSigs, vote.BlockSignature)
+			stateSigs = append(stateSigs, vote.StateSignature)
+			_, val := voteSet.valSet.GetByAddress(vote.ValidatorAddress)
+			blsIDs = append(blsIDs, val.ProTxHash)
+		}
+	}
+	thresholdBlockSig, err := bls12381.RecoverThresholdSignatureFromShares(blockSigs, blsIDs)
+	if err != nil {
+		return err
+	}
+	voteSet.thresholdBlockSig = thresholdBlockSig
+	thresholdStateSig, err := bls12381.RecoverThresholdSignatureFromShares(stateSigs, blsIDs)
+	if err != nil {
+		return err
+	}
+	voteSet.thresholdStateSig = thresholdStateSig
+	return nil
 }
 
 // If a peer claims that it has 2/3 majority for given blockKey, call this.

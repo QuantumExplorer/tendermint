@@ -595,7 +595,8 @@ var testPrivValidatorKey = `{
   "priv_key": {
     "type": "tendermint/PrivKeyBLS12381",
     "value": "RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70="
-  }
+  },
+  "pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="
 }`
 
 var testPrivValidatorState = `{

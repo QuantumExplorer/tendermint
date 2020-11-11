@@ -139,8 +139,8 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	assert.NotNil(t, partSet)
 	//The part set can be either 4 or 5 parts, this is because of variance in sizes due to the non second part of
 	// timestamps marshalling to different sizes
-	assert.True(t, partSet.Total() >= 4)
-	assert.True(t, partSet.Total() <= 5)
+	assert.True(t, partSet.Total() >= 7)
+	assert.True(t, partSet.Total() <= 8)
 }
 
 func TestBlockHashesTo(t *testing.T) {
@@ -319,8 +319,9 @@ func TestMaxCommitBytes(t *testing.T) {
 	}
 
 	pb := commit.ToProto()
-
-	assert.EqualValues(t, MaxCommitBytes(1, crypto.BLS12381), int64(pb.Size()))
+	pbSize := int64(pb.Size())
+	maxCommitBytes := MaxCommitBytes(1, crypto.BLS12381)
+	assert.EqualValues(t, maxCommitBytes, pbSize)
 
 	// check the upper bound of the commit size
 	for i := 1; i < MaxVotesCount; i++ {

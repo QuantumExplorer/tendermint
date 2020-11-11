@@ -611,8 +611,8 @@ const (
 )
 
 const (
-	// Max size of commit without any commitSigs -> 82 for BlockID, 82 for StateID, 8 for Height, 4 for Round.
-	MaxCommitOverheadBytes int64 = 176
+	// Max size of commit without any commitSigs -> 82 for BlockID, 34 for StateID, 8 for Height, 4 for Round.
+	MaxCommitOverheadBytes int64 = 130
 	// Commit sig size is made up of 96 bytes for the signature, 20 bytes for the address,
 	// 1 byte for the flag
 	MaxCommitSigBytesBLS12381 int64 = 220

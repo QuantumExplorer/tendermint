@@ -383,7 +383,6 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	}
 
 	blockSignBytes := types.ProposalBlockSignBytes(chainID, proposal)
-	stateSignBytes := types.ProposalStateSignBytes(chainID, proposal)
 
 	// We might crash before writing to the wal,
 	// causing us to try to re-sign for the same HRS.
@@ -407,11 +406,7 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	if err != nil {
 		return err
 	}
-	stateSig, err := pv.Key.PrivKey.Sign(stateSignBytes)
-	if err != nil {
-		return err
-	}
-	pv.saveSigned(height, round, step, blockSignBytes, blockSig, stateSignBytes, stateSig)
+	pv.saveSigned(height, round, step, blockSignBytes, blockSig, nil, nil)
 	proposal.Signature = blockSig
 	return nil
 }
