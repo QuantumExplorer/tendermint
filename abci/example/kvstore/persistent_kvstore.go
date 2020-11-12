@@ -30,7 +30,7 @@ type PersistentKVStoreApplication struct {
 	// validator set
 	ValUpdates []types.ValidatorUpdate
 
-	valAddrToPubKeyMap map[string]pc.PublicKey
+	valProTxHashToPubKeyMap map[string]pc.PublicKey
 
 	logger log.Logger
 }
@@ -46,7 +46,7 @@ func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication
 
 	return &PersistentKVStoreApplication{
 		app:                &Application{state: state},
-		valAddrToPubKeyMap: make(map[string]pc.PublicKey),
+		valProTxHashToPubKeyMap: make(map[string]pc.PublicKey),
 		logger:             log.NewNopLogger(),
 	}
 }
@@ -131,17 +131,18 @@ func (app *PersistentKVStoreApplication) BeginBlock(req types.RequestBeginBlock)
 	// Punish validators who committed equivocation.
 	for _, ev := range req.ByzantineValidators {
 		if ev.Type == types.EvidenceType_DUPLICATE_VOTE {
-			addr := string(ev.Validator.Address)
-			if pubKey, ok := app.valAddrToPubKeyMap[addr]; ok {
+			proTxHashString := string(ev.Validator.ProTxHash)
+			if pubKey, ok := app.valProTxHashToPubKeyMap[proTxHashString]; ok {
 				app.updateValidator(types.ValidatorUpdate{
 					PubKey: pubKey,
 					Power:  ev.Validator.Power - 1,
+					ProTxHash: ev.Validator.ProTxHash,
 				})
 				app.logger.Info("Decreased val power by 1 because of the equivocation",
-					"val", addr)
+					"val", proTxHashString)
 			} else {
 				app.logger.Error("Wanted to punish val, but can't find it",
-					"val", addr)
+					"val", proTxHashString)
 			}
 		}
 	}
@@ -247,11 +248,14 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 
 // add, update, or remove a validator
 func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate) types.ResponseDeliverTx {
-	pubkey, err := cryptoenc.PubKeyFromProto(v.PubKey)
+	_, err := cryptoenc.PubKeyFromProto(v.PubKey)
+	if v.ProTxHash == nil {
+		panic(fmt.Errorf("proTxHash can not be nil: %w", err))
+	}
 	if err != nil {
 		panic(fmt.Errorf("can't decode public key: %w", err))
 	}
-	key := []byte("val:" + string(pubkey.Bytes()))
+	key := []byte("val:" + string(v.ProTxHash))
 
 	if v.Power == 0 {
 		// remove validator
@@ -260,15 +264,15 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 			panic(err)
 		}
 		if !hasKey {
-			pubStr := base64.StdEncoding.EncodeToString(pubkey.Bytes())
+			proTxHashString := base64.StdEncoding.EncodeToString(v.ProTxHash)
 			return types.ResponseDeliverTx{
 				Code: code.CodeTypeUnauthorized,
-				Log:  fmt.Sprintf("Cannot remove non-existent validator %s", pubStr)}
+				Log:  fmt.Sprintf("Cannot remove non-existent validator %s", proTxHashString)}
 		}
 		if err = app.app.state.db.Delete(key); err != nil {
 			panic(err)
 		}
-		delete(app.valAddrToPubKeyMap, string(pubkey.Address()))
+		delete(app.valProTxHashToPubKeyMap, string(v.ProTxHash))
 	} else {
 		// add or update validator
 		value := bytes.NewBuffer(make([]byte, 0))
@@ -280,7 +284,7 @@ func (app *PersistentKVStoreApplication) updateValidator(v types.ValidatorUpdate
 		if err = app.app.state.db.Set(key, value.Bytes()); err != nil {
 			panic(err)
 		}
-		app.valAddrToPubKeyMap[string(pubkey.Address())] = v.PubKey
+		app.valProTxHashToPubKeyMap[string(v.ProTxHash)] = v.PubKey
 	}
 
 	// we only update the changes array if we successfully updated the tree

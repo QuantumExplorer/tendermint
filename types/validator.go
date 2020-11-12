@@ -151,6 +151,10 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 		return nil, err
 	}
 
+	if v.ProTxHash == nil {
+		return nil, errors.New("the validator must have a proTxHash")
+	}
+
 	vp := tmproto.Validator{
 		Address:          v.Address,
 		PubKey:           pk,

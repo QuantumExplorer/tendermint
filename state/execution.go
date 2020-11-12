@@ -396,6 +396,16 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 			return fmt.Errorf("validator %v is using pubkey %s, which is unsupported for consensus",
 				valUpdate, pk.TypeIdentifier())
 		}
+
+		if valUpdate.ProTxHash == nil {
+			return fmt.Errorf("validator %v does not have a protxhash, which is needed for consensus",
+				valUpdate)
+		}
+
+		if len(valUpdate.ProTxHash) != 32 {
+			return fmt.Errorf("validator %v is using protxhash %s, which is not the required length",
+				valUpdate, valUpdate.ProTxHash)
+		}
 	}
 	return nil
 }

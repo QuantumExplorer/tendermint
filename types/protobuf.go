@@ -70,6 +70,7 @@ func (tm2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
 		Address: val.PubKey.Address(),
 		Power:   val.VotingPower,
+		ProTxHash: val.ProTxHash,
 	}
 }
 

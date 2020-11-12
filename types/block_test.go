@@ -487,18 +487,13 @@ func TestBlockMaxDataBytes(t *testing.T) {
 		panics        bool
 		result        int64
 	}{
-		0: {-10, crypto.Ed25519, 1, 0, true, 0},
-		1: {10, crypto.Ed25519, 1, 0, true, 0},
-		2: {979, crypto.Ed25519, 1, 0, true, 0},
-		3: {980, crypto.Ed25519, 1, 0, false, 0},
-		4: {981, crypto.Ed25519, 1, 0, false, 1},
-		5: {1092, crypto.Ed25519, 2, 0, false, 1},
-		6: {1191, crypto.Ed25519, 2, 100, false, 0},
-		7: {1012, crypto.BLS12381, 1, 0, true, 0},
-		8: {1013, crypto.BLS12381, 1, 0, false, 0},
-		9: {1014, crypto.BLS12381, 1, 0, false, 1},
-		10: {1158, crypto.BLS12381, 2, 0, false, 1},
-		11: {1257, crypto.BLS12381, 2, 100, false, 0},
+		0: {-10, crypto.BLS12381, 1, 0, true, 0},
+		1: {10, crypto.BLS12381, 1, 0, true, 0},
+		2: {1127, crypto.BLS12381, 1, 0, true, 0},
+		3: {1128, crypto.BLS12381, 1, 0, false, 0},
+		4: {1129, crypto.BLS12381, 1, 0, false, 1},
+		5: {1352, crypto.BLS12381, 2, 0, false, 1},
+		6: {1451, crypto.BLS12381, 2, 100, false, 0},
 	}
 	//An extra 33 bytes (32 for sig, 1 for proto encoding are needed for BLS compared to edwards per validator
 
@@ -526,14 +521,11 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 		panics      bool
 		result      int64
 	}{
-		0: {-10, 1, crypto.Ed25519,1, true, 0},
-		1: {10, 1, crypto.Ed25519,1, true, 0},
-		2: {979, 1, crypto.Ed25519,1, true, 0},
-		3: {980, 1, crypto.Ed25519,1, false, 0},
-		4: {981, 1, crypto.Ed25519,1, false, 1},
-		5: {1012, 1, crypto.BLS12381,1, true, 0},
-		6: {1013, 1, crypto.BLS12381,1, false, 0},
-		7: {1014, 1, crypto.BLS12381,1, false, 1},
+		0: {-10, 1, crypto.BLS12381,1, true, 0},
+		1: {10, 1, crypto.BLS12381,1, true, 0},
+		2: {1127, 1, crypto.BLS12381,1, true, 0},
+		3: {1128, 1, crypto.BLS12381,1, false, 0},
+		4: {1129, 1, crypto.BLS12381,1, false, 1},
 	}
 
 	for i, tc := range testCases {
