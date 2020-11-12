@@ -162,13 +162,8 @@ func (state *pcState) handle(event Event) (Event, error) {
 			first, second = firstItem.block, secondItem.block
 			firstParts    = first.MakePartSet(types.BlockPartSizeBytes)
 			firstID       = types.BlockID{Hash: first.Hash(), PartSetHeader: firstParts.Header()}
-			firstStateID types.StateID
+			firstStateID  = types.StateID{LastAppHash: first.Header.AppHash}
 		)
-		if first.Header.AppHash == nil {
-			firstStateID = types.StateID{LastAppHash: make([]byte,32)}
-		} else {
-			firstStateID = types.StateID{LastAppHash: first.Header.AppHash}
-		}
 
 		// verify if +second+ last commit "confirms" +first+ block
 		err = state.context.verifyCommit(tmState.ChainID, firstID, firstStateID, first.Height, second.LastCommit)

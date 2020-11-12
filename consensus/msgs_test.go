@@ -330,7 +330,7 @@ func TestConsMsgsVectors(t *testing.T) {
 	}
 
 	si := types.StateID{
-		LastAppHash: make([]byte,32),
+		LastAppHash: make([]byte, 32),
 	}
 
 	pbBi := bi.ToProto()

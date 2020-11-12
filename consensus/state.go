@@ -2092,8 +2092,6 @@ func (cs *State) signVote(
 	var lastAppHash []byte
 	if hash == nil {
 		lastAppHash = nil
-	} else if cs.state.AppHash == nil {
-		lastAppHash = make([]byte, 32)
 	} else {
 		lastAppHash = cs.state.AppHash
 	}

@@ -221,6 +221,7 @@ func randomGenesisDoc() *types.GenesisDoc {
 			{
 				Address: pubkey.Address(),
 				PubKey:  pubkey,
+				ProTxHash: crypto.CRandBytes(32),
 				Power:   10,
 				Name:    "myval",
 			},

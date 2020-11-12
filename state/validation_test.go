@@ -204,6 +204,7 @@ func TestValidateBlockCommit(t *testing.T) {
 		require.NoError(t, err, "height %d", height)
 
 		goodVote.BlockSignature, badVote.BlockSignature = g.BlockSignature, b.BlockSignature
+		goodVote.StateSignature, badVote.StateSignature = g.StateSignature, b.StateSignature
 
 		wrongSigsCommit = types.NewCommit(goodVote.Height, goodVote.Round,
 			blockID, stateID, []types.CommitSig{goodVote.CommitSig(), badVote.CommitSig()})

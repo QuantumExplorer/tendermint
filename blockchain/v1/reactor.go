@@ -469,12 +469,7 @@ func (bcR *BlockchainReactor) processBlock() error {
 	firstParts := first.MakePartSet(types.BlockPartSizeBytes)
 	firstPartSetHeader := firstParts.Header()
 	firstID := types.BlockID{Hash: first.Hash(), PartSetHeader: firstPartSetHeader}
-	var firstStateID types.StateID
-	if first.Header.AppHash == nil {
-		firstStateID = types.StateID{LastAppHash: make([]byte,32)}
-	} else {
-		firstStateID = types.StateID{LastAppHash: first.Header.AppHash}
-	}
+	firstStateID := types.StateID{LastAppHash: first.Header.AppHash}
 	// Finally, verify the first block using the second's commit
 	// NOTE: we can probably make this more efficient, but note that calling
 	// first.Hash() doesn't verify the tx contents, so MakePartSet() is

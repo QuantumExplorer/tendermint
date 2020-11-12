@@ -39,7 +39,7 @@ func makeTestCommit(height int64, timestamp time.Time) *types.Commit {
 		StateSignature:        []byte("StateSignature"),
 	}}
 	return types.NewCommit(height, 0,
-		types.BlockID{Hash: []byte(""), PartSetHeader: types.PartSetHeader{Hash: []byte(""), Total: 2}}, types.StateID{LastAppHash: make([]byte,32)}, commitSigs)
+		types.BlockID{Hash: []byte(""), PartSetHeader: types.PartSetHeader{Hash: []byte(""), Total: 2}}, types.StateID{LastAppHash: make([]byte, 32)}, commitSigs)
 }
 
 func makeTxs(height int64) (txs []types.Tx) {

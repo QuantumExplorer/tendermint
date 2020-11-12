@@ -957,9 +957,6 @@ func (commit *Commit) ValidateBasic() error {
 		if commit.BlockID.IsZero() {
 			return errors.New("commit cannot be for nil block")
 		}
-		if commit.StateID.LastAppHash == nil {
-			return errors.New("commit LastAppHash state can not be nil")
-		}
 
 		if len(commit.Signatures) == 0 {
 			return errors.New("no signatures in commit")

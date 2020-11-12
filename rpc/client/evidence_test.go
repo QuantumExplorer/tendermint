@@ -42,6 +42,12 @@ func newEvidence(t *testing.T, val *privval.FilePV,
 	vote2.BlockSignature, err = val.Key.PrivKey.Sign(types.VoteBlockSignBytes(chainID, v2))
 	require.NoError(t, err)
 
+	vote.StateSignature, err = val.Key.PrivKey.Sign(types.VoteStateSignBytes(chainID, v))
+	require.NoError(t, err)
+
+	vote2.StateSignature, err = val.Key.PrivKey.Sign(types.VoteStateSignBytes(chainID, v2))
+	require.NoError(t, err)
+
 	return types.NewDuplicateVoteEvidence(vote, vote2)
 }
 

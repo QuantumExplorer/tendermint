@@ -468,6 +468,7 @@ func updateState(
 		InitialHeight:                    state.InitialHeight,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
+		LastStateID:                      types.StateID{state.AppHash},
 		LastBlockTime:                    header.Time,
 		LastChainLock: 					  *lastChainLock,
 		NextChainLock:                    *nextChainLock,
