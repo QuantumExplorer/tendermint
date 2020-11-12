@@ -57,6 +57,9 @@ type State struct {
 	LastBlockID         types.BlockID
 	LastBlockTime       time.Time
 
+	//The Last StateID is actually the previous App Hash
+	LastStateID         types.StateID
+
 	//Last Chain Lock is the last known chain lock in consensus, and does not go to nil if a block had no chain lock
 	//Next Chain Lock is a chain lock being proposed by the abci application
 	LastChainLock types.ChainLock
@@ -96,6 +99,8 @@ func (state State) Copy() State {
 		LastBlockHeight: state.LastBlockHeight,
 		LastBlockID:     state.LastBlockID,
 		LastBlockTime:   state.LastBlockTime,
+
+		LastStateID: state.LastStateID,
 
 		LastChainLock: state.LastChainLock,
 		NextChainLock: state.NextChainLock,
@@ -163,6 +168,8 @@ func (state *State) ToProto() (*tmstate.State, error) {
 	}
 	sm.Validators = vals
 
+	sm.LastStateID = state.LastStateID.ToProto()
+
 	nVals, err := state.NextValidators.ToProto()
 	if err != nil {
 		return nil, err
@@ -205,6 +212,13 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 	state.LastBlockID = *bi
 	state.LastBlockHeight = pb.LastBlockHeight
 	state.LastBlockTime = pb.LastBlockTime
+
+	si, err := types.StateIDFromProto(&pb.LastStateID)
+	if err != nil {
+		return nil, err
+	}
+
+	state.LastStateID = *si
 
 	state.LastChainLock = types.ChainLock(pb.LastChainLock)
 	state.NextChainLock = types.ChainLock(pb.NextChainLock)
@@ -350,6 +364,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		LastBlockHeight: 0,
 		LastBlockID:     types.BlockID{},
+		LastStateID:     types.StateID{},
 		LastBlockTime:   genDoc.GenesisTime,
 
 		NextChainLock: initialChainLock,

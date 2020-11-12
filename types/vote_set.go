@@ -296,7 +296,9 @@ func (voteSet *VoteSet) addVerifiedVote(
 			stateMaj23StateID := vote.StateID
 			voteSet.maj23 = &maj23BlockID
 			voteSet.stateMaj23 = &stateMaj23StateID
-			voteSet.recoverThresholdSigs(votesByBlock)
+			if len(votesByBlock.votes) > 1 {
+				voteSet.recoverThresholdSigs(votesByBlock)
+			}
 			// And also copy votes over to voteSet.votes
 			for i, vote := range votesByBlock.votes {
 				if vote != nil {
@@ -310,6 +312,9 @@ func (voteSet *VoteSet) addVerifiedVote(
 }
 
 func (voteSet *VoteSet) recoverThresholdSigs(blockVotes *blockVotes) error {
+	if len(blockVotes.votes) < 2 {
+		return fmt.Errorf("attempting to recover a threshold signature with only 1 vote")
+	}
 	var blockSigs [][]byte
 	var stateSigs [][]byte
 	var blsIDs [][]byte

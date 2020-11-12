@@ -416,6 +416,7 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 			Address: privVal.PrivKey.PubKey().Address(),
 			PubKey:  privVal.PrivKey.PubKey(),
 			Power:   1000,
+			ProTxHash: privVal.ProTxHash,
 			Name:    fmt.Sprintf("test%d", i),
 		}
 	}

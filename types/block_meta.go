@@ -22,7 +22,7 @@ type BlockMeta struct {
 func NewBlockMeta(block *Block, blockParts *PartSet) *BlockMeta {
 	var lastAppHash []byte
 	if block.Header.AppHash == nil {
-		lastAppHash = make([]byte,32)
+		lastAppHash = make([]byte, 32)
 	} else {
 		lastAppHash = block.Header.AppHash
 	}

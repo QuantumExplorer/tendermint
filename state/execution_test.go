@@ -68,8 +68,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	prevHash := state.LastBlockID.Hash
 	prevParts := types.PartSetHeader{}
 	prevBlockID := types.BlockID{Hash: prevHash, PartSetHeader: prevParts}
-	prevAppHash := state.AppHash
-	prevStateID := types.StateID{LastAppHash: prevAppHash}
+	prevStateID := state.LastStateID
 
 	var (
 		commitSig0 = types.NewCommitSigForBlock(

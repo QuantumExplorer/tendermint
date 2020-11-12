@@ -134,13 +134,14 @@ func TestUnmarshalValidatorKey(t *testing.T) {
 	serialized := fmt.Sprintf(`{
   "address": "%s",
   "pub_key": {
-    "type": "tendermint/PubKeyEd25519",
+    "type": "tendermint/PubKeyBLS12381",
     "value": "%s"
   },
   "priv_key": {
-    "type": "tendermint/PrivKeyEd25519",
+    "type": "tendermint/PrivKeyBLS12381",
     "value": "%s"
-  }
+  },
+  "pro_tx_hash": "Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="
 }`, addr, pubB64, privB64)
 
 	val := FilePVKey{}
