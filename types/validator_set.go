@@ -265,11 +265,11 @@ func (vals *ValidatorSet) HasAddress(address []byte) bool {
 	return false
 }
 
-// GetByAddress returns an index of the validator with address and validator
+// GetByProTxHash returns an index of the validator with address and validator
 // itself (copy) if found. Otherwise, -1 and nil are returned.
-func (vals *ValidatorSet) GetByAddress(address []byte) (index int32, val *Validator) {
+func (vals *ValidatorSet) GetByProTxHash(proTxHash []byte) (index int32, val *Validator) {
 	for idx, val := range vals.Validators {
-		if bytes.Equal(val.Address, address) {
+		if bytes.Equal(val.ProTxHash, proTxHash) {
 			return int32(idx), val.Copy()
 		}
 	}
@@ -373,15 +373,15 @@ func (vals *ValidatorSet) Iterate(fn func(index int, val *Validator) bool) {
 func processChanges(origChanges []*Validator) (updates, removals []*Validator, err error) {
 	// Make a deep copy of the changes and sort by address.
 	changes := validatorListCopy(origChanges)
-	sort.Sort(ValidatorsByAddress(changes))
+	sort.Sort(ValidatorsByProTxHashes(changes))
 
 	removals = make([]*Validator, 0, len(changes))
 	updates = make([]*Validator, 0, len(changes))
-	var prevAddr Address
+	var prevProTxHash []byte
 
 	// Scan changes by address and append valid validators to updates or removals lists.
 	for _, valUpdate := range changes {
-		if bytes.Equal(valUpdate.Address, prevAddr) {
+		if bytes.Equal(valUpdate.ProTxHash, prevProTxHash) {
 			err = fmt.Errorf("duplicate entry %v in %v", valUpdate, changes)
 			return nil, nil, err
 		}
@@ -400,7 +400,7 @@ func processChanges(origChanges []*Validator) (updates, removals []*Validator, e
 			updates = append(updates, valUpdate)
 		}
 
-		prevAddr = valUpdate.Address
+		prevProTxHash = valUpdate.ProTxHash
 	}
 
 	return updates, removals, err
@@ -428,7 +428,7 @@ func verifyUpdates(
 ) (tvpAfterUpdatesBeforeRemovals int64, err error) {
 
 	delta := func(update *Validator, vals *ValidatorSet) int64 {
-		_, val := vals.GetByAddress(update.Address)
+		_, val := vals.GetByProTxHash(update.Address)
 		if val != nil {
 			return update.VotingPower - val.VotingPower
 		}
@@ -474,7 +474,7 @@ func numNewValidators(updates []*Validator, vals *ValidatorSet) int {
 func computeNewPriorities(updates []*Validator, vals *ValidatorSet, updatedTotalVotingPower int64) {
 	for _, valUpdate := range updates {
 		address := valUpdate.Address
-		_, val := vals.GetByAddress(address)
+		_, val := vals.GetByProTxHash(address)
 		if val == nil {
 			// add val
 			// Set ProposerPriority to -C*totalVotingPower (with C ~= 1.125) to make sure validators can't
@@ -498,7 +498,7 @@ func computeNewPriorities(updates []*Validator, vals *ValidatorSet, updatedTotal
 // must have been validated with verifyUpdates() and priorities computed with computeNewPriorities().
 func (vals *ValidatorSet) applyUpdates(updates []*Validator) {
 	existing := vals.Validators
-	sort.Sort(ValidatorsByAddress(existing))
+	sort.Sort(ValidatorsByProTxHashes(existing))
 
 	merged := make([]*Validator, len(existing)+len(updates))
 	i := 0
@@ -539,7 +539,7 @@ func verifyRemovals(deletes []*Validator, vals *ValidatorSet) (votingPower int64
 	removedVotingPower := int64(0)
 	for _, valUpdate := range deletes {
 		address := valUpdate.Address
-		_, val := vals.GetByAddress(address)
+		_, val := vals.GetByProTxHash(address)
 		if val == nil {
 			return removedVotingPower, fmt.Errorf("failed to find validator %X to remove", address)
 		}
@@ -816,7 +816,7 @@ func (vals *ValidatorSet) VerifyCommitLightTrusting(chainID string, commit *Comm
 
 		// We don't know the validators that committed this block, so we have to
 		// check for each vote if its validator is already known.
-		valIdx, val := vals.GetByAddress(commitSig.ValidatorAddress)
+		valIdx, val := vals.GetByProTxHash(commitSig.ValidatorAddress)
 
 		if val != nil {
 			// check for double vote of validator on the same commit
@@ -940,15 +940,15 @@ func (valz ValidatorsByVotingPower) Swap(i, j int) {
 
 // ValidatorsByAddress implements sort.Interface for []*Validator based on
 // the Address field.
-type ValidatorsByAddress []*Validator
+type ValidatorsByProTxHashes []*Validator
 
-func (valz ValidatorsByAddress) Len() int { return len(valz) }
+func (valz ValidatorsByProTxHashes) Len() int { return len(valz) }
 
-func (valz ValidatorsByAddress) Less(i, j int) bool {
-	return bytes.Compare(valz[i].Address, valz[j].Address) == -1
+func (valz ValidatorsByProTxHashes) Less(i, j int) bool {
+	return bytes.Compare(valz[i].ProTxHash, valz[j].ProTxHash) == -1
 }
 
-func (valz ValidatorsByAddress) Swap(i, j int) {
+func (valz ValidatorsByProTxHashes) Swap(i, j int) {
 	valz[i], valz[j] = valz[j], valz[i]
 }
 

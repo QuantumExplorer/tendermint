@@ -1691,7 +1691,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 	)
 	for _, ev := range block.Evidence.Evidence {
 		if dve, ok := ev.(*types.DuplicateVoteEvidence); ok {
-			if _, val := cs.Validators.GetByAddress(dve.VoteA.ValidatorAddress); val != nil {
+			if _, val := cs.Validators.GetByProTxHash(dve.VoteA.ValidatorAddress); val != nil {
 				byzantineValidatorsCount++
 				byzantineValidatorsPower += val.VotingPower
 			}
@@ -2085,7 +2085,7 @@ func (cs *State) signVote(
 		return nil, errPubKeyIsNotSet
 	}
 	addr := cs.privValidatorPubKey.Address()
-	valIdx, _ := cs.Validators.GetByAddress(addr)
+	valIdx, _ := cs.Validators.GetByProTxHash(addr)
 
 	//Since the block has already been validated the block.lastAppHash must be the state.AppHash
 

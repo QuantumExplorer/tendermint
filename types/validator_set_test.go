@@ -29,7 +29,7 @@ func TestValidatorSetBasic(t *testing.T) {
 
 	assert.EqualValues(t, vset, vset.Copy())
 	assert.False(t, vset.HasAddress([]byte("some val")))
-	idx, val := vset.GetByAddress([]byte("some val"))
+	idx, val := vset.GetByProTxHash([]byte("some val"))
 	assert.EqualValues(t, -1, idx)
 	assert.Nil(t, val)
 	addr, val := vset.GetByIndex(-100)
@@ -52,7 +52,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
 
 	assert.True(t, vset.HasAddress(val.Address))
-	idx, _ = vset.GetByAddress(val.Address)
+	idx, _ = vset.GetByProTxHash(val.Address)
 	assert.EqualValues(t, 0, idx)
 	addr, _ = vset.GetByIndex(0)
 	assert.Equal(t, []byte(val.Address), addr)
@@ -65,13 +65,13 @@ func TestValidatorSetBasic(t *testing.T) {
 	// update
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
-	_, val = vset.GetByAddress(val.Address)
+	_, val = vset.GetByProTxHash(val.Address)
 	val.VotingPower += 100
 	proposerPriority := val.ProposerPriority
 
 	val.ProposerPriority = 0
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
-	_, val = vset.GetByAddress(val.Address)
+	_, val = vset.GetByProTxHash(val.Address)
 	assert.Equal(t, proposerPriority, val.ProposerPriority)
 
 }
@@ -364,6 +364,10 @@ func newValidatorWithRandProTxHash(address []byte, power int64) *Validator {
 	return &Validator{Address: address, VotingPower: power, ProTxHash: crypto.CRandBytes(32)}
 }
 
+func newValidatorWithProTxHashFromAddress(address []byte, power int64) *Validator {
+	return &Validator{Address: address, VotingPower: power, ProTxHash: crypto.Sha256(address)}
+}
+
 func newValidator(address []byte, power int64, proTxHash []byte) *Validator {
 	return &Validator{Address: address, VotingPower: power, ProTxHash: proTxHash}
 }
@@ -506,7 +510,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 		// work on copy to have the old ProposerPriorities:
 		newVset := tc.vs.CopyIncrementProposerPriority(tc.times)
 		for _, val := range tc.vs.Validators {
-			_, updatedVal := newVset.GetByAddress(val.Address)
+			_, updatedVal := newVset.GetByProTxHash(val.Address)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)
 		}
 	}
@@ -708,7 +712,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	}{
 		{"good", chainID, vote.BlockID, vote.StateID, vote.Height, commit, false},
 
-		{"wrong signature (#0)", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
+		{"wrong block signature (#0)", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
 		{"wrong block ID", chainID, makeBlockIDRandom(), vote.StateID, vote.Height, commit, true},
 		{"wrong height", chainID, vote.BlockID, vote.StateID, vote.Height - 1, commit, true},
 
@@ -722,7 +726,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"wrong signature (#0)", chainID, vote.BlockID, vote.StateID, vote.Height,
+		{"wrong block signature (#0)", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}), true},
 	}
 
@@ -773,7 +777,7 @@ func TestValidatorSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
 
 	err = valSet.VerifyCommit(chainID, blockID, stateID, h, commit)
 	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "wrong signature (#3)")
+		assert.Contains(t, err.Error(), "wrong block signature (#3)")
 	}
 }
 
@@ -906,7 +910,7 @@ func permutation(valList []testVal) []testVal {
 func createNewValidatorList(testValList []testVal) []*Validator {
 	valList := make([]*Validator, 0, len(testValList))
 	for _, val := range testValList {
-		valList = append(valList, newValidatorWithRandProTxHash([]byte(val.name), val.power))
+		valList = append(valList, newValidatorWithProTxHashFromAddress([]byte(val.name), val.power))
 	}
 	return valList
 }

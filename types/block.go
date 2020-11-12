@@ -620,8 +620,8 @@ const (
 
 // CommitSig is a part of the Vote included in a Commit.
 type CommitSig struct {
-	BlockIDFlag      BlockIDFlag `json:"block_id_flag"`
-	ValidatorAddress Address     `json:"validator_address"`
+	BlockIDFlag           BlockIDFlag `json:"block_id_flag"`
+	ValidatorProTxHash    []byte      `json:"validator_pro_tx_hash"`
 	BlockSignature        []byte      `json:"block_signature"`
 	StateSignature        []byte      `json:"state_signature"`
 }

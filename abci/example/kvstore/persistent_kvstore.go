@@ -66,10 +66,10 @@ func (app *PersistentKVStoreApplication) SetOption(req types.RequestSetOption) t
 	return app.app.SetOption(req)
 }
 
-// tx is either "val:pubkey!power" or "key=value" or just arbitrary bytes
+// tx is either "val:proTxHash!pubkey!power" or "key=value" or just arbitrary bytes
 func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
 	// if it starts with "val:", update the validator set
-	// format is "val:pubkey!power"
+	// format is "val:proTxHash!pubkey!power"
 	if isValidatorTx(req.Tx) {
 		// update validators in the merkle tree
 		// and in app.ValUpdates
@@ -199,32 +199,41 @@ func (app *PersistentKVStoreApplication) Validators() (validators []types.Valida
 	return
 }
 
-func MakeValSetChangeTx(pubkey pc.PublicKey, power int64) []byte {
+func MakeValSetChangeTx(proTxHash []byte, pubkey pc.PublicKey, power int64) []byte {
 	pk, err := cryptoenc.PubKeyFromProto(pubkey)
 	if err != nil {
 		panic(err)
 	}
 	pubStr := base64.StdEncoding.EncodeToString(pk.Bytes())
-	return []byte(fmt.Sprintf("val:%s!%d", pubStr, power))
+	proTxHashStr := base64.StdEncoding.EncodeToString(proTxHash)
+	return []byte(fmt.Sprintf("val:%s!%s!%d", proTxHashStr, pubStr, power))
 }
 
 func isValidatorTx(tx []byte) bool {
 	return strings.HasPrefix(string(tx), ValidatorSetChangePrefix)
 }
 
-// format is "val:pubkey!power"
+// format is "val:proTxHash!pubkey!power"
 // pubkey is a base64-encoded 48-byte bls12381 key
 func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.ResponseDeliverTx {
 	tx = tx[len(ValidatorSetChangePrefix):]
 
 	//  get the pubkey and power
-	pubKeyAndPower := strings.Split(string(tx), "!")
-	if len(pubKeyAndPower) != 2 {
+	values := strings.Split(string(tx), "!")
+	if len(values) != 3 {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
-			Log:  fmt.Sprintf("Expected 'pubkey!power'. Got %v", pubKeyAndPower)}
+			Log:  fmt.Sprintf("Expected 'proTxHash!pubkey!power'. Got %v", values)}
 	}
-	pubkeyS, powerS := pubKeyAndPower[0], pubKeyAndPower[1]
+	proTxHashS, pubkeyS, powerS := values[0], values[1], values[2]
+
+	// decode the pubkey
+	proTxHash, err := base64.StdEncoding.DecodeString(proTxHashS)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("ProTxHash (%s) is invalid base64", proTxHash)}
+	}
 
 	// decode the pubkey
 	pubkey, err := base64.StdEncoding.DecodeString(pubkeyS)
@@ -243,7 +252,7 @@ func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.Respon
 	}
 
 	// update
-	return app.updateValidator(types.BLS12381ValidatorUpdate(pubkey, power))
+	return app.updateValidator(types.BLS12381ValidatorUpdate(proTxHash, pubkey, power))
 }
 
 // add, update, or remove a validator

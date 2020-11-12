@@ -322,7 +322,7 @@ func (voteSet *VoteSet) recoverThresholdSigs(blockVotes *blockVotes) error {
 		if vote != nil {
 			blockSigs = append(blockSigs, vote.BlockSignature)
 			stateSigs = append(stateSigs, vote.StateSignature)
-			_, val := voteSet.valSet.GetByAddress(vote.ValidatorAddress)
+			_, val := voteSet.valSet.GetByProTxHash(vote.ValidatorAddress)
 			blsIDs = append(blsIDs, val.ProTxHash)
 		}
 	}
@@ -419,9 +419,9 @@ func (voteSet *VoteSet) GetByAddress(address []byte) *Vote {
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	valIndex, val := voteSet.valSet.GetByAddress(address)
+	valIndex, val := voteSet.valSet.GetByProTxHash(address)
 	if val == nil {
-		panic("GetByAddress(address) returned nil")
+		panic("GetByProTxHash(address) returned nil")
 	}
 	return voteSet.votes[valIndex]
 }

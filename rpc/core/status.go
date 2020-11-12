@@ -80,6 +80,6 @@ func validatorAtHeight(h int64) *types.Validator {
 		return nil
 	}
 	privValAddress := env.PubKey.Address()
-	_, val := vals.GetByAddress(privValAddress)
+	_, val := vals.GetByProTxHash(privValAddress)
 	return val
 }

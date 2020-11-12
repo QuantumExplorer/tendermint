@@ -126,6 +126,7 @@ func (pv MockPV) ExtractIntoValidator(votingPower int64) *Validator {
 		Address:     pubKey.Address(),
 		PubKey:      pubKey,
 		VotingPower: votingPower,
+		ProTxHash:   pv.ProTxHash,
 	}
 }
 

@@ -59,7 +59,7 @@ func MakeVote(
 		return nil, fmt.Errorf("can't get pubkey: %w", err)
 	}
 	addr := pubKey.Address()
-	idx, _ := valSet.GetByAddress(addr)
+	idx, _ := valSet.GetByProTxHash(addr)
 	vote := &Vote{
 		ValidatorAddress: addr,
 		ValidatorIndex:   idx,

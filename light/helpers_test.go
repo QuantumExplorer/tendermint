@@ -107,7 +107,7 @@ func makeVote(header *types.Header, valset *types.ValidatorSet,
 	key crypto.PrivKey, blockID types.BlockID, stateID types.StateID) *types.Vote {
 
 	addr := key.PubKey().Address()
-	idx, _ := valset.GetByAddress(addr)
+	idx, _ := valset.GetByProTxHash(addr)
 	vote := &types.Vote{
 		ValidatorAddress: addr,
 		ValidatorIndex:   idx,

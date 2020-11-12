@@ -106,13 +106,15 @@ func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 
 func TestABCIValidatorWithoutPubKey(t *testing.T) {
 	pkBLS := bls12381.GenPrivKey().PubKey()
+	proTxHash := crypto.CRandBytes(32)
 
-	abciVal := TM2PB.Validator(NewValidator(pkBLS, 10, crypto.CRandBytes(32)))
+	abciVal := TM2PB.Validator(NewValidator(pkBLS, 10, proTxHash))
 
 	// pubkey must be nil
 	tmValExpected := abci.Validator{
 		Address: pkBLS.Address(),
 		Power:   10,
+		ProTxHash: proTxHash,
 	}
 
 	assert.Equal(t, tmValExpected, abciVal)

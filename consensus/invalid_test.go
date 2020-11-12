@@ -67,7 +67,7 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 			panic(err)
 		}
 		addr := pubKey.Address()
-		valIndex, _ := cs.Validators.GetByAddress(addr)
+		valIndex, _ := cs.Validators.GetByProTxHash(addr)
 
 		// precommit a random block
 		blockHash := bytes.HexBytes(tmrand.Bytes(32))

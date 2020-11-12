@@ -44,7 +44,7 @@ type ErrVoteConflictingVotes struct {
 }
 
 func (err *ErrVoteConflictingVotes) Error() string {
-	return fmt.Sprintf("conflicting votes from validator %X", err.VoteA.ValidatorAddress)
+	return fmt.Sprintf("conflicting votes from validator %X", err.VoteA.ValidatorProTxHash)
 }
 
 func NewConflictingVoteError(vote1, vote2 *Vote) *ErrVoteConflictingVotes {
@@ -60,15 +60,15 @@ type Address = crypto.Address
 // Vote represents a prevote, precommit, or commit vote from validators for
 // consensus.
 type Vote struct {
-	Type             tmproto.SignedMsgType `json:"type"`
-	Height           int64                 `json:"height"`
-	Round            int32                 `json:"round"`    // assume there will not be greater than 2_147_483_647 rounds
-	BlockID          BlockID               `json:"block_id"` // zero if vote is nil.
-	StateID			 StateID			   `json:"state_id"`
-	ValidatorAddress Address               `json:"validator_address"`
-	ValidatorIndex   int32                 `json:"validator_index"`
-	BlockSignature   []byte                `json:"block_signature"`
-	StateSignature   []byte                `json:"state_signature"`
+	Type               tmproto.SignedMsgType `json:"type"`
+	Height             int64                 `json:"height"`
+	Round              int32                 `json:"round"`    // assume there will not be greater than 2_147_483_647 rounds
+	BlockID            BlockID               `json:"block_id"` // zero if vote is nil.
+	StateID			   StateID			     `json:"state_id"`
+	ValidatorProTxHash []byte                `json:"validator_pro_tx_hash"`
+	ValidatorIndex     int32                 `json:"validator_index"`
+	BlockSignature     []byte                `json:"block_signature"`
+	StateSignature     []byte                `json:"state_signature"`
 }
 
 // CommitSig converts the Vote to a CommitSig.
@@ -89,7 +89,7 @@ func (vote *Vote) CommitSig() CommitSig {
 
 	return CommitSig{
 		BlockIDFlag:      blockIDFlag,
-		ValidatorAddress: vote.ValidatorAddress,
+		ValidatorAddress: vote.ValidatorProTxHash,
 		BlockSignature:        vote.BlockSignature,
 		StateSignature:        vote.StateSignature,
 	}
