@@ -265,6 +265,17 @@ func (vals *ValidatorSet) HasProTxHash(proTxHash []byte) bool {
 	return false
 }
 
+// HasAddress returns true if address given is in the validator set, false -
+// otherwise.
+func (vals *ValidatorSet) HasAddress(address []byte) bool {
+	for _, val := range vals.Validators {
+		if bytes.Equal(val.Address, address) {
+			return true
+		}
+	}
+	return false
+}
+
 // GetByProTxHash returns an index of the validator with protxhash and validator
 // itself (copy) if found. Otherwise, -1 and nil are returned.
 func (vals *ValidatorSet) GetByProTxHash(proTxHash []byte) (index int32, val *Validator) {

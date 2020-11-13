@@ -141,7 +141,7 @@ func TestUnmarshalValidatorKey(t *testing.T) {
     "type": "tendermint/PrivKeyBLS12381",
     "value": "%s"
   },
-  "pro_tx_hash": "Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="
+  "pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 }`, addr, pubB64, privB64)
 
 	val := FilePVKey{}

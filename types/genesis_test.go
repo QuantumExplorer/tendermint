@@ -24,14 +24,14 @@ func TestGenesisBad(t *testing.T) {
 		[]byte(`{"chain_id":"chain","initial_height":"-1"}`), // negative initial height
 		// missing pub_key type
 		[]byte(
-			`{"validators":[{"pub_key":{"value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="},"power":"10","name":"","pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="}]}`,
+			`{"validators":[{"pub_key":{"value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="},"power":"10","name":"","pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"}]}`,
 		),
 		// missing chain_id
 		[]byte(
 			`{"validators":[` +
 				`{"pub_key":{` +
 				`"type":"tendermint/PubKeyEd25519","value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="` +
-				`},"power":"10","name":"","pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="}` +
+				`},"power":"10","name":"","pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"}` +
 				`]}`,
 		),
 		// too big chain_id
@@ -39,7 +39,7 @@ func TestGenesisBad(t *testing.T) {
 			`{"chain_id": "Lorem ipsum dolor sit amet, consectetuer adipiscing", "validators": [` +
 				`{"pub_key":{` +
 				`"type":"tendermint/PubKeyEd25519","value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="` +
-				`},"power":"10","name":"","pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="}` +
+				`},"power":"10","name":"","pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"}` +
 				`]}`,
 		),
 		// wrong address
@@ -47,7 +47,7 @@ func TestGenesisBad(t *testing.T) {
 			`{"chain_id":"mychain", "validators":[` +
 				`{"address": "A", "pub_key":{` +
 				`"type":"tendermint/PubKeyEd25519","value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="` +
-				`},"power":"10","name":"","pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="}` +
+				`},"power":"10","name":"","pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"}` +
 				`]}`,
 		),
 		// missing pro_tx_hash
@@ -78,7 +78,7 @@ func TestGenesisGood(t *testing.T) {
 				"pub_key":{"type":"tendermint/PubKeyEd25519","value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="},
 				"power":"10",
 				"name":"",
-				"pro_tx_hash":"Ub85zB9Bufxj36Wx7fPwyjrVyvrksStP6SY7CLtQxF8="
+				"pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 			}],
 			"app_hash":"",
 			"app_state":{"account_owner": "Bob"}

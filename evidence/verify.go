@@ -156,8 +156,9 @@ func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, t
 func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet *types.ValidatorSet) error {
 	_, val := valSet.GetByProTxHash(e.VoteA.ValidatorProTxHash)
 	if val == nil {
-		return fmt.Errorf("address %X was not a validator at height %d", e.VoteA.ValidatorProTxHash, e.Height())
+		return fmt.Errorf("proTxHash %X was not a validator at height %d", e.VoteA.ValidatorProTxHash, e.Height())
 	}
+	proTxHash := val.ProTxHash
 	pubKey := val.PubKey
 
 	// H/R/S must be the same
@@ -185,11 +186,9 @@ func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet 
 		)
 	}
 
-	// pubkey must match address (this should already be true, sanity check)
-	addr := e.VoteA.ValidatorProTxHash
-	if !bytes.Equal(pubKey.Address(), addr) {
-		return fmt.Errorf("address (%X) doesn't match pubkey (%v - %X)",
-			addr, pubKey, pubKey.Address())
+	// proTxHash must match address (this should already be true, sanity check)
+	if !bytes.Equal(proTxHash, e.VoteA.ValidatorProTxHash) {
+		return fmt.Errorf("proTxHash (%X) doesn't match pubkey (%v)", e.VoteA.ValidatorProTxHash, proTxHash)
 	}
 	va := e.VoteA.ToProto()
 	vb := e.VoteB.ToProto()

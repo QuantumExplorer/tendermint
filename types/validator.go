@@ -198,7 +198,10 @@ func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
 	if randPower {
 		votePower += int64(tmrand.Uint32())
 	}
-	proTxHash := tmrand.Bytes(32)
+	proTxHash, err := privVal.GetProTxHash()
+	if err != nil {
+		panic(fmt.Errorf("could not retrieve proTxHash %w", err))
+	}
 	pubKey, err := privVal.GetPubKey()
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
