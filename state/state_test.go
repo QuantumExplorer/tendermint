@@ -975,12 +975,12 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
-	_, valOld := state.Validators.GetByIndex(0)
-	var pubkeyOld = valOld.PubKey
+	_, val0 := state.Validators.GetByIndex(0)
+	var proTxHashOld = val0.ProTxHash //this is not really old, as it stays the same
 	pubkey := bls12381.GenPrivKey().PubKey()
 
 	// Swap the first validator with a new one (validator set size stays the same).
-	header, chainLock, blockID, responses := makeHeaderPartsResponsesValPubKeyChange(state, pubkey)
+	header, chainLock, blockID, responses := makeHeaderPartsResponsesValPubKeyChange(state, pubkey, val0)
 
 	// Save state etc.
 	var validatorUpdates []*types.Validator
@@ -998,7 +998,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	v0, err := stateStore.LoadValidators(nextHeight)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v0.Size())
-	index, val := v0.GetByProTxHash(pubkeyOld.Address())
+	index, val := v0.GetByProTxHash(proTxHashOld)
 	assert.NotNil(t, val)
 	if index < 0 {
 		t.Fatal("expected to find old validator")
@@ -1008,10 +1008,10 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	v1, err := stateStore.LoadValidators(nextHeight + 1)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v1.Size())
-	index, val = v1.GetByProTxHash(pubkey.Address())
+	index, val = v1.GetByAddress(pubkey.Address())
 	assert.NotNil(t, val)
 	if index < 0 {
-		t.Fatal("expected to find newly added validator")
+		t.Fatal("expected to find same validator by new address")
 	}
 }
 

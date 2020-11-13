@@ -115,7 +115,7 @@ func (v *Validator) String() string {
 func ValidatorListString(vals []*Validator) string {
 	chunks := make([]string, len(vals))
 	for i, val := range vals {
-		chunks[i] = fmt.Sprintf("%s:%d", val.Address, val.VotingPower)
+		chunks[i] = fmt.Sprintf("%s:%d", val.ProTxHash, val.VotingPower)
 	}
 
 	return strings.Join(chunks, ",")

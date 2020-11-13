@@ -3,6 +3,7 @@ package privval
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
@@ -131,6 +132,8 @@ func TestUnmarshalValidatorKey(t *testing.T) {
 	pubB64 := base64.StdEncoding.EncodeToString(pubBytes)
 	privB64 := base64.StdEncoding.EncodeToString(privBytes)
 
+	proTxHash := crypto.RandProTxHash()
+
 	serialized := fmt.Sprintf(`{
   "address": "%s",
   "pub_key": {
@@ -141,8 +144,8 @@ func TestUnmarshalValidatorKey(t *testing.T) {
     "type": "tendermint/PrivKeyBLS12381",
     "value": "%s"
   },
-  "pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
-}`, addr, pubB64, privB64)
+  "pro_tx_hash": "%s"
+}`, addr, pubB64, privB64, proTxHash)
 
 	val := FilePVKey{}
 	err := tmjson.Unmarshal([]byte(serialized), &val)
@@ -152,6 +155,7 @@ func TestUnmarshalValidatorKey(t *testing.T) {
 	assert.EqualValues(addr, val.Address)
 	assert.EqualValues(pubKey, val.PubKey)
 	assert.EqualValues(privKey, val.PrivKey)
+	assert.EqualValues(proTxHash, val.ProTxHash)
 
 	// export it and make sure it is the same
 	out, err := tmjson.Marshal(val)

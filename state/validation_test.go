@@ -173,11 +173,12 @@ func TestValidateBlockCommit(t *testing.T) {
 		/*
 			wrongSigsCommit is fine except for the extra bad precommit
 		*/
+		proTxHashString := proTxHash.String()
 		goodVote, err := types.MakeVote(height,
 			blockID,
 			stateID,
 			state.Validators,
-			privVals[proTxHash.String()],
+			privVals[proTxHashString],
 			chainID,
 		)
 		require.NoError(t, err, "height %d", height)
