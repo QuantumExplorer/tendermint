@@ -158,7 +158,7 @@ func (evpool *Pool) AddEvidenceFromConsensus(ev types.Evidence, time time.Time, 
 
 	switch ev := ev.(type) {
 	case *types.DuplicateVoteEvidence:
-		_, val := valSet.GetByProTxHash(ev.VoteA.ValidatorAddress)
+		_, val := valSet.GetByProTxHash(ev.VoteA.ValidatorProTxHash)
 		vals = append(vals, val)
 		totalPower = valSet.TotalVotingPower()
 	default:

@@ -36,6 +36,10 @@ func ProTxHashFromSeedBytes(bz []byte) ProTxHash {
 	return ProTxHash(tmhash.SumTruncated(bz))
 }
 
+func RandProTxHash() ProTxHash {
+	return ProTxHash(CRandBytes(32))
+}
+
 type PubKey interface {
 	Address() Address
 	Bytes() []byte

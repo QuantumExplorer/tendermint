@@ -1,7 +1,7 @@
 package state_test
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
+	"github.com/tendermint/tendermint/crypto"
 	"testing"
 	"time"
 
@@ -67,8 +67,8 @@ func TestValidateBlockHeader(t *testing.T) {
 		{"LastResultsHash wrong", func(block *types.Block) { block.LastResultsHash = wrongHash }},
 
 		{"EvidenceHash wrong", func(block *types.Block) { block.EvidenceHash = wrongHash }},
-		{"Proposer wrong", func(block *types.Block) { block.ProposerAddress = bls12381.GenPrivKey().PubKey().Address() }},
-		{"Proposer invalid", func(block *types.Block) { block.ProposerAddress = []byte("wrong size") }},
+		{"Proposer wrong", func(block *types.Block) { block.ProposerProTxHash = crypto.CRandBytes(32) }},
+		{"Proposer invalid", func(block *types.Block) { block.ProposerProTxHash = []byte("wrong size") }},
 	}
 
 	// Build up state for multiple heights
@@ -182,11 +182,11 @@ func TestValidateBlockCommit(t *testing.T) {
 		)
 		require.NoError(t, err, "height %d", height)
 
-		bpvPubKey, err := badPrivVal.GetPubKey()
+		bpvProTxHash, err := badPrivVal.GetProTxHash()
 		require.NoError(t, err)
 
 		badVote := &types.Vote{
-			ValidatorAddress: bpvPubKey.Address(),
+			ValidatorProTxHash: bpvProTxHash,
 			ValidatorIndex:   0,
 			Height:           height,
 			Round:            0,

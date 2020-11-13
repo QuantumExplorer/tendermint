@@ -66,12 +66,7 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 		if err != nil {
 			panic(err)
 		}
-		pubKey, err := cs.privValidator.GetPubKey()
-		if err != nil {
-			panic(err)
-		}
-		addr := pubKey.Address()
-		valIndex, _ := cs.Validators.GetByProTxHash(addr)
+		valIndex, _ := cs.Validators.GetByProTxHash(proTxHash)
 
 		// precommit a random block
 		blockHash := bytes.HexBytes(tmrand.Bytes(32))

@@ -105,16 +105,16 @@ func validateBlock(evidencePool EvidencePool, proxyAppQueryConn proxy.AppConnQue
 
 	// NOTE: We can't actually verify it's the right proposer because we don't
 	// know what round the block was first proposed. So just check that it's
-	// a legit address and a known validator.
-	if len(block.ProposerAddress) != crypto.AddressSize {
-		return fmt.Errorf("expected ProposerAddress size %d, got %d",
-			crypto.AddressSize,
-			len(block.ProposerAddress),
+	// a legit pro_tx_hash and a known validator.
+	if len(block.ProposerProTxHash) != crypto.DefaultHashSize {
+		return fmt.Errorf("expected ProposerProTxHash size %d, got %d",
+			crypto.DefaultHashSize,
+			len(block.ProposerProTxHash),
 		)
 	}
-	if !state.Validators.HasAddress(block.ProposerAddress) {
-		return fmt.Errorf("block.Header.ProposerAddress %X is not a validator",
-			block.ProposerAddress,
+	if !state.Validators.HasProTxHash(block.ProposerProTxHash) {
+		return fmt.Errorf("block.Header.ProposerProTxHash %X is not a validator",
+			block.ProposerProTxHash,
 		)
 	}
 

@@ -60,7 +60,7 @@ func (evpool *Pool) verify(evidence types.Evidence) (*info, error) {
 			return nil, fmt.Errorf("verifying duplicate vote evidence: %w", err)
 		}
 
-		_, val := valSet.GetByProTxHash(ev.VoteA.ValidatorAddress)
+		_, val := valSet.GetByProTxHash(ev.VoteA.ValidatorProTxHash)
 
 		return &info{
 			Evidence:         evidence,
@@ -154,7 +154,7 @@ func VerifyLightClientAttack(e *types.LightClientAttackEvidence, commonHeader, t
 //      - the block ID's must be different
 //      - The signatures must both be valid
 func VerifyDuplicateVote(e *types.DuplicateVoteEvidence, chainID string, valSet *types.ValidatorSet) error {
-	_, val := valSet.GetByProTxHash(e.VoteA.ValidatorAddress)
+	_, val := valSet.GetByProTxHash(e.VoteA.ValidatorProTxHash)
 	if val == nil {
 		return fmt.Errorf("address %X was not a validator at height %d", e.VoteA.ValidatorAddress, e.Height())
 	}
@@ -232,7 +232,7 @@ func getMaliciousValidators(evidence *types.LightClientAttackEvidence, commonVal
 				continue
 			}
 
-			_, val := commonVals.GetByProTxHash(commitSig.ValidatorAddress)
+			_, val := commonVals.GetByProTxHash(commitSig.ValidatorProTxHash)
 			if val == nil {
 				// validator wasn't in the common validator set
 				continue
@@ -256,7 +256,7 @@ func getMaliciousValidators(evidence *types.LightClientAttackEvidence, commonVal
 				continue
 			}
 
-			_, val := evidence.ConflictingBlock.ValidatorSet.GetByProTxHash(sigA.ValidatorAddress)
+			_, val := evidence.ConflictingBlock.ValidatorSet.GetByProTxHash(sigA.ValidatorProTxHash)
 			validators = append(validators, val)
 		}
 		return validators, equivocationType

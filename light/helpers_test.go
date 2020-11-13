@@ -107,15 +107,19 @@ func makeVote(header *types.Header, valset *types.ValidatorSet,
 	key crypto.PrivKey, blockID types.BlockID, stateID types.StateID) *types.Vote {
 
 	addr := key.PubKey().Address()
-	idx, _ := valset.GetByProTxHash(addr)
+	idx, val := valset.GetByAddress(addr)
+	if val == nil {
+		panic("val must exist")
+	}
+	proTxHash := val.ProTxHash
 	vote := &types.Vote{
-		ValidatorAddress: addr,
-		ValidatorIndex:   idx,
-		Height:           header.Height,
-		Round:            1,
-		Type:             tmproto.PrecommitType,
-		BlockID:          blockID,
-		StateID:          stateID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     idx,
+		Height:             header.Height,
+		Round:              1,
+		Type:               tmproto.PrecommitType,
+		BlockID:            blockID,
+		StateID:            stateID,
 	}
 
 	v := vote.ToProto()
@@ -155,7 +159,7 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 		AppHash:            appHash,
 		ConsensusHash:      consHash,
 		LastResultsHash:    resHash,
-		ProposerAddress:    valset.Validators[0].Address,
+		ProposerProTxHash:    valset.Validators[0].ProTxHash,
 	}
 }
 
