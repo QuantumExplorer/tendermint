@@ -363,7 +363,7 @@ func TestConsMsgsVectors(t *testing.T) {
 	pbProposal := proposal.ToProto()
 
 	v := &types.Vote{
-		ValidatorAddress: []byte("add_more_exclamation"),
+		ValidatorProTxHash: []byte("add_more_exclamation"),
 		ValidatorIndex:   1,
 		Height:           1,
 		Round:            0,

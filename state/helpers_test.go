@@ -138,7 +138,7 @@ func makeBlock(state sm.State, height int64) *types.Block {
 		makeTxs(state.LastBlockHeight),
 		new(types.Commit),
 		nil,
-		state.Validators.GetProposer().Address,
+		state.Validators.GetProposer().ProTxHash,
 	)
 	return block
 }

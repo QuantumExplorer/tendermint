@@ -61,6 +61,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.NotNil(t, vset.Hash())
 	assert.NotPanics(t, func() { vset.IncrementProposerPriority(1) })
 	assert.Equal(t, val.Address, vset.GetProposer().Address)
+	assert.Equal(t, val.ProTxHash, vset.GetProposer().ProTxHash)
 
 	// update
 	val = randValidator(vset.TotalVotingPower())
@@ -322,8 +323,8 @@ func TestProposerSelection3(t *testing.T) {
 		j int32
 	)
 	for ; i < 10000; i++ {
-		got := vset.GetProposer().Address
-		expected := proposerOrder[j%4].Address
+		got := vset.GetProposer().ProTxHash
+		expected := proposerOrder[j%4].ProTxHash
 		if !bytes.Equal(got, expected) {
 			t.Fatalf(fmt.Sprintf("vset.Proposer (%X) does not match expected proposer (%X) for (%d, %d)", got, expected, i, j))
 		}
@@ -629,7 +630,7 @@ func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
 	for i, tc := range tcs {
 		tc.vals.IncrementProposerPriority(tc.times)
 
-		assert.Equal(t, tc.wantProposer.Address, tc.vals.GetProposer().Address,
+		assert.Equal(t, tc.wantProposer.ProTxHash, tc.vals.GetProposer().ProTxHash,
 			"test case: %v",
 			i)
 

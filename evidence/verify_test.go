@@ -107,9 +107,9 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 	assert.Equal(t, 1, len(pendingEvs))
 
-	pubKey, err := newPrivVal.GetPubKey()
+	proTxHash, err := newPrivVal.GetProTxHash()
 	require.NoError(t, err)
-	lastCommit := makeCommit(state.LastBlockHeight, pubKey.Address())
+	lastCommit := makeCommit(state.LastBlockHeight, proTxHash)
 	chainLock := types.NewMockChainLock(1)
 	block := types.MakeBlock(state.LastBlockHeight, chainLock.CoreBlockHeight, &chainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 
@@ -214,9 +214,9 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 	assert.Equal(t, 1, len(pendingEvs))
 
-	pubKey, err := conflictingPrivVals[0].GetPubKey()
+	proTxHash, err := conflictingPrivVals[0].GetProTxHash()
 	require.NoError(t, err)
-	lastCommit := makeCommit(state.LastBlockHeight, pubKey.Address())
+	lastCommit := makeCommit(state.LastBlockHeight, proTxHash)
 	chainLock := types.NewMockChainLock(1)
 	block := types.MakeBlock(state.LastBlockHeight, chainLock.CoreBlockHeight, &chainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 
@@ -314,9 +314,9 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 	pendingEvs, _ := pool.PendingEvidence(state.ConsensusParams.Evidence.MaxBytes)
 	assert.Equal(t, 1, len(pendingEvs))
 
-	pubKey, err := conflictingPrivVals[0].GetPubKey()
+	proTxHash, err := conflictingPrivVals[0].GetProTxHash()
 	require.NoError(t, err)
-	lastCommit := makeCommit(state.LastBlockHeight, pubKey.Address())
+	lastCommit := makeCommit(state.LastBlockHeight, proTxHash)
 	chainLock := types.NewMockChainLock(1)
 	block := types.MakeBlock(state.LastBlockHeight, chainLock.CoreBlockHeight, &chainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 
@@ -412,10 +412,10 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 func makeVote(
 	t *testing.T, val types.PrivValidator, chainID string, valIndex int32, height int64,
 	round int32, step int, blockID types.BlockID, stateID types.StateID) *types.Vote {
-	pubKey, err := val.GetPubKey()
+	proTxHash, err := val.GetProTxHash()
 	require.NoError(t, err)
 	v := &types.Vote{
-		ValidatorAddress: pubKey.Address(),
+		ValidatorProTxHash: proTxHash,
 		ValidatorIndex:   valIndex,
 		Height:           height,
 		Round:            round,
@@ -449,7 +449,7 @@ func makeHeaderRandom(height int64) *types.Header {
 		AppHash:            crypto.CRandBytes(tmhash.Size),
 		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
-		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+		ProposerProTxHash:  crypto.CRandBytes(crypto.DefaultHashSize),
 	}
 }
 

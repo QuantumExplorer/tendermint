@@ -59,7 +59,7 @@ func TestResetValidator(t *testing.T) {
 	randStateBytes := tmrand.Bytes(tmhash.Size)
 	blockID := types.BlockID{Hash: randBytes, PartSetHeader: types.PartSetHeader{}}
 	stateID := types.StateID{LastAppHash: randStateBytes}
-	vote := newVote(privVal.Key.Address, 0, height, round, voteType, blockID, stateID)
+	vote := newVote(privVal.Key.ProTxHash, 0, height, round, voteType, blockID, stateID)
 	err = privVal.SignVote("mychainid", vote.ToProto())
 	assert.NoError(t, err, "expected no error signing vote")
 
@@ -183,7 +183,7 @@ func TestSignVote(t *testing.T) {
 	voteType := tmproto.PrevoteType
 
 	// sign a vote for first time
-	vote := newVote(privVal.Key.Address, 0, height, round, voteType, block1, state)
+	vote := newVote(privVal.Key.ProTxHash, 0, height, round, voteType, block1, state)
 	v := vote.ToProto()
 	err = privVal.SignVote("mychainid", v)
 	assert.NoError(err, "expected no error signing vote")
@@ -194,10 +194,10 @@ func TestSignVote(t *testing.T) {
 
 	// now try some bad votes
 	cases := []*types.Vote{
-		newVote(privVal.Key.Address, 0, height, round-1, voteType, block1, state),   // round regression
-		newVote(privVal.Key.Address, 0, height-1, round, voteType, block1, state),   // height regression
-		newVote(privVal.Key.Address, 0, height-2, round+4, voteType, block1, state), // height regression and different round
-		newVote(privVal.Key.Address, 0, height, round, voteType, block2, state),     // different block
+		newVote(privVal.Key.ProTxHash, 0, height, round-1, voteType, block1, state),   // round regression
+		newVote(privVal.Key.ProTxHash, 0, height-1, round, voteType, block1, state),   // height regression
+		newVote(privVal.Key.ProTxHash, 0, height-2, round+4, voteType, block1, state), // height regression and different round
+		newVote(privVal.Key.ProTxHash, 0, height, round, voteType, block2, state),     // different block
 	}
 
 	for _, c := range cases {
@@ -302,10 +302,10 @@ func TestDifferByTimestamp(t *testing.T) {
 	}
 }
 
-func newVote(addr types.Address, idx int32, height int64, round int32,
+func newVote(proTxHash types.ProTxHash, idx int32, height int64, round int32,
 	typ tmproto.SignedMsgType, blockID types.BlockID, stateID types.StateID) *types.Vote {
 	return &types.Vote{
-		ValidatorAddress: addr,
+		ValidatorProTxHash: proTxHash,
 		ValidatorIndex:   idx,
 		Height:           height,
 		Round:            round,

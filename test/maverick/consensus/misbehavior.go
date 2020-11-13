@@ -119,32 +119,31 @@ func defaultEnterPropose(cs *State, height int64, round int32) {
 	}
 	logger.Debug("This node is a validator")
 
-	pubKey, err := cs.privValidator.GetPubKey()
+	proTxHash, err := cs.privValidator.GetProTxHash()
 	if err != nil {
 		// If this node is a validator & proposer in the currentx round, it will
 		// miss the opportunity to create a block.
 		logger.Error("Error on retrival of pubkey", "err", err)
 		return
 	}
-	address := pubKey.Address()
 
 	// if not a validator, we're done
-	if !cs.Validators.HasAddress(address) {
-		logger.Debug("This node is not a validator", "addr", address, "vals", cs.Validators)
+	if !cs.Validators.HasProTxHash(proTxHash) {
+		logger.Debug("This node is not a validator", "pro_tx_hash", proTxHash, "vals", cs.Validators)
 		return
 	}
 
-	if cs.isProposer(address) {
+	if cs.isProposer(proTxHash) {
 		logger.Info("enterPropose: Our turn to propose",
 			"proposer",
-			address,
+			proTxHash,
 			"privValidator",
 			cs.privValidator)
 		cs.decideProposal(height, round)
 	} else {
 		logger.Info("enterPropose: Not our turn to propose",
 			"proposer",
-			cs.Validators.GetProposer().Address,
+			cs.Validators.GetProposer().ProTxHash,
 			"privValidator",
 			cs.privValidator)
 	}

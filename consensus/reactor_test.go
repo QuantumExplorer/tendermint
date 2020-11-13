@@ -406,9 +406,9 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	// map of active validators
 	activeVals := make(map[string]struct{})
 	for i := 0; i < nVals; i++ {
-		pubKey, err := css[i].privValidator.GetPubKey()
+		proTxHash, err := css[i].privValidator.GetProTxHash()
 		require.NoError(t, err)
-		activeVals[string(pubKey.Address())] = struct{}{}
+		activeVals[string(proTxHash)] = struct{}{}
 	}
 
 	// wait till everyone makes block 1
@@ -441,7 +441,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 
 	// the commits for block 4 should be with the updated validator set
-	activeVals[string(newValidatorPubKey1.Address())] = struct{}{}
+	activeVals[string(newValidatorProTxHash)] = struct{}{}
 
 	// wait till everyone makes block 5
 	// it includes the commit for block 4, which should have the updated validator set
@@ -493,8 +493,8 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, newValidatorTx2, newValidatorTx3)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, newValidatorTx2, newValidatorTx3)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
-	activeVals[string(newValidatorPubKey2.Address())] = struct{}{}
-	activeVals[string(newValidatorPubKey3.Address())] = struct{}{}
+	activeVals[string(newValidatorProTxHash2)] = struct{}{}
+	activeVals[string(newValidatorProTxHash3)] = struct{}{}
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
 	//---------------------------------------------------------------------------
@@ -506,8 +506,8 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, removeValidatorTx2, removeValidatorTx3)
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, removeValidatorTx2, removeValidatorTx3)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
-	delete(activeVals, string(newValidatorPubKey2.Address()))
-	delete(activeVals, string(newValidatorPubKey3.Address()))
+	delete(activeVals, string(newValidatorProTxHash2))
+	delete(activeVals, string(newValidatorProTxHash3))
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 }
 
@@ -628,8 +628,8 @@ func validateBlock(block *types.Block, activeVals map[string]struct{}) error {
 	}
 
 	for _, commitSig := range block.LastCommit.Signatures {
-		if _, ok := activeVals[string(commitSig.ValidatorAddress)]; !ok {
-			return fmt.Errorf("found vote for inactive validator %X", commitSig.ValidatorAddress)
+		if _, ok := activeVals[string(commitSig.ValidatorProTxHash)]; !ok {
+			return fmt.Errorf("found vote for inactive validator %X", commitSig.ValidatorProTxHash)
 		}
 	}
 	return nil

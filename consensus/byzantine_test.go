@@ -187,7 +187,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 		close(done)
 	}()
 
-	pubkey, _ := bcs.privValidator.GetPubKey()
+	proTxHash, _ := bcs.privValidator.GetProTxHash()
 
 	select {
 	case <-done:
@@ -195,7 +195,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 			if assert.NotNil(t, ev, idx) {
 				ev, ok := ev.(*types.DuplicateVoteEvidence)
 				assert.True(t, ok)
-				assert.Equal(t, pubkey.Address(), ev.VoteA.ValidatorAddress)
+				assert.Equal(t, proTxHash, ev.VoteA.ValidatorProTxHash)
 				assert.Equal(t, prevoteHeight, ev.Height())
 			}
 		}

@@ -57,7 +57,7 @@ func makeEvidences(
 	chainID string,
 ) (correct *types.DuplicateVoteEvidence, fakes []*types.DuplicateVoteEvidence) {
 	vote := types.Vote{
-		ValidatorAddress: val.Key.Address,
+		ValidatorProTxHash: val.Key.ProTxHash,
 		ValidatorIndex:   0,
 		Height:           1,
 		Round:            0,
@@ -83,7 +83,7 @@ func makeEvidences(
 	// different address
 	{
 		v := vote2
-		v.ValidatorAddress = []byte("some_address")
+		v.ValidatorProTxHash = []byte("some_pro_tx_hash")
 		fakes = append(fakes, newEvidence(t, val, &vote, &v, chainID))
 	}
 

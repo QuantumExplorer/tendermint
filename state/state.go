@@ -265,7 +265,7 @@ func (state State) MakeBlock(
 	txs []types.Tx,
 	commit *types.Commit,
 	evidence []types.Evidence,
-	proposerProTxHash []byte,
+	proposerProTxHash types.ProTxHash,
 ) (*types.Block, *types.PartSet) {
 
 	var chainLock *types.ChainLock = nil

@@ -21,7 +21,7 @@ func TestEvidence_Misbehavior(t *testing.T) {
 			for _, evidence := range block.Evidence.Evidence {
 				switch evidence := evidence.(type) {
 				case *types.DuplicateVoteEvidence:
-					if bytes.Equal(evidence.VoteA.ValidatorAddress, node.Key.PubKey().Address()) {
+					if bytes.Equal(evidence.VoteA.ValidatorProTxHash, node.ProTxHash) {
 						nodeEvidence = evidence
 					}
 				default:

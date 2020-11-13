@@ -34,7 +34,7 @@ func exampleVote() *types.Vote {
 		StateID: types.StateID{
 			LastAppHash: tmhash.Sum([]byte("stateID_hash")),
 		},
-		ValidatorAddress: crypto.AddressHash([]byte("validator_address")),
+		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
 		ValidatorIndex:   56789,
 	}
 }

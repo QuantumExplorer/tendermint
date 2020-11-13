@@ -56,7 +56,7 @@ func TestPeerCatchupRounds(t *testing.T) {
 
 func makeVoteHR(t *testing.T, height int64, valIndex, round int32, privVals []types.PrivValidator) *types.Vote {
 	privVal := privVals[valIndex]
-	pubKey, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +65,7 @@ func makeVoteHR(t *testing.T, height int64, valIndex, round int32, privVals []ty
 	randBytes2 := tmrand.Bytes(tmhash.Size)
 
 	vote := &types.Vote{
-		ValidatorAddress: pubKey.Address(),
+		ValidatorProTxHash: proTxHash,
 		ValidatorIndex:   valIndex,
 		Height:           height,
 		Round:            round,

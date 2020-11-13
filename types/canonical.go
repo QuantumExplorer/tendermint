@@ -70,7 +70,7 @@ func CanonicalizeProposal(chainID string, proposal *tmproto.Proposal) tmproto.Ca
 }
 
 // CanonicalizeVote transforms the given Vote to a CanonicalVote, which does
-// not contain ValidatorIndex and ValidatorAddress fields.
+// not contain ValidatorIndex and ValidatorProTxHash fields.
 func CanonicalizeVote(chainID string, vote *tmproto.Vote) tmproto.CanonicalVote {
 	return tmproto.CanonicalVote{
 		Type:      vote.Type,
@@ -83,7 +83,7 @@ func CanonicalizeVote(chainID string, vote *tmproto.Vote) tmproto.CanonicalVote 
 }
 
 // CanonicalizeVote transforms the given Vote to a CanonicalVote, which does
-// not contain ValidatorIndex and ValidatorAddress fields.
+// not contain ValidatorIndex and ValidatorProTxHash fields.
 func CanonicalizeStateVote(vote *tmproto.Vote) tmproto.CanonicalStateVote {
 	return tmproto.CanonicalStateVote{
 		Height:    vote.Height,       // encoded as sfixed64

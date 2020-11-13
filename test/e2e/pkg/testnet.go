@@ -65,7 +65,7 @@ type Node struct {
 	Testnet          *Testnet
 	Mode             Mode
 	Key              crypto.PrivKey
-	ProTxHash        []byte
+	ProTxHash        crypto.ProTxHash
 	IP               net.IP
 	ProxyPort        uint32
 	StartAt          int64

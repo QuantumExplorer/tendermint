@@ -280,7 +280,7 @@ func (th *TestHarness) TestSignVote() error {
 				LastAppHash: lastAppHash,
 			},
 			ValidatorIndex:   0,
-			ValidatorAddress: tmhash.SumTruncated([]byte("addr")),
+			ValidatorProTxHash: tmhash.SumTruncated([]byte("pro_tx_hash")),
 		}
 		v := vote.ToProto()
 		voteBlockBytes := types.VoteBlockSignBytes(th.chainID, v)

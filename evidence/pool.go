@@ -412,7 +412,7 @@ func (evpool *Pool) fastCheck(ev types.Evidence) bool {
 	OUTER:
 		for _, sig := range lcae.ConflictingBlock.Commit.Signatures {
 			for _, val := range evInfo.Validators {
-				if bytes.Equal(val.Address, sig.ValidatorAddress) {
+				if bytes.Equal(val.ProTxHash, sig.ValidatorProTxHash) {
 					continue OUTER
 				}
 			}

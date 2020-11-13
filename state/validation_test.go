@@ -73,12 +73,12 @@ func TestValidateBlockHeader(t *testing.T) {
 
 	// Build up state for multiple heights
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Validators.GetProposer().Address
+		proposerProTxHash := state.Validators.GetProposer().ProTxHash
 		/*
 			Invalid blocks don't pass
 		*/
 		for _, tc := range testCases {
-			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerAddr)
+			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, nil, proposerProTxHash)
 			tc.malleateBlock(block)
 			err := blockExec.ValidateBlock(state, block)
 			require.Error(t, err, tc.name)
@@ -113,7 +113,7 @@ func TestValidateBlockCommit(t *testing.T) {
 	badPrivVal := types.NewMockPV()
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Validators.GetProposer().Address
+		proTxHash := state.Validators.GetProposer().ProTxHash
 		if height > 1 {
 			/*
 				#2589: ensure state.LastValidators.VerifyCommit fails here
@@ -124,7 +124,7 @@ func TestValidateBlockCommit(t *testing.T) {
 				state.LastBlockID,
 				types.StateID{LastAppHash: state.AppHash},
 				state.Validators,
-				privVals[proposerAddr.String()],
+				privVals[proTxHash.String()],
 				chainID,
 			)
 			require.NoError(t, err, "height %d", height)
@@ -238,7 +238,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
-		proposerAddr := state.Validators.GetProposer().Address
+		proposerProTxHash := state.Validators.GetProposer().ProTxHash
 		maxBytesEvidence := state.ConsensusParams.Evidence.MaxBytes
 		if height > 1 {
 			/*
@@ -249,11 +249,11 @@ func TestValidateBlockEvidence(t *testing.T) {
 			// more bytes than the maximum allowed for evidence
 			for currentBytes <= maxBytesEvidence {
 				newEv := types.NewMockDuplicateVoteEvidenceWithValidator(height, time.Now(),
-					privVals[proposerAddr.String()], chainID)
+					privVals[proposerProTxHash.String()], chainID)
 				evidence = append(evidence, newEv)
 				currentBytes += int64(len(newEv.Bytes()))
 			}
-			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr)
+			block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerProTxHash)
 			err := blockExec.ValidateBlock(state, block)
 			if assert.Error(t, err) {
 				_, ok := err.(*types.ErrEvidenceOverflow)

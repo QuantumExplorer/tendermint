@@ -45,10 +45,10 @@ func voteToStep(vote *tmproto.Vote) int8 {
 
 // FilePVKey stores the immutable part of PrivValidator.
 type FilePVKey struct {
-	Address   types.Address  `json:"address"`
-	PubKey    crypto.PubKey  `json:"pub_key"`
-	PrivKey   crypto.PrivKey `json:"priv_key"`
-	ProTxHash []byte 	     `json:"pro_tx_hash"`
+	Address   types.Address    `json:"address"`
+	PubKey    crypto.PubKey    `json:"pub_key"`
+	PrivKey   crypto.PrivKey   `json:"priv_key"`
+	ProTxHash crypto.ProTxHash `json:"pro_tx_hash"`
 
 	filePath string
 }
