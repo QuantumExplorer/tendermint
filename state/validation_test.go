@@ -268,8 +268,9 @@ func TestValidateBlockEvidence(t *testing.T) {
 		var currentBytes int64 = 0
 		// precisely the amount of allowed evidence
 		for {
+			proposerProTxHashString := proposerProTxHash.String()
 			newEv := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultEvidenceTime,
-				privVals[proposerProTxHash.String()], chainID)
+				privVals[proposerProTxHashString], chainID)
 			currentBytes += int64(len(newEv.Bytes()))
 			if currentBytes >= maxBytesEvidence {
 				break

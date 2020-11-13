@@ -560,10 +560,10 @@ func (vals *ValidatorSet) applyUpdates(updates []*Validator) {
 func verifyRemovals(deletes []*Validator, vals *ValidatorSet) (votingPower int64, err error) {
 	removedVotingPower := int64(0)
 	for _, valUpdate := range deletes {
-		address := valUpdate.Address
-		_, val := vals.GetByProTxHash(address)
+		proTxHash := valUpdate.ProTxHash
+		_, val := vals.GetByProTxHash(proTxHash)
 		if val == nil {
-			return removedVotingPower, fmt.Errorf("failed to find validator %X to remove", address)
+			return removedVotingPower, fmt.Errorf("failed to find validator %X to remove", proTxHash)
 		}
 		removedVotingPower += val.VotingPower
 	}

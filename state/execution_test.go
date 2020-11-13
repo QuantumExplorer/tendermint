@@ -397,11 +397,11 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 	block := makeBlock(state, 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-	vp, err := cryptoenc.PubKeyToProto(state.Validators.Validators[0].PubKey)
+	proTxHash := state.Validators.Validators[0].ProTxHash
 	require.NoError(t, err)
 	// Remove the only validator
 	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{PubKey: vp, Power: 0},
+		{ProTxHash: proTxHash, Power: 0},
 	}
 
 	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })
