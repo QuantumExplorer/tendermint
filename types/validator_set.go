@@ -256,9 +256,9 @@ func (vals *ValidatorSet) Copy() *ValidatorSet {
 
 // HasAddress returns true if address given is in the validator set, false -
 // otherwise.
-func (vals *ValidatorSet) HasAddress(address []byte) bool {
+func (vals *ValidatorSet) HasProTxHash(proTxHash []byte) bool {
 	for _, val := range vals.Validators {
-		if bytes.Equal(val.Address, address) {
+		if bytes.Equal(val.ProTxHash, proTxHash) {
 			return true
 		}
 	}
@@ -280,12 +280,12 @@ func (vals *ValidatorSet) GetByProTxHash(proTxHash []byte) (index int32, val *Va
 // index.
 // It returns nil values if index is less than 0 or greater or equal to
 // len(ValidatorSet.Validators).
-func (vals *ValidatorSet) GetByIndex(index int32) (address []byte, val *Validator) {
+func (vals *ValidatorSet) GetByIndex(index int32) (proTxHash []byte, val *Validator) {
 	if index < 0 || int(index) >= len(vals.Validators) {
 		return nil, nil
 	}
 	val = vals.Validators[index]
-	return val.Address, val.Copy()
+	return val.ProTxHash, val.Copy()
 }
 
 // Size returns the length of the validator set.
@@ -453,7 +453,7 @@ func verifyUpdates(
 func numNewValidators(updates []*Validator, vals *ValidatorSet) int {
 	numNewValidators := 0
 	for _, valUpdate := range updates {
-		if !vals.HasAddress(valUpdate.Address) {
+		if !vals.HasProTxHash(valUpdate.ProTxHash) {
 			numNewValidators++
 		}
 	}
@@ -816,7 +816,7 @@ func (vals *ValidatorSet) VerifyCommitLightTrusting(chainID string, commit *Comm
 
 		// We don't know the validators that committed this block, so we have to
 		// check for each vote if its validator is already known.
-		valIdx, val := vals.GetByProTxHash(commitSig.ValidatorAddress)
+		valIdx, val := vals.GetByProTxHash(commitSig.ValidatorProTxHash)
 
 		if val != nil {
 			// check for double vote of validator on the same commit

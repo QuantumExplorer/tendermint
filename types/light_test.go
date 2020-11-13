@@ -128,7 +128,7 @@ func TestSignedHeaderValidateBasic(t *testing.T) {
 		AppHash:            commit.Hash(),
 		LastResultsHash:    commit.Hash(),
 		EvidenceHash:       commit.Hash(),
-		ProposerAddress:    crypto.AddressHash([]byte("proposer_address")),
+		ProposerProTxHash:  crypto.ProTxHashFromSeedBytes([]byte("proposer_pro_tx_hash")),
 	}
 
 	validSignedHeader := SignedHeader{Header: &h, Commit: commit}

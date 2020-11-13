@@ -222,16 +222,16 @@ func TestMockEvidenceValidateBasic(t *testing.T) {
 
 func makeVote(
 	t *testing.T, val PrivValidator, chainID string, valIndex int32, height int64, round int32, step int, blockID BlockID, stateID StateID) *Vote {
-	pubKey, err := val.GetPubKey()
+	proTxHash, err := val.GetProTxHash()
 	require.NoError(t, err)
 	v := &Vote{
-		ValidatorAddress: pubKey.Address(),
-		ValidatorIndex:   valIndex,
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.SignedMsgType(step),
-		BlockID:          blockID,
-		StateID:		  stateID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     valIndex,
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.SignedMsgType(step),
+		BlockID:            blockID,
+		StateID:		    stateID,
 	}
 
 	vpb := v.ToProto()
@@ -259,7 +259,7 @@ func makeHeaderRandom() *Header {
 		AppHash:            crypto.CRandBytes(tmhash.Size),
 		LastResultsHash:    crypto.CRandBytes(tmhash.Size),
 		EvidenceHash:       crypto.CRandBytes(tmhash.Size),
-		ProposerAddress:    crypto.CRandBytes(crypto.AddressSize),
+		ProposerProTxHash:  crypto.CRandBytes(crypto.DefaultHashSize),
 	}
 }
 

@@ -62,6 +62,10 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 	go func() {
 		cs.mtx.Lock()
 		cs.privValidator = pv
+		proTxHash, err := cs.privValidator.GetProTxHash()
+		if err != nil {
+			panic(err)
+		}
 		pubKey, err := cs.privValidator.GetPubKey()
 		if err != nil {
 			panic(err)
@@ -73,7 +77,7 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 		blockHash := bytes.HexBytes(tmrand.Bytes(32))
 		lastAppHash := bytes.HexBytes(tmrand.Bytes(32))
 		precommit := &types.Vote{
-			ValidatorAddress: addr,
+			ValidatorProTxHash: proTxHash,
 			ValidatorIndex:   valIndex,
 			Height:           cs.Height,
 			Round:            cs.Round,

@@ -369,7 +369,7 @@ type Header struct {
 
 	// consensus info
 	EvidenceHash    tmbytes.HexBytes `json:"evidence_hash"`    // evidence included in the block
-	ProposerAddress Address          `json:"proposer_address"` // original proposer of the block
+	ProposerProTxHash ProTxHash          `json:"proposer_pro_tx_hash"` // original proposer of the block
 }
 
 // Populate the Header with state-derived data.
@@ -379,7 +379,7 @@ func (h *Header) Populate(
 	timestamp time.Time, lastBlockID BlockID,
 	valHash, nextValHash []byte,
 	consensusHash, appHash, lastResultsHash []byte,
-	proposerAddress Address,
+	proposerProTxHash ProTxHash,
 ) {
 	h.Version = version
 	h.ChainID = chainID
@@ -390,7 +390,7 @@ func (h *Header) Populate(
 	h.ConsensusHash = consensusHash
 	h.AppHash = appHash
 	h.LastResultsHash = lastResultsHash
-	h.ProposerAddress = proposerAddress
+	h.ProposerProTxHash = proposerProTxHash
 }
 
 // ValidateBasic performs stateless validation on a Header returning an error
@@ -427,10 +427,10 @@ func (h Header) ValidateBasic() error {
 		return fmt.Errorf("wrong EvidenceHash: %v", err)
 	}
 
-	if len(h.ProposerAddress) != crypto.AddressSize {
+	if len(h.ProposerProTxHash) != crypto.DefaultHashSize {
 		return fmt.Errorf(
-			"invalid ProposerAddress length; got: %d, expected: %d",
-			len(h.ProposerAddress), crypto.AddressSize,
+			"invalid ProposerProTxHash length; got: %d, expected: %d",
+			len(h.ProposerProTxHash), crypto.DefaultHashSize,
 		)
 	}
 
@@ -493,7 +493,7 @@ func (h *Header) Hash() tmbytes.HexBytes {
 		cdcEncode(h.AppHash),
 		cdcEncode(h.LastResultsHash),
 		cdcEncode(h.EvidenceHash),
-		cdcEncode(h.ProposerAddress),
+		cdcEncode(h.ProposerProTxHash),
 	})
 }
 
@@ -533,7 +533,7 @@ func (h *Header) StringIndented(indent string) string {
 		indent, h.ConsensusHash,
 		indent, h.LastResultsHash,
 		indent, h.EvidenceHash,
-		indent, h.ProposerAddress,
+		indent, h.ProposerProTxHash,
 		indent, h.Hash())
 }
 
@@ -558,7 +558,7 @@ func (h *Header) ToProto() *tmproto.Header {
 		EvidenceHash:          h.EvidenceHash,
 		LastResultsHash:       h.LastResultsHash,
 		LastCommitHash:        h.LastCommitHash,
-		ProposerAddress:       h.ProposerAddress,
+		ProposerProTxHash:     h.ProposerProTxHash,
 	}
 }
 
@@ -591,7 +591,7 @@ func HeaderFromProto(ph *tmproto.Header) (Header, error) {
 	h.EvidenceHash = ph.EvidenceHash
 	h.LastResultsHash = ph.LastResultsHash
 	h.LastCommitHash = ph.LastCommitHash
-	h.ProposerAddress = ph.ProposerAddress
+	h.ProposerProTxHash = ph.ProposerProTxHash
 
 	return *h, h.ValidateBasic()
 }
@@ -613,9 +613,9 @@ const (
 const (
 	// Max size of commit without any commitSigs -> 82 for BlockID, 34 for StateID, 8 for Height, 4 for Round.
 	MaxCommitOverheadBytes int64 = 130
-	// Commit sig size is made up of 96 bytes for the signature, 20 bytes for the address,
+	// Commit sig size is made up of 96 bytes for the signature, 32 bytes for the proTxHash,
 	// 1 byte for the flag
-	MaxCommitSigBytesBLS12381 int64 = 220
+	MaxCommitSigBytesBLS12381 int64 = 232
 )
 
 // CommitSig is a part of the Vote included in a Commit.
@@ -627,12 +627,12 @@ type CommitSig struct {
 }
 
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
-func NewCommitSigForBlock(blockSignature []byte, stateSignature []byte, valAddr Address) CommitSig {
+func NewCommitSigForBlock(blockSignature []byte, stateSignature []byte, valProTxHash []byte) CommitSig {
 	return CommitSig{
-		BlockIDFlag:      BlockIDFlagCommit,
-		ValidatorAddress: valAddr,
-		BlockSignature:   blockSignature,
-		StateSignature:   stateSignature,
+		BlockIDFlag:        BlockIDFlagCommit,
+		ValidatorProTxHash: valProTxHash,
+		BlockSignature:     blockSignature,
+		StateSignature:     stateSignature,
 	}
 }
 
@@ -687,7 +687,7 @@ func (cs CommitSig) String() string {
 	return fmt.Sprintf("CommitSig{%X , %X by %X on %v}",
 		tmbytes.Fingerprint(cs.BlockSignature),
 		tmbytes.Fingerprint(cs.StateSignature),
-		tmbytes.Fingerprint(cs.ValidatorAddress),
+		tmbytes.Fingerprint(cs.ValidatorProTxHash),
 		cs.BlockIDFlag)
 }
 
@@ -737,8 +737,8 @@ func (cs CommitSig) ValidateBasic() error {
 
 	switch cs.BlockIDFlag {
 	case BlockIDFlagAbsent:
-		if len(cs.ValidatorAddress) != 0 {
-			return errors.New("validator address is present")
+		if len(cs.ValidatorProTxHash) != 0 {
+			return errors.New("validator proTxHash is present")
 		}
 		if len(cs.BlockSignature) != 0 {
 			return errors.New("block signature is present")
@@ -747,10 +747,10 @@ func (cs CommitSig) ValidateBasic() error {
 			return errors.New("state signature is present")
 		}
 	default:
-		if len(cs.ValidatorAddress) != crypto.AddressSize {
-			return fmt.Errorf("expected ValidatorAddress size to be %d bytes, got %d bytes",
-				crypto.AddressSize,
-				len(cs.ValidatorAddress),
+		if len(cs.ValidatorProTxHash) != crypto.DefaultHashSize {
+			return fmt.Errorf("expected ValidatorProTxHash size to be %d bytes, got %d bytes",
+				crypto.DefaultHashSize,
+				len(cs.ValidatorProTxHash),
 			)
 		}
 		if len(cs.BlockSignature) == 0 {
@@ -777,10 +777,10 @@ func (cs *CommitSig) ToProto() *tmproto.CommitSig {
 	}
 
 	return &tmproto.CommitSig{
-		BlockIdFlag:      tmproto.BlockIDFlag(cs.BlockIDFlag),
-		ValidatorAddress: cs.ValidatorAddress,
-		BlockSignature:   cs.BlockSignature,
-		StateSignature:   cs.StateSignature,
+		BlockIdFlag:        tmproto.BlockIDFlag(cs.BlockIDFlag),
+		ValidatorProTxHash: cs.ValidatorProTxHash,
+		BlockSignature:     cs.BlockSignature,
+		StateSignature:     cs.StateSignature,
 	}
 }
 
@@ -789,7 +789,7 @@ func (cs *CommitSig) ToProto() *tmproto.CommitSig {
 func (cs *CommitSig) FromProto(csp tmproto.CommitSig) error {
 
 	cs.BlockIDFlag = BlockIDFlag(csp.BlockIdFlag)
-	cs.ValidatorAddress = csp.ValidatorAddress
+	cs.ValidatorProTxHash = csp.ValidatorProTxHash
 	cs.BlockSignature = csp.BlockSignature
 	cs.StateSignature = csp.StateSignature
 
@@ -802,7 +802,7 @@ func (cs *CommitSig) FromProto(csp tmproto.CommitSig) error {
 // Commit contains the evidence that a block was committed by a set of validators.
 // NOTE: Commit is empty for height 1, but never nil.
 type Commit struct {
-	// NOTE: The signatures are in order of address to preserve the bonded
+	// NOTE: The signatures are in order of proTxHash to preserve the bonded
 	// ValidatorSet order.
 	// Any peer with a block can gossip signatures by index with a peer without
 	// recalculating the active ValidatorSet.
@@ -859,7 +859,7 @@ func (commit *Commit) GetVote(valIdx int32) *Vote {
 		Round:            commit.Round,
 		BlockID:          commitSig.BlockID(commit.BlockID),
 		StateID: 		  commitSig.StateID(commit.StateID),
-		ValidatorAddress: commitSig.ValidatorAddress,
+		ValidatorProTxHash: commitSig.ValidatorProTxHash,
 		ValidatorIndex:   valIdx,
 		BlockSignature:   commitSig.BlockSignature,
 		StateSignature:   commitSig.StateSignature,

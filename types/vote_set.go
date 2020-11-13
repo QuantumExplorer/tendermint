@@ -161,14 +161,14 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 		return false, ErrVoteNil
 	}
 	valIndex := vote.ValidatorIndex
-	valAddr := vote.ValidatorAddress
+	valProTxHash := vote.ValidatorProTxHash
 	blockKey := vote.BlockID.Key()
 
 	// Ensure that validator index was set
 	if valIndex < 0 {
 		return false, fmt.Errorf("index < 0: %w", ErrVoteInvalidValidatorIndex)
-	} else if len(valAddr) == 0 {
-		return false, fmt.Errorf("empty address: %w", ErrVoteInvalidValidatorAddress)
+	} else if len(valProTxHash) == 0 {
+		return false, fmt.Errorf("empty pro_tx_hash: %w", ErrVoteInvalidValidatorProTxHash)
 	}
 
 	// Make sure the step matches.
@@ -181,7 +181,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Ensure that signer is a validator.
-	lookupAddr, val := voteSet.valSet.GetByIndex(valIndex)
+	lookupProTxHash, val := voteSet.valSet.GetByIndex(valIndex)
 	if val == nil {
 		return false, fmt.Errorf(
 			"cannot find validator %d in valSet of size %d: %w",
@@ -189,11 +189,11 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Ensure that the signer has the right address.
-	if !bytes.Equal(valAddr, lookupAddr) {
+	if !bytes.Equal(valProTxHash, lookupProTxHash) {
 		return false, fmt.Errorf(
-			"vote.ValidatorAddress (%X) does not match address (%X) for vote.ValidatorIndex (%d)\n"+
+			"vote.ValidatorProTxHash (%X) does not match address (%X) for vote.ValidatorIndex (%d)\n"+
 				"Ensure the genesis file is correct across all validators: %w",
-			valAddr, lookupAddr, valIndex, ErrVoteInvalidValidatorAddress)
+			valProTxHash, lookupProTxHash, valIndex, ErrVoteInvalidValidatorProTxHash)
 	}
 
 	// If we already know of this vote, return false.
@@ -205,7 +205,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	}
 
 	// Check signature.
-	if err := vote.Verify(voteSet.chainID, val.PubKey); err != nil {
+	if err := vote.Verify(voteSet.chainID, val.PubKey, val.ProTxHash); err != nil {
 		return false, fmt.Errorf("failed to verify vote with ChainID %s and PubKey %s: %w", voteSet.chainID, val.PubKey, err)
 	}
 
@@ -322,8 +322,7 @@ func (voteSet *VoteSet) recoverThresholdSigs(blockVotes *blockVotes) error {
 		if vote != nil {
 			blockSigs = append(blockSigs, vote.BlockSignature)
 			stateSigs = append(stateSigs, vote.StateSignature)
-			_, val := voteSet.valSet.GetByProTxHash(vote.ValidatorAddress)
-			blsIDs = append(blsIDs, val.ProTxHash)
+			blsIDs = append(blsIDs, vote.ValidatorProTxHash)
 		}
 	}
 	thresholdBlockSig, err := bls12381.RecoverThresholdSignatureFromShares(blockSigs, blsIDs)
@@ -413,13 +412,13 @@ func (voteSet *VoteSet) GetByIndex(valIndex int32) *Vote {
 	return voteSet.votes[valIndex]
 }
 
-func (voteSet *VoteSet) GetByAddress(address []byte) *Vote {
+func (voteSet *VoteSet) GetByProTxHash(proTxHash []byte) *Vote {
 	if voteSet == nil {
 		return nil
 	}
 	voteSet.mtx.Lock()
 	defer voteSet.mtx.Unlock()
-	valIndex, val := voteSet.valSet.GetByProTxHash(address)
+	valIndex, val := voteSet.valSet.GetByProTxHash(proTxHash)
 	if val == nil {
 		panic("GetByProTxHash(address) returned nil")
 	}

@@ -57,18 +57,18 @@ func makeVote(
 	valset *types.ValidatorSet,
 	privVal types.PrivValidator) *types.Vote {
 
-	pubKey, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	require.NoError(t, err)
 
-	valIdx, _ := valset.GetByProTxHash(pubKey.Address())
+	valIdx, _ := valset.GetByProTxHash(proTxHash)
 	vote := &types.Vote{
-		ValidatorAddress: pubKey.Address(),
-		ValidatorIndex:   valIdx,
-		Height:           header.Height,
-		Round:            1,
-		Type:             tmproto.PrecommitType,
-		BlockID:          blockID,
-		StateID:          stateID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     valIdx,
+		Height:             header.Height,
+		Round:              1,
+		Type:               tmproto.PrecommitType,
+		BlockID:            blockID,
+		StateID:            stateID,
 	}
 
 	vpb := vote.ToProto()

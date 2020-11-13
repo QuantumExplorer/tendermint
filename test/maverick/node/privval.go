@@ -257,7 +257,7 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 
 // GetPubKey returns the public key of the validator.
 // Implements PrivValidator.
-func (pv *FilePV) GetProTxHash() ([]byte, error) {
+func (pv *FilePV) GetProTxHash() (crypto.ProTxHash, error) {
 	return pv.Key.ProTxHash, nil
 }
 

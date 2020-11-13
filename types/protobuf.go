@@ -61,8 +61,8 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 		AppHash:            header.AppHash,
 		LastResultsHash:    header.LastResultsHash,
 
-		EvidenceHash:    header.EvidenceHash,
-		ProposerAddress: header.ProposerAddress,
+		EvidenceHash:      header.EvidenceHash,
+		ProposerProTxHash: header.ProposerProTxHash,
 	}
 }
 

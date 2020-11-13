@@ -36,7 +36,7 @@ func exampleVote(t byte) *Vote {
 		StateID: StateID{
 			LastAppHash: tmhash.Sum([]byte("lastAppState_hash")),
 		},
-		ValidatorAddress: crypto.AddressHash([]byte("validator_address")),
+		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
 		ValidatorIndex:   56789,
 	}
 }
@@ -204,18 +204,20 @@ func TestIsVoteTypeValid(t *testing.T) {
 
 func TestVoteVerify(t *testing.T) {
 	privVal := NewMockPV()
+	proTxHash, err := privVal.GetProTxHash()
+	require.NoError(t, err)
 	pubkey, err := privVal.GetPubKey()
 	require.NoError(t, err)
 
 	vote := examplePrevote()
-	vote.ValidatorAddress = pubkey.Address()
+	vote.ValidatorProTxHash = proTxHash
 
-	err = vote.Verify("test_chain_id", bls12381.GenPrivKey().PubKey())
+	err = vote.Verify("test_chain_id", bls12381.GenPrivKey().PubKey(), crypto.CRandBytes(32))
 	if assert.Error(t, err) {
-		assert.Equal(t, ErrVoteInvalidValidatorAddress, err)
+		assert.Equal(t, ErrVoteInvalidValidatorProTxHash, err)
 	}
 
-	err = vote.Verify("test_chain_id", pubkey)
+	err = vote.Verify("test_chain_id", pubkey, proTxHash)
 	if assert.Error(t, err) {
 		assert.Equal(t, ErrVoteInvalidSignature, err)
 	}
@@ -250,7 +252,7 @@ func TestVoteValidateBasic(t *testing.T) {
 		{"Invalid BlockID", func(v *Vote) {
 			v.BlockID = BlockID{[]byte{1, 2, 3}, PartSetHeader{111, []byte("blockparts")}}
 		}, true},
-		{"Invalid Address", func(v *Vote) { v.ValidatorAddress = make([]byte, 1) }, true},
+		{"Invalid ProTxHash", func(v *Vote) { v.ValidatorProTxHash = make([]byte, 1) }, true},
 		{"Invalid ValidatorIndex", func(v *Vote) { v.ValidatorIndex = -1 }, true},
 		{"Invalid Signature", func(v *Vote) { v.BlockSignature = nil }, true},
 		{"Too big Signature", func(v *Vote) { v.BlockSignature = make([]byte, MaxSignatureSize+1) }, true},

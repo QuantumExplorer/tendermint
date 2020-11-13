@@ -63,9 +63,9 @@ func (sc *RetrySignerClient) GetPubKey() (crypto.PubKey, error) {
 	return nil, fmt.Errorf("exhausted all attempts to get pubkey: %w", err)
 }
 
-func (sc *RetrySignerClient) GetProTxHash() ([]byte, error) {
+func (sc *RetrySignerClient) GetProTxHash() (crypto.ProTxHash, error) {
 	var (
-		proTxHash  []byte
+		proTxHash  crypto.ProTxHash
 		err error
 	)
 	for i := 0; i < sc.retries || sc.retries == 0; i++ {

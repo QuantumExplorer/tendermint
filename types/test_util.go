@@ -12,18 +12,18 @@ func MakeCommit(blockID BlockID, stateID StateID, height int64, round int32,
 
 	// all sign
 	for i := 0; i < len(validators); i++ {
-		pubKey, err := validators[i].GetPubKey()
+		proTxHash, err := validators[i].GetProTxHash()
 		if err != nil {
-			return nil, fmt.Errorf("can't get pubkey: %w", err)
+			return nil, fmt.Errorf("can't get proTxHash: %w", err)
 		}
 		vote := &Vote{
-			ValidatorAddress: pubKey.Address(),
-			ValidatorIndex:   int32(i),
-			Height:           height,
-			Round:            round,
-			Type:             tmproto.PrecommitType,
-			BlockID:          blockID,
-			StateID:          stateID,
+			ValidatorProTxHash: proTxHash,
+			ValidatorIndex:     int32(i),
+			Height:             height,
+			Round:              round,
+			Type:               tmproto.PrecommitType,
+			BlockID:            blockID,
+			StateID:            stateID,
 		}
 
 		_, err = signAddVote(validators[i], vote, voteSet)
@@ -54,20 +54,19 @@ func MakeVote(
 	privVal PrivValidator,
 	chainID string,
 ) (*Vote, error) {
-	pubKey, err := privVal.GetPubKey()
+	proTxHash, err := privVal.GetProTxHash()
 	if err != nil {
-		return nil, fmt.Errorf("can't get pubkey: %w", err)
+		return nil, fmt.Errorf("can't get proTxHash: %w", err)
 	}
-	addr := pubKey.Address()
-	idx, _ := valSet.GetByProTxHash(addr)
+	idx, _ := valSet.GetByProTxHash(proTxHash)
 	vote := &Vote{
-		ValidatorAddress: addr,
-		ValidatorIndex:   idx,
-		Height:           height,
-		Round:            0,
-		Type:             tmproto.PrecommitType,
-		BlockID:          blockID,
-		StateID:		  stateID,
+		ValidatorProTxHash: proTxHash,
+		ValidatorIndex:     idx,
+		Height:             height,
+		Round:              0,
+		Type:               tmproto.PrecommitType,
+		BlockID:            blockID,
+		StateID:		    stateID,
 	}
 	v := vote.ToProto()
 

@@ -13,7 +13,7 @@ import (
 // that signs votes and proposals, and never double signs.
 type PrivValidator interface {
 	GetPubKey() (crypto.PubKey, error)
-	GetProTxHash() ([]byte, error)
+	GetProTxHash() (crypto.ProTxHash, error)
 
 	SignVote(chainID string, vote *tmproto.Vote) error
 	SignProposal(chainID string, proposal *tmproto.Proposal) error
@@ -49,7 +49,7 @@ func (pvs PrivValidatorsByAddress) Swap(i, j int) {
 // Only use it for testing.
 type MockPV struct {
 	PrivKey              crypto.PrivKey
-	ProTxHash			 []byte
+	ProTxHash			 crypto.ProTxHash
 	breakProposalSigning bool
 	breakVoteSigning     bool
 }
@@ -71,7 +71,7 @@ func (pv MockPV) GetPubKey() (crypto.PubKey, error) {
 }
 
 // Implements PrivValidator.
-func (pv MockPV) GetProTxHash() ([]byte, error) {
+func (pv MockPV) GetProTxHash() (crypto.ProTxHash, error) {
 	return pv.ProTxHash, nil
 }
 

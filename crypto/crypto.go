@@ -8,6 +8,7 @@ import (
 const (
 	// AddressSize is the size of a pubkey address.
 	AddressSize = tmhash.TruncatedSize
+	DefaultHashSize = 32
 )
 
 type KeyType int
@@ -25,8 +26,14 @@ const (
 // Use an alias so Unmarshal methods (with ptr receivers) are available too.
 type Address = bytes.HexBytes
 
+type ProTxHash = bytes.HexBytes
+
 func AddressHash(bz []byte) Address {
 	return Address(tmhash.SumTruncated(bz))
+}
+
+func ProTxHashFromSeedBytes(bz []byte) ProTxHash {
+	return ProTxHash(tmhash.SumTruncated(bz))
 }
 
 type PubKey interface {

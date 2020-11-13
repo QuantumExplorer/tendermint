@@ -258,14 +258,14 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 // Create a block from the latest state
 
 // MakeBlock builds a block from the current state with the given txs, commit,
-// and evidence. Note it also takes a proposerAddress because the state does not
+// and evidence. Note it also takes a proposerProTxHash because the state does not
 // track rounds, and hence does not know the correct proposer. TODO: fix this!
 func (state State) MakeBlock(
 	height int64,
 	txs []types.Tx,
 	commit *types.Commit,
 	evidence []types.Evidence,
-	proposerAddress []byte,
+	proposerProTxHash []byte,
 ) (*types.Block, *types.PartSet) {
 
 	var chainLock *types.ChainLock = nil
@@ -297,7 +297,7 @@ func (state State) MakeBlock(
 		timestamp, state.LastBlockID,
 		state.Validators.Hash(), state.NextValidators.Hash(),
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
-		proposerAddress,
+		proposerProTxHash,
 	)
 
 

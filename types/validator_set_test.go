@@ -28,7 +28,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
 
 	assert.EqualValues(t, vset, vset.Copy())
-	assert.False(t, vset.HasAddress([]byte("some val")))
+	assert.False(t, vset.HasProTxHash([]byte("some val")))
 	idx, val := vset.GetByProTxHash([]byte("some val"))
 	assert.EqualValues(t, -1, idx)
 	assert.Nil(t, val)
@@ -51,7 +51,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
 
-	assert.True(t, vset.HasAddress(val.Address))
+	assert.True(t, vset.HasProTxHash(val.Address))
 	idx, _ = vset.GetByProTxHash(val.Address)
 	assert.EqualValues(t, 0, idx)
 	addr, _ = vset.GetByIndex(0)
@@ -673,16 +673,17 @@ func TestSafeSubClip(t *testing.T) {
 // verification.
 func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	var (
+		proTxHash = crypto.CRandBytes(crypto.DefaultHashSize)
 		privKey = bls12381.GenPrivKey()
 		pubKey  = privKey.PubKey()
-		v1      = NewValidator(pubKey, 1000, crypto.CRandBytes(32))
+		v1      = NewValidator(pubKey, 1000, proTxHash)
 		vset    = NewValidatorSet([]*Validator{v1})
 
 		chainID = "Lalande21185"
 	)
 
 	vote := examplePrecommit()
-	vote.ValidatorAddress = pubKey.Address()
+	vote.ValidatorProTxHash = proTxHash
 	v := vote.ToProto()
 	blockSig, err := privKey.Sign(VoteBlockSignBytes(chainID, v))
 	require.NoError(t, err)

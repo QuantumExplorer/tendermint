@@ -90,7 +90,7 @@ func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
 	return pk, nil
 }
 
-func (sc *SignerClient) GetProTxHash() ([]byte, error) {
+func (sc *SignerClient) GetProTxHash() (crypto.ProTxHash, error) {
 	response, err := sc.endpoint.SendRequest(mustWrapMsg(&privvalproto.ProTxHashRequest{ChainId: sc.chainID}))
 	if err != nil {
 		return nil, fmt.Errorf("send: %w", err)
