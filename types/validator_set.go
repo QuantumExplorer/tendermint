@@ -357,7 +357,7 @@ func (vals *ValidatorSet) GetProposer() (proposer *Validator) {
 func (vals *ValidatorSet) findProposer() *Validator {
 	var proposer *Validator
 	for _, val := range vals.Validators {
-		if proposer == nil || !bytes.Equal(val.Address, proposer.Address) {
+		if proposer == nil || !bytes.Equal(val.ProTxHash, proposer.ProTxHash) {
 			proposer = proposer.CompareProposerPriority(val)
 		}
 	}
@@ -401,7 +401,7 @@ func processChanges(origChanges []*Validator) (updates, removals []*Validator, e
 	updates = make([]*Validator, 0, len(changes))
 	var prevProTxHash []byte
 
-	// Scan changes by address and append valid validators to updates or removals lists.
+	// Scan changes by proTxHash and append valid validators to updates or removals lists.
 	for _, valUpdate := range changes {
 		if bytes.Equal(valUpdate.ProTxHash, prevProTxHash) {
 			err = fmt.Errorf("duplicate entry %v in %v", valUpdate, changes)
@@ -495,8 +495,8 @@ func numNewValidators(updates []*Validator, vals *ValidatorSet) int {
 // No changes are made to the validator set 'vals'.
 func computeNewPriorities(updates []*Validator, vals *ValidatorSet, updatedTotalVotingPower int64) {
 	for _, valUpdate := range updates {
-		address := valUpdate.Address
-		_, val := vals.GetByProTxHash(address)
+		proTxHash := valUpdate.ProTxHash
+		_, val := vals.GetByProTxHash(proTxHash)
 		if val == nil {
 			// add val
 			// Set ProposerPriority to -C*totalVotingPower (with C ~= 1.125) to make sure validators can't
@@ -526,13 +526,13 @@ func (vals *ValidatorSet) applyUpdates(updates []*Validator) {
 	i := 0
 
 	for len(existing) > 0 && len(updates) > 0 {
-		if bytes.Compare(existing[0].Address, updates[0].Address) < 0 { // unchanged validator
+		if bytes.Compare(existing[0].ProTxHash, updates[0].ProTxHash) < 0 { // unchanged validator
 			merged[i] = existing[0]
 			existing = existing[1:]
 		} else {
 			// Apply add or update.
 			merged[i] = updates[0]
-			if bytes.Equal(existing[0].Address, updates[0].Address) {
+			if bytes.Equal(existing[0].ProTxHash, updates[0].ProTxHash) {
 				// Validator is present in both, advance existing.
 				existing = existing[1:]
 			}
@@ -584,7 +584,7 @@ func (vals *ValidatorSet) applyRemovals(deletes []*Validator) {
 
 	// Loop over deletes until we removed all of them.
 	for len(deletes) > 0 {
-		if bytes.Equal(existing[0].Address, deletes[0].Address) {
+		if bytes.Equal(existing[0].ProTxHash, deletes[0].ProTxHash) {
 			deletes = deletes[1:]
 		} else { // Leave it in the resulting slice.
 			merged[i] = existing[0]

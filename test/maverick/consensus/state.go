@@ -1592,7 +1592,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		var (
 			commitSize = block.LastCommit.Size()
 			valSetLen  = len(cs.LastValidators.Validators)
-			address    types.Address
+			proTxHash    types.ProTxHash
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
@@ -1604,7 +1604,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 				// Metrics won't be updated, but it's not critical.
 				cs.Logger.Error(fmt.Sprintf("recordMetrics: %v", errPubKeyIsNotSet))
 			} else {
-				address = cs.privValidatorPubKey.Address()
+				proTxHash = cs.privValidatorProTxHash
 			}
 		}
 
@@ -1615,9 +1615,9 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 				missingValidatorsPower += val.VotingPower
 			}
 
-			if bytes.Equal(val.Address, address) {
+			if bytes.Equal(val.ProTxHash, proTxHash) {
 				label := []string{
-					"validator_address", val.Address.String(),
+					"validator_pro_tx_hash", val.ProTxHash.String(),
 				}
 				cs.metrics.ValidatorPower.With(label...).Set(float64(val.VotingPower))
 				if commitSig.ForBlock() {

@@ -1258,10 +1258,10 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 	state, err = stateStore.Load()
 	require.NoError(t, err)
 
-	newValAddr := state.Validators.Validators[0].Address
-	expectValAddr := val.Address
-	assert.NotEqual(t, oldValAddr, newValAddr)
-	assert.Equal(t, newValAddr, expectValAddr)
+	newValProTxHash := state.Validators.Validators[0].ProTxHash
+	expectValProTxHash := val.ProTxHash
+	assert.NotEqual(t, oldValAddr, newValProTxHash)
+	assert.Equal(t, newValProTxHash, expectValProTxHash)
 }
 
 // returns the vals on InitChain

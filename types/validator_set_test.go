@@ -51,8 +51,8 @@ func TestValidatorSetBasic(t *testing.T) {
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
 
-	assert.True(t, vset.HasProTxHash(val.Address))
-	idx, _ = vset.GetByProTxHash(val.Address)
+	assert.True(t, vset.HasProTxHash(val.ProTxHash))
+	idx, _ = vset.GetByProTxHash(val.ProTxHash)
 	assert.EqualValues(t, 0, idx)
 	addr, _ = vset.GetByIndex(0)
 	assert.Equal(t, []byte(val.Address), addr)
@@ -66,13 +66,13 @@ func TestValidatorSetBasic(t *testing.T) {
 	// update
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
-	_, val = vset.GetByProTxHash(val.Address)
+	_, val = vset.GetByProTxHash(val.ProTxHash)
 	val.VotingPower += 100
 	proposerPriority := val.ProposerPriority
 
 	val.ProposerPriority = 0
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
-	_, val = vset.GetByProTxHash(val.Address)
+	_, val = vset.GetByProTxHash(val.ProTxHash)
 	assert.Equal(t, proposerPriority, val.ProposerPriority)
 
 }
@@ -514,7 +514,7 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 		// work on copy to have the old ProposerPriorities:
 		newVset := tc.vs.CopyIncrementProposerPriority(tc.times)
 		for _, val := range tc.vs.Validators {
-			_, updatedVal := newVset.GetByProTxHash(val.Address)
+			_, updatedVal := newVset.GetByProTxHash(val.ProTxHash)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)
 		}
 	}

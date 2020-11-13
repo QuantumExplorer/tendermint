@@ -75,7 +75,7 @@ func makeValidCommit(
 	sigs := make([]types.CommitSig, 0)
 	for i := 0; i < vals.Size(); i++ {
 		_, val := vals.GetByIndex(int32(i))
-		vote, err := types.MakeVote(height, blockID, stateID, vals, privVals[val.Address.String()], chainID)
+		vote, err := types.MakeVote(height, blockID, stateID, vals, privVals[val.ProTxHash.String()], chainID)
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +99,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 		secret := []byte(fmt.Sprintf("test%d", i))
 		pk := bls12381.GenPrivKeyFromSecret(secret)
 		valAddr := pk.PubKey().Address()
-		proTxHash := crypto.CRandBytes(32)
+		proTxHash := crypto.RandProTxHash()
 		vals[i] = types.GenesisValidator{
 			Address: valAddr,
 			PubKey:  pk.PubKey(),
@@ -107,7 +107,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 			Name:    fmt.Sprintf("test%d", i),
 			ProTxHash: proTxHash,
 		}
-		privVals[valAddr.String()] = types.NewMockPVWithParams(pk, proTxHash, false, false)
+		privVals[proTxHash.String()] = types.NewMockPVWithParams(pk, proTxHash, false, false)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
 		ChainID:    chainID,
@@ -151,23 +151,16 @@ func genValSet(size int) *types.ValidatorSet {
 	return types.NewValidatorSet(vals)
 }
 
-func makeHeaderPartsResponsesValPubKeyChange(
-	state sm.State,
-	pubkey crypto.PubKey,
-) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
-
+func makeHeaderPartsResponsesValPubKeyChange(state sm.State, pubkey crypto.PubKey, val *types.Validator, ) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
 		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
-	// If the pubkey is new, remove the old and add the new.
-	_, val := state.NextValidators.GetByIndex(0)
 	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
 			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, 0, val.ProTxHash),
-				types.TM2PB.NewValidatorUpdate(pubkey, 10, val.ProTxHash),
+				types.TM2PB.NewValidatorUpdate(pubkey, val.VotingPower, val.ProTxHash),
 			},
 		}
 	}
