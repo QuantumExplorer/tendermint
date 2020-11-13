@@ -54,6 +54,9 @@ func MakeVote(
 	privVal PrivValidator,
 	chainID string,
 ) (*Vote, error) {
+	if privVal == nil {
+		return nil, fmt.Errorf("privVal must be set")
+	}
 	proTxHash, err := privVal.GetProTxHash()
 	if err != nil {
 		return nil, fmt.Errorf("can't get proTxHash: %w", err)

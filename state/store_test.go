@@ -109,10 +109,10 @@ func TestPruneStates(t *testing.T) {
 			db := dbm.NewMemDB()
 			stateStore := sm.NewStore(db)
 			pk := bls12381.GenPrivKey().PubKey()
-
+			proTxHash := crypto.RandProTxHash()
 			// Generate a bunch of state data. Validators change for heights ending with 3, and
 			// parameters when ending with 5.
-			validator := &types.Validator{Address: tmrand.Bytes(crypto.AddressSize), VotingPower: 100, PubKey: pk, ProTxHash: crypto.CRandBytes(32)}
+			validator := &types.Validator{Address: tmrand.Bytes(crypto.AddressSize), VotingPower: 100, PubKey: pk, ProTxHash: proTxHash}
 			validatorSet := &types.ValidatorSet{
 				Validators: []*types.Validator{validator},
 				Proposer:   validator,

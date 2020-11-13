@@ -239,7 +239,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	maxEvidenceBytes := int64(maxBytes / 2)
 	state.ConsensusParams.Block.MaxBytes = int64(maxBytes)
 	state.ConsensusParams.Evidence.MaxBytes = maxEvidenceBytes
-	proposerAddr, _ := state.Validators.GetByIndex(0)
+	proposerProTxHash, _ := state.Validators.GetByIndex(0)
 
 	// Make Mempool
 	memplMetrics := mempl.PrometheusMetrics("node_test_1")
@@ -292,7 +292,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
-		proposerAddr,
+		proposerProTxHash,
 	)
 
 	// check that the part set does not exceed the maximum block size
@@ -328,7 +328,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	var maxBytes int64 = 16384
 	var partSize uint32 = 256
 	state.ConsensusParams.Block.MaxBytes = maxBytes
-	proposerAddr, _ := state.Validators.GetByIndex(0)
+	proposerProTxHash, _ := state.Validators.GetByIndex(0)
 
 	// Make Mempool
 	memplMetrics := mempl.PrometheusMetrics("node_test_2")
@@ -361,7 +361,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
-		proposerAddr,
+		proposerProTxHash,
 	)
 
 	pb, err := block.ToProto()

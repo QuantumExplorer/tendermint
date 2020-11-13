@@ -88,7 +88,7 @@ func TestValidateBlockHeader(t *testing.T) {
 			A good block passes
 		*/
 		var err error
-		state, _, _, lastCommit, err = makeAndCommitGoodBlock(state, height, lastCommit, proposerAddr, blockExec, privVals, nil)
+		state, _, _, lastCommit, err = makeAndCommitGoodBlock(state, height, lastCommit, proposerProTxHash, blockExec, privVals, nil)
 		require.NoError(t, err, "height %d", height)
 	}
 }
@@ -135,7 +135,7 @@ func TestValidateBlockCommit(t *testing.T) {
 				types.StateID{LastAppHash: state.AppHash},
 				[]types.CommitSig{wrongHeightVote.CommitSig()},
 			)
-			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proposerAddr)
+			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proTxHash)
 			err = blockExec.ValidateBlock(state, block)
 			_, isErrInvalidCommitHeight := err.(types.ErrInvalidCommitHeight)
 			require.True(t, isErrInvalidCommitHeight, "expected ErrInvalidCommitHeight at height %d but got: %v", height, err)
@@ -143,7 +143,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			/*
 				#2589: test len(block.LastCommit.Signatures) == state.LastValidators.Size()
 			*/
-			block, _ = state.MakeBlock(height, makeTxs(height), wrongSigsCommit, nil, proposerAddr)
+			block, _ = state.MakeBlock(height, makeTxs(height), wrongSigsCommit, nil, proTxHash)
 			err = blockExec.ValidateBlock(state, block)
 			_, isErrInvalidCommitSignatures := err.(types.ErrInvalidCommitSignatures)
 			require.True(t, isErrInvalidCommitSignatures,
@@ -163,7 +163,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			state,
 			height,
 			lastCommit,
-			proposerAddr,
+			proTxHash,
 			blockExec,
 			privVals,
 			nil,
@@ -177,7 +177,7 @@ func TestValidateBlockCommit(t *testing.T) {
 			blockID,
 			stateID,
 			state.Validators,
-			privVals[proposerAddr.String()],
+			privVals[proTxHash.String()],
 			chainID,
 		)
 		require.NoError(t, err, "height %d", height)
@@ -269,7 +269,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 		// precisely the amount of allowed evidence
 		for {
 			newEv := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultEvidenceTime,
-				privVals[proposerAddr.String()], chainID)
+				privVals[proposerProTxHash.String()], chainID)
 			currentBytes += int64(len(newEv.Bytes()))
 			if currentBytes >= maxBytesEvidence {
 				break
@@ -282,7 +282,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 			state,
 			height,
 			lastCommit,
-			proposerAddr,
+			proposerProTxHash,
 			blockExec,
 			privVals,
 			evidence,

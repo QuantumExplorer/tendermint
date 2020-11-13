@@ -282,6 +282,10 @@ func (cs *State) SetPrivValidator(priv types.PrivValidator) {
 	cs.mtx.Lock()
 	defer cs.mtx.Unlock()
 
+	if priv == nil {
+		cs.Logger.Error("attempting to set private validator to nil")
+	}
+
 	cs.privValidator = priv
 
 	if err := cs.updatePrivValidatorProTxHash(); err != nil {

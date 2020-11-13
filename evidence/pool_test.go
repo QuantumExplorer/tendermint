@@ -402,6 +402,9 @@ func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Stor
 
 	pubKey, _ := privVal.GetPubKey()
     proTxHash, _ := privVal.GetProTxHash()
+    if len(proTxHash) != 32 {
+    	panic("proTxHash len not correct")
+	}
 	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey, ProTxHash: proTxHash}
 
 	// create validator set and state

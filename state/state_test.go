@@ -440,7 +440,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 	val1VotingPower := int64(10)
-	val1ProTxHash := crypto.CRandBytes(32)
+	val1ProTxHash := crypto.RandProTxHash()
 	val1PubKey := bls12381.GenPrivKey().PubKey()
 	val1 := &types.Validator{ProTxHash: val1ProTxHash, Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
 

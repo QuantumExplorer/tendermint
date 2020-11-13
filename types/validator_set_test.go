@@ -370,6 +370,9 @@ func newValidatorWithProTxHashFromAddress(address []byte, power int64) *Validato
 }
 
 func newValidator(address []byte, power int64, proTxHash []byte) *Validator {
+	if len(proTxHash) != 32 {
+		panic("proTxHash wrong length")
+	}
 	return &Validator{Address: address, VotingPower: power, ProTxHash: proTxHash}
 }
 

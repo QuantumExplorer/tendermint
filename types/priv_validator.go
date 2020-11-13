@@ -122,6 +122,9 @@ func (pv MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error 
 
 func (pv MockPV) ExtractIntoValidator(votingPower int64) *Validator {
 	pubKey, _ := pv.GetPubKey()
+	if len(pv.ProTxHash) != 32 {
+		panic("proTxHash wrong length")
+	}
 	return &Validator{
 		Address:     pubKey.Address(),
 		PubKey:      pubKey,

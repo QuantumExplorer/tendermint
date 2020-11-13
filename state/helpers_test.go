@@ -32,12 +32,12 @@ func makeAndCommitGoodBlock(
 	state sm.State,
 	height int64,
 	lastCommit *types.Commit,
-	proposerAddr []byte,
+	proposerProTxHash []byte,
 	blockExec *sm.BlockExecutor,
 	privVals map[string]types.PrivValidator,
 	evidence []types.Evidence) (sm.State, types.BlockID, types.StateID, *types.Commit, error) {
 	// A good block passes
-	state, blockID, stateID, err := makeAndApplyGoodBlock(state, height, lastCommit, proposerAddr, blockExec, evidence)
+	state, blockID, stateID, err := makeAndApplyGoodBlock(state, height, lastCommit, proposerProTxHash, blockExec, evidence)
 	if err != nil {
 		return state, types.BlockID{}, types.StateID{}, nil, err
 	}
@@ -50,9 +50,9 @@ func makeAndCommitGoodBlock(
 	return state, blockID, stateID, commit, nil
 }
 
-func makeAndApplyGoodBlock(state sm.State, height int64, lastCommit *types.Commit, proposerAddr []byte,
+func makeAndApplyGoodBlock(state sm.State, height int64, lastCommit *types.Commit, proposerProTxHash []byte,
 	blockExec *sm.BlockExecutor, evidence []types.Evidence) (sm.State, types.BlockID, types.StateID, error) {
-	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerAddr)
+	block, _ := state.MakeBlock(height, makeTxs(height), lastCommit, evidence, proposerProTxHash)
 	if err := blockExec.ValidateBlock(state, block); err != nil {
 		return state, types.BlockID{}, types.StateID{}, err
 	}

@@ -27,6 +27,9 @@ type Validator struct {
 
 // NewValidator returns a new validator with the given pubkey and voting power.
 func NewValidator(pubKey crypto.PubKey, votingPower int64, proTxHash []byte) *Validator {
+	if len(proTxHash) != 32 {
+		panic("proTxHash wrong length")
+	}
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,

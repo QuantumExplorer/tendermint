@@ -433,6 +433,7 @@ var (
 	ErrSignatureFoundInPastBlocks = errors.New("found signature from the same key")
 
 	errPubKeyIsNotSet = errors.New("pubkey is not set. Look for \"Can't get private validator pubkey\" errors")
+	errProTxHashIsNotSet = errors.New("proTxHash is not set. Look for \"Can't get private validator proTxHash\" errors")
 )
 
 //-----------------------------------------------------------------------------
@@ -1272,9 +1273,16 @@ func (cs *State) createProposalBlock() (block *types.Block, blockParts *types.Pa
 		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", errPubKeyIsNotSet))
 		return
 	}
-	proposerAddr := cs.privValidatorPubKey.Address()
 
-	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerAddr)
+	if cs.privValidatorProTxHash == nil {
+		// If this node is a validator & proposer in the current round, it will
+		// miss the opportunity to create a block.
+		cs.Logger.Error(fmt.Sprintf("enterPropose: %v", errProTxHashIsNotSet))
+		return
+	}
+	proposerProTxHash := cs.privValidatorProTxHash
+
+	return cs.blockExec.CreateProposalBlock(cs.Height, cs.state, commit, proposerProTxHash)
 }
 
 // Enter: any +2/3 prevotes at next round.
@@ -1904,7 +1912,7 @@ func (cs *State) updatePrivValidatorPubKeyAndProTxHash() error {
 // look back to check existence of the node's consensus votes before joining consensus
 func (cs *State) checkDoubleSigningRisk(height int64) error {
 	if cs.privValidator != nil && cs.privValidatorPubKey != nil && cs.config.DoubleSignCheckHeight > 0 && height > 0 {
-		valAddr := cs.privValidatorPubKey
+		valProTxHash := cs.privValidatorProTxHash
 		doubleSignCheckHeight := cs.config.DoubleSignCheckHeight
 		if doubleSignCheckHeight > height {
 			doubleSignCheckHeight = height
@@ -1913,7 +1921,7 @@ func (cs *State) checkDoubleSigningRisk(height int64) error {
 			lastCommit := cs.blockStore.LoadSeenCommit(height - i)
 			if lastCommit != nil {
 				for sigIdx, s := range lastCommit.Signatures {
-					if s.BlockIDFlag == types.BlockIDFlagCommit && bytes.Equal(s.ValidatorProTxHash, valAddr) {
+					if s.BlockIDFlag == types.BlockIDFlagCommit && bytes.Equal(s.ValidatorProTxHash, valProTxHash) {
 						cs.Logger.Info("Found signature from the same key", "sig", s, "idx", sigIdx, "height", height-i)
 						return ErrSignatureFoundInPastBlocks
 					}
