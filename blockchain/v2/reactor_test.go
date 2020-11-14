@@ -472,7 +472,7 @@ func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower 
 		}
 		privValidators[i] = privVal
 	}
-	sort.Sort(types.PrivValidatorsByAddress(privValidators))
+	sort.Sort(types.PrivValidatorsByProTxHash(privValidators))
 
 	return &types.GenesisDoc{
 		GenesisTime: tmtime.Now(),

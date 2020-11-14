@@ -866,30 +866,30 @@ func TestEmptySet(t *testing.T) {
 
 func TestUpdatesForNewValidatorSet(t *testing.T) {
 
-	v1 := newValidatorWithRandProTxHash([]byte("v1"), 100)
-	v2 := newValidatorWithRandProTxHash([]byte("v2"), 100)
+	v1 := newValidatorWithProTxHashFromAddress([]byte("v1"), 100)
+	v2 := newValidatorWithProTxHashFromAddress([]byte("v2"), 100)
 	valList := []*Validator{v1, v2}
 	valSet := NewValidatorSet(valList)
 	verifyValidatorSet(t, valSet)
 
 	// Verify duplicates are caught in NewValidatorSet() and it panics
-	v111 := newValidatorWithRandProTxHash([]byte("v1"), 100)
-	v112 := newValidatorWithRandProTxHash([]byte("v1"), 123)
-	v113 := newValidatorWithRandProTxHash([]byte("v1"), 234)
+	v111 := newValidatorWithProTxHashFromAddress([]byte("v1"), 100)
+	v112 := newValidatorWithProTxHashFromAddress([]byte("v1"), 123)
+	v113 := newValidatorWithProTxHashFromAddress([]byte("v1"), 234)
 	valList = []*Validator{v111, v112, v113}
 	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 	// Verify set including validator with voting power 0 cannot be created
-	v1 = newValidatorWithRandProTxHash([]byte("v1"), 0)
-	v2 = newValidatorWithRandProTxHash([]byte("v2"), 22)
-	v3 := newValidatorWithRandProTxHash([]byte("v3"), 33)
+	v1 = newValidatorWithProTxHashFromAddress([]byte("v1"), 0)
+	v2 = newValidatorWithProTxHashFromAddress([]byte("v2"), 22)
+	v3 := newValidatorWithProTxHashFromAddress([]byte("v3"), 33)
 	valList = []*Validator{v1, v2, v3}
 	assert.Panics(t, func() { NewValidatorSet(valList) })
 
 	// Verify set including validator with negative voting power cannot be created
-	v1 = newValidatorWithRandProTxHash([]byte("v1"), 10)
-	v2 = newValidatorWithRandProTxHash([]byte("v2"), -20)
-	v3 = newValidatorWithRandProTxHash([]byte("v3"), 30)
+	v1 = newValidatorWithProTxHashFromAddress([]byte("v1"), 10)
+	v2 = newValidatorWithProTxHashFromAddress([]byte("v2"), -20)
+	v3 = newValidatorWithProTxHashFromAddress([]byte("v3"), 30)
 	valList = []*Validator{v1, v2, v3}
 	assert.Panics(t, func() { NewValidatorSet(valList) })
 
@@ -917,6 +917,7 @@ func createNewValidatorList(testValList []testVal) []*Validator {
 	for _, val := range testValList {
 		valList = append(valList, newValidatorWithProTxHashFromAddress([]byte(val.name), val.power))
 	}
+	sort.Sort(ValidatorsByProTxHashes(valList))
 	return valList
 }
 
@@ -1243,15 +1244,15 @@ func TestValSetApplyUpdatesTestsExecute(t *testing.T) {
 		1: { // append
 			[]testVal{{"v4", 44}, {"v5", 55}},
 			[]testVal{{"v6", 66}},
-			[]testVal{{"v4", 44}, {"v5", 55}, {"v6", 66}}},
+			[]testVal{{"v6", 66}, {"v4", 44}, {"v5", 55}}},
 		2: { // insert
 			[]testVal{{"v4", 44}, {"v6", 66}},
 			[]testVal{{"v5", 55}},
-			[]testVal{{"v4", 44}, {"v5", 55}, {"v6", 66}}},
+			[]testVal{{"v6", 66}, {"v4", 44}, {"v5", 55}}},
 		3: { // insert multi
 			[]testVal{{"v4", 44}, {"v6", 66}, {"v9", 99}},
 			[]testVal{{"v5", 55}, {"v7", 77}, {"v8", 88}},
-			[]testVal{{"v4", 44}, {"v5", 55}, {"v6", 66}, {"v7", 77}, {"v8", 88}, {"v9", 99}}},
+			[]testVal{{"v8", 88},  {"v7", 77}, {"v6", 66}, {"v9", 99}, {"v4", 44}, {"v5", 55}}},
 		// changes
 		4: { // head
 			[]testVal{{"v1", 111}, {"v2", 22}},
@@ -1264,24 +1265,24 @@ func TestValSetApplyUpdatesTestsExecute(t *testing.T) {
 		6: { // middle
 			[]testVal{{"v1", 11}, {"v2", 222}, {"v3", 33}},
 			[]testVal{{"v2", 22}},
-			[]testVal{{"v1", 11}, {"v2", 22}, {"v3", 33}}},
+			[]testVal{{"v1", 11}, {"v3", 33}, {"v2", 22}}},
 		7: { // multi
 			[]testVal{{"v1", 111}, {"v2", 222}, {"v3", 333}},
 			[]testVal{{"v1", 11}, {"v2", 22}, {"v3", 33}},
-			[]testVal{{"v1", 11}, {"v2", 22}, {"v3", 33}}},
+			[]testVal{{"v1", 11}, {"v3", 33}, {"v2", 22}}},
 		// additions and changes
 		8: {
 			[]testVal{{"v1", 111}, {"v2", 22}},
 			[]testVal{{"v1", 11}, {"v3", 33}, {"v4", 44}},
-			[]testVal{{"v1", 11}, {"v2", 22}, {"v3", 33}, {"v4", 44}}},
+			[]testVal{{"v1", 11}, {"v4", 44}, {"v3", 33}, {"v2", 22}}},
 	}
 
 	for i, tt := range valSetUpdatesBasicTests {
 		// create a new validator set with the start values
 		valSet := createNewValidatorSet(tt.startVals)
-
 		// applyUpdates() with the update values
 		valList := createNewValidatorList(tt.updateVals)
+
 		valSet.applyUpdates(valList)
 
 		// check the new list of validators for proper merge
@@ -1427,7 +1428,8 @@ func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg tes
 	applyChangesToValSet(t, nil, valSet, cfg.addedVals, cfg.updatedVals, cfg.deletedVals)
 
 	// basic checks
-	assert.Equal(t, cfg.expectedVals, toTestValList(valSet.Validators))
+	testValSet := toTestValList(valSet.Validators)
+	assert.Equal(t, cfg.expectedVals, testValSet)
 	verifyValidatorSet(t, valSet)
 
 	// verify that the added validators have the smallest priority:
@@ -1491,7 +1493,7 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 			startVals:    []testVal{{"v1", MaxTotalVotingPower - 2}, {"v2", 1}, {"v3", 1}},
 			deletedVals:  []testVal{{"v1", 0}},
 			addedVals:    []testVal{{"v4", MaxTotalVotingPower - 2}},
-			expectedVals: []testVal{{"v4", MaxTotalVotingPower - 2}, {"v2", 1}, {"v3", 1}},
+			expectedVals: []testVal{{"v4", MaxTotalVotingPower - 2}, {"v3", 1}, {"v2", 1}},
 			expErr:       nil,
 		},
 		{
@@ -1517,8 +1519,9 @@ func TestValSetUpdateOverflowRelated(t *testing.T) {
 				{"v4", MaxTotalVotingPower}, {"v5", MaxTotalVotingPower}, {"v6", MaxTotalVotingPower},
 				{"v7", MaxTotalVotingPower}, {"v8", MaxTotalVotingPower}, {"v9", 8}},
 			expectedVals: []testVal{
-				{"v1", 1}, {"v2", 1}, {"v3", 1}, {"v4", 1}, {"v5", 1},
-				{"v6", 1}, {"v7", 1}, {"v8", 1}, {"v9", 1}},
+				{"v8", 1}, {"v7", 1}, {"v1", 1}, {"v6", 1}, {"v9", 1},
+				{"v4", 1}, {"v3", 1}, {"v5", 1}, {"v2", 1},
+			},
 			expErr: ErrTotalVotingPowerOverflow,
 		},
 	}
@@ -1695,9 +1698,11 @@ func (tvals testValsByVotingPower) Len() int {
 	return len(tvals)
 }
 
+//Here we need to sort by the pro_tx_hash and not the name if the power is equal, in the test the pro_tx_hash is derived
+// from the name by applying a single SHA256
 func (tvals testValsByVotingPower) Less(i, j int) bool {
 	if tvals[i].power == tvals[j].power {
-		return bytes.Compare([]byte(tvals[i].name), []byte(tvals[j].name)) == -1
+		return bytes.Compare(crypto.Sha256([]byte(tvals[i].name)), crypto.Sha256([]byte(tvals[j].name))) == -1
 	}
 	return tvals[i].power > tvals[j].power
 }

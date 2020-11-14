@@ -191,7 +191,7 @@ func (voteSet *VoteSet) addVote(vote *Vote) (added bool, err error) {
 	// Ensure that the signer has the right address.
 	if !bytes.Equal(valProTxHash, lookupProTxHash) {
 		return false, fmt.Errorf(
-			"vote.ValidatorProTxHash (%X) does not match address (%X) for vote.ValidatorIndex (%d)\n"+
+			"vote.ValidatorProTxHash (%X) does not match proTxHash (%X) for vote.ValidatorIndex (%d)\n"+
 				"Ensure the genesis file is correct across all validators: %w",
 			valProTxHash, lookupProTxHash, valIndex, ErrVoteInvalidValidatorProTxHash)
 	}

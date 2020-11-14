@@ -40,7 +40,7 @@ var ErrTotalVotingPowerOverflow = fmt.Errorf("total voting power of resulting va
 // The validators can be fetched by address or index.
 // The index is in order of .VotingPower, so the indices are fixed for all
 // rounds of a given blockchain height - ie. the validators are sorted by their
-// voting power (descending). Secondary index - .Address (ascending).
+// voting power (descending). Secondary index - .ProTxHash (ascending).
 //
 // On the other hand, the .ProposerPriority of each validator and the
 // designated .GetProposer() of a set changes every round, upon calling
@@ -450,7 +450,7 @@ func verifyUpdates(
 ) (tvpAfterUpdatesBeforeRemovals int64, err error) {
 
 	delta := func(update *Validator, vals *ValidatorSet) int64 {
-		_, val := vals.GetByProTxHash(update.Address)
+		_, val := vals.GetByProTxHash(update.ProTxHash)
 		if val != nil {
 			return update.VotingPower - val.VotingPower
 		}
@@ -516,7 +516,7 @@ func computeNewPriorities(updates []*Validator, vals *ValidatorSet, updatedTotal
 
 // Merges the vals' validator list with the updates list.
 // When two elements with same address are seen, the one from updates is selected.
-// Expects updates to be a list of updates sorted by address with no duplicates or errors,
+// Expects updates to be a list of updates sorted by proTxHash with no duplicates or errors,
 // must have been validated with verifyUpdates() and priorities computed with computeNewPriorities().
 func (vals *ValidatorSet) applyUpdates(updates []*Validator) {
 	existing := vals.Validators
@@ -951,7 +951,7 @@ func (valz ValidatorsByVotingPower) Len() int { return len(valz) }
 
 func (valz ValidatorsByVotingPower) Less(i, j int) bool {
 	if valz[i].VotingPower == valz[j].VotingPower {
-		return bytes.Compare(valz[i].Address, valz[j].Address) == -1
+		return bytes.Compare(valz[i].ProTxHash, valz[j].ProTxHash) == -1
 	}
 	return valz[i].VotingPower > valz[j].VotingPower
 }
@@ -1070,7 +1070,7 @@ func RandValidatorSet(numValidators int, votingPower int64) (*ValidatorSet, []Pr
 		privValidators[i] = privValidator
 	}
 
-	sort.Sort(PrivValidatorsByAddress(privValidators))
+	sort.Sort(PrivValidatorsByProTxHash(privValidators))
 
 	return NewValidatorSet(valz), privValidators
 }

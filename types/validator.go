@@ -49,7 +49,7 @@ func (v *Validator) ValidateBasic() error {
 	}
 
 	if v.ProTxHash == nil {
-		return errors.New("no protx hash")
+		return errors.New("validator is missing pro_tx_hash")
 	}
 
 	if v.VotingPower < 0 {

@@ -19,26 +19,26 @@ type PrivValidator interface {
 	SignProposal(chainID string, proposal *tmproto.Proposal) error
 }
 
-type PrivValidatorsByAddress []PrivValidator
+type PrivValidatorsByProTxHash []PrivValidator
 
-func (pvs PrivValidatorsByAddress) Len() int {
+func (pvs PrivValidatorsByProTxHash) Len() int {
 	return len(pvs)
 }
 
-func (pvs PrivValidatorsByAddress) Less(i, j int) bool {
-	pvi, err := pvs[i].GetPubKey()
+func (pvs PrivValidatorsByProTxHash) Less(i, j int) bool {
+	pvi, err := pvs[i].GetProTxHash()
 	if err != nil {
 		panic(err)
 	}
-	pvj, err := pvs[j].GetPubKey()
+	pvj, err := pvs[j].GetProTxHash()
 	if err != nil {
 		panic(err)
 	}
 
-	return bytes.Compare(pvi.Address(), pvj.Address()) == -1
+	return bytes.Compare(pvi, pvj) == -1
 }
 
-func (pvs PrivValidatorsByAddress) Swap(i, j int) {
+func (pvs PrivValidatorsByProTxHash) Swap(i, j int) {
 	pvs[i], pvs[j] = pvs[j], pvs[i]
 }
 
