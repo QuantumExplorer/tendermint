@@ -3,6 +3,7 @@ package bls12381
 import (
 	"bytes"
 	"crypto/subtle"
+	"errors"
 	"fmt"
 	bls "github.com/xdustinface/bls-signatures/go-bindings"
 	"io"
@@ -116,8 +117,11 @@ func genPrivKey(rand io.Reader) PrivKey {
 	if err != nil {
 		panic(err)
 	}
-
-	return PrivKey(bls.PrivateKeyFromSeed(seed).Serialize())
+	privKey, err := bls.PrivateKeyFromSeed(seed)
+	if err != nil {
+		panic(err)
+	}
+	return PrivKey(privKey.Serialize())
 }
 
 // GenPrivKeyFromSecret hashes the secret with SHA2, and uses
@@ -126,13 +130,17 @@ func genPrivKey(rand io.Reader) PrivKey {
 // if it's derived from user input.
 func GenPrivKeyFromSecret(secret []byte) PrivKey {
 	seed := crypto.Sha256(secret) // Not Ripemd160 because we want 32 bytes.
-
-	return PrivKey(bls.PrivateKeyFromSeed(seed).Serialize())
+	privKey, err := bls.PrivateKeyFromSeed(seed)
+	if err != nil {
+		panic(err)
+	}
+	return PrivKey(privKey.Serialize())
 }
 
 //BLS Ids are the Pro_tx_hashes from validators
 func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte) ([]byte, error) {
 	var sigShares []*bls.InsecureSignature
+	var hashes []bls.Hash
 	// Create and validate sigShares for each member and populate BLS-IDs from members into ids
 	for _, sigShareData := range sigSharesData {
 		sigShare, error := bls.InsecureSignatureFromBytes(sigShareData)
@@ -141,7 +149,17 @@ func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte
 		}
 		sigShares = append(sigShares, sigShare)
 	}
-	thresholdSignature, error := bls.InsecureSignatureRecover(sigShares, blsIds)
+
+	for _, blsId := range blsIds {
+		if len(blsId) != 32 {
+			return nil, errors.New("blsId incorrect size, expected 32 bytes")
+		}
+		var hash bls.Hash
+		copy(hash[:],blsId)
+		hashes = append(hashes, hash)
+	}
+
+	thresholdSignature, error := bls.InsecureSignatureRecover(sigShares, hashes)
 	return thresholdSignature.Serialize(), error
 }
 
