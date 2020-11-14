@@ -22,8 +22,8 @@ func DefaultValidationRequestHandler(
 	switch r := req.Sum.(type) {
 	case *privvalproto.Message_PubKeyRequest:
 		if r.PubKeyRequest.GetChainId() != chainID {
-			res = mustWrapMsg(&privvalproto.SignedVoteResponse{
-				Vote: nil, Error: &privvalproto.RemoteSignerError{
+			res = mustWrapMsg(&privvalproto.PubKeyResponse{
+				PubKey: nil, Error: &privvalproto.RemoteSignerError{
 					Code: 0, Description: "unable to provide pubkey"}})
 			return res, fmt.Errorf("want chainID: %s, got chainID: %s", r.PubKeyRequest.GetChainId(), chainID)
 		}
@@ -40,6 +40,26 @@ func DefaultValidationRequestHandler(
 				PubKey: nil, Error: &privvalproto.RemoteSignerError{Code: 0, Description: err.Error()}})
 		} else {
 			res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: &pk, Error: nil})
+		}
+	case *privvalproto.Message_ProTxHashRequest:
+		if r.ProTxHashRequest.GetChainId() != chainID {
+			res = mustWrapMsg(&privvalproto.ProTxHashResponse{
+				ProTxHash: nil, Error: &privvalproto.RemoteSignerError{
+					Code: 0, Description: "unable to provide proTxHash"}})
+			return res, fmt.Errorf("want chainID: %s, got chainID: %s", r.ProTxHashRequest.GetChainId(), chainID)
+		}
+
+		var proTxHash crypto.ProTxHash
+		proTxHash, err = privVal.GetProTxHash()
+		if err != nil {
+			return res, err
+		}
+
+		if err != nil {
+			res = mustWrapMsg(&privvalproto.ProTxHashResponse{
+				ProTxHash: nil, Error: &privvalproto.RemoteSignerError{Code: 0, Description: err.Error()}})
+		} else {
+			res = mustWrapMsg(&privvalproto.ProTxHashResponse{ProTxHash: proTxHash, Error: nil})
 		}
 
 	case *privvalproto.Message_SignVoteRequest:
@@ -62,8 +82,8 @@ func DefaultValidationRequestHandler(
 
 	case *privvalproto.Message_SignProposalRequest:
 		if r.SignProposalRequest.GetChainId() != chainID {
-			res = mustWrapMsg(&privvalproto.SignedVoteResponse{
-				Vote: nil, Error: &privvalproto.RemoteSignerError{
+			res = mustWrapMsg(&privvalproto.SignedProposalResponse{
+				Proposal: nil, Error: &privvalproto.RemoteSignerError{
 					Code:        0,
 					Description: "unable to sign proposal"}})
 			return res, fmt.Errorf("want chainID: %s, got chainID: %s", r.SignProposalRequest.GetChainId(), chainID)
