@@ -393,7 +393,7 @@ func (vals *ValidatorSet) Iterate(fn func(index int, val *Validator) bool) {
 //
 // No changes are made to 'origChanges'.
 func processChanges(origChanges []*Validator) (updates, removals []*Validator, err error) {
-	// Make a deep copy of the changes and sort by address.
+	// Make a deep copy of the changes and sort by proTxHash.
 	changes := validatorListCopy(origChanges)
 	sort.Sort(ValidatorsByProTxHashes(changes))
 

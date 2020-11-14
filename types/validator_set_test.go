@@ -32,14 +32,14 @@ func TestValidatorSetBasic(t *testing.T) {
 	idx, val := vset.GetByProTxHash([]byte("some val"))
 	assert.EqualValues(t, -1, idx)
 	assert.Nil(t, val)
-	addr, val := vset.GetByIndex(-100)
-	assert.Nil(t, addr)
+	proTxHash, val := vset.GetByIndex(-100)
+	assert.Nil(t, proTxHash)
 	assert.Nil(t, val)
-	addr, val = vset.GetByIndex(0)
-	assert.Nil(t, addr)
+	proTxHash, val = vset.GetByIndex(0)
+	assert.Nil(t, proTxHash)
 	assert.Nil(t, val)
-	addr, val = vset.GetByIndex(100)
-	assert.Nil(t, addr)
+	proTxHash, val = vset.GetByIndex(100)
+	assert.Nil(t, proTxHash)
 	assert.Nil(t, val)
 	assert.Zero(t, vset.Size())
 	assert.Equal(t, int64(0), vset.TotalVotingPower())
@@ -54,8 +54,8 @@ func TestValidatorSetBasic(t *testing.T) {
 	assert.True(t, vset.HasProTxHash(val.ProTxHash))
 	idx, _ = vset.GetByProTxHash(val.ProTxHash)
 	assert.EqualValues(t, 0, idx)
-	addr, _ = vset.GetByIndex(0)
-	assert.Equal(t, []byte(val.Address), addr)
+	proTxHash, _ = vset.GetByIndex(0)
+	assert.Equal(t, []byte(val.ProTxHash), proTxHash)
 	assert.Equal(t, 1, vset.Size())
 	assert.Equal(t, val.VotingPower, vset.TotalVotingPower())
 	assert.NotNil(t, vset.Hash())
@@ -335,7 +335,7 @@ func TestProposerSelection3(t *testing.T) {
 
 		computed := vset.GetProposer() // findGetProposer()
 		if i != 0 {
-			if !bytes.Equal(got, computed.Address) {
+			if !bytes.Equal(got, computed.ProTxHash) {
 				t.Fatalf(
 					fmt.Sprintf(
 						"vset.Proposer (%X) does not match computed proposer (%X) for (%d, %d)",
@@ -437,9 +437,9 @@ func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
 	// which should panic on overflows:
 	shouldPanic := func() {
 		NewValidatorSet([]*Validator{
-			{Address: []byte("a"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-			{Address: []byte("b"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-			{Address: []byte("c"), VotingPower: math.MaxInt64, ProposerPriority: 0},
+			{ProTxHash: []byte("a"), VotingPower: math.MaxInt64, ProposerPriority: 0},
+			{ProTxHash: []byte("b"), VotingPower: math.MaxInt64, ProposerPriority: 0},
+			{ProTxHash: []byte("c"), VotingPower: math.MaxInt64, ProposerPriority: 0},
 		})
 	}
 
@@ -491,23 +491,23 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 	}{
 		0: {ValidatorSet{
 			Validators: []*Validator{
-				{Address: []byte("a"), ProposerPriority: 1},
-				{Address: []byte("b"), ProposerPriority: 2},
-				{Address: []byte("c"), ProposerPriority: 3}}},
+				{ProTxHash: []byte("a"), ProposerPriority: 1},
+				{ProTxHash: []byte("b"), ProposerPriority: 2},
+				{ProTxHash: []byte("c"), ProposerPriority: 3}}},
 			1, 2},
 		1: {ValidatorSet{
 			Validators: []*Validator{
-				{Address: []byte("a"), ProposerPriority: 10},
-				{Address: []byte("b"), ProposerPriority: -10},
-				{Address: []byte("c"), ProposerPriority: 1}}},
+				{ProTxHash: []byte("a"), ProposerPriority: 10},
+				{ProTxHash: []byte("b"), ProposerPriority: -10},
+				{ProTxHash: []byte("c"), ProposerPriority: 1}}},
 			// this should average twice but the average should be 0 after the first iteration
 			// (voting power is 0 -> no changes)
 			11, 1 / 3},
 		2: {ValidatorSet{
 			Validators: []*Validator{
-				{Address: []byte("a"), ProposerPriority: 100},
-				{Address: []byte("b"), ProposerPriority: -10},
-				{Address: []byte("c"), ProposerPriority: 1}}},
+				{ProTxHash: []byte("a"), ProposerPriority: 100},
+				{ProTxHash: []byte("b"), ProposerPriority: -10},
+				{ProTxHash: []byte("c"), ProposerPriority: 1}}},
 			1, 91 / 3},
 	}
 	for i, tc := range tcs {

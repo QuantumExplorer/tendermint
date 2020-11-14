@@ -33,7 +33,7 @@ func AddressHash(bz []byte) Address {
 }
 
 func ProTxHashFromSeedBytes(bz []byte) ProTxHash {
-	return ProTxHash(tmhash.SumTruncated(bz))
+	return ProTxHash(tmhash.Sum(bz))
 }
 
 func RandProTxHash() ProTxHash {
