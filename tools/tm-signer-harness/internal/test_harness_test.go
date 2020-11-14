@@ -29,7 +29,7 @@ const (
     	"type": "tendermint/PrivKeyBLS12381",
     	"value": "RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70="
   	},
-	"pro_tx_hash": "CLS3a6rb6Z9gM8HgX11Qak9bPROJn8EZodVjwcPgnQM="
+	"pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 }`
 
 	stateFileContents = `{
@@ -67,7 +67,7 @@ const (
 		},
 		"power": "10",
 		"name": "",
-		"pro_tx_hash": "CLS3a6rb6Z9gM8HgX11Qak9bPROJn8EZodVjwcPgnQM="
+		"pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 		}
 	],
 	"app_hash": ""
@@ -130,7 +130,7 @@ func newMockSignerServer(
 	t *testing.T,
 	th *TestHarness,
 	privKey crypto.PrivKey,
-	proTxHash []byte,
+	proTxHash crypto.ProTxHash,
 	breakProposalSigning bool,
 	breakVoteSigning bool,
 ) *privval.SignerServer {
