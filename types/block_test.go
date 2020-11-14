@@ -356,7 +356,7 @@ func TestHeaderHash(t *testing.T) {
 			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
 			ProposerProTxHash:  crypto.ProTxHashFromSeedBytes([]byte("proposer_pro_tx_hash")),
-		}, hexBytesFromString("3CE00D7341FDB70D1B4F4E9D7969CADF91362A5663A0BAA0C1061C4B9DC0694A")},
+		}, hexBytesFromString("786FFBA7845BC39A1C3BB3216288CA157D82FEED634E74A1F151476CF66E4EFB")},
 		{"nil header yields nil", nil, nil},
 		{"nil ValidatorsHash yields nil", &Header{
 			Version:            tmversion.Consensus{Block: 1, App: 2},
@@ -489,11 +489,11 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0: {-10, crypto.BLS12381, 1, 0, true, 0},
 		1: {10, crypto.BLS12381, 1, 0, true, 0},
-		2: {1127, crypto.BLS12381, 1, 0, true, 0},
-		3: {1128, crypto.BLS12381, 1, 0, false, 0},
-		4: {1129, crypto.BLS12381, 1, 0, false, 1},
-		5: {1352, crypto.BLS12381, 2, 0, false, 1},
-		6: {1451, crypto.BLS12381, 2, 100, false, 0},
+		2: {1139, crypto.BLS12381, 1, 0, true, 0},
+		3: {1140, crypto.BLS12381, 1, 0, false, 0},
+		4: {1141, crypto.BLS12381, 1, 0, false, 1},
+		5: {1376, crypto.BLS12381, 2, 0, false, 1},
+		6: {1475, crypto.BLS12381, 2, 100, false, 0},
 	}
 	//An extra 33 bytes (32 for sig, 1 for proto encoding are needed for BLS compared to edwards per validator
 
@@ -523,9 +523,9 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 	}{
 		0: {-10, 1, crypto.BLS12381,1, true, 0},
 		1: {10, 1, crypto.BLS12381,1, true, 0},
-		2: {1127, 1, crypto.BLS12381,1, true, 0},
-		3: {1128, 1, crypto.BLS12381,1, false, 0},
-		4: {1129, 1, crypto.BLS12381,1, false, 1},
+		2: {1139, 1, crypto.BLS12381,1, true, 0},
+		3: {1140, 1, crypto.BLS12381,1, false, 0},
+		4: {1141, 1, crypto.BLS12381,1, false, 1},
 	}
 
 	for i, tc := range testCases {
