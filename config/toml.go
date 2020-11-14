@@ -532,7 +532,7 @@ var testEd25519GenesisFmt = `{
       },
       "power": "10",
       "name": "",
-      "pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
+      "pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
     }
   ],
   "app_hash": ""
@@ -568,7 +568,7 @@ var testGenesisFmt = `{
       },
       "power": "10",
       "name": "",
-      "pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
+      "pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
     }
   ],
   "app_hash": ""
@@ -596,7 +596,7 @@ var testPrivValidatorKey = `{
     "type": "tendermint/PrivKeyBLS12381",
     "value": "RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70="
   },
-  "pro_tx_hash":"51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
+  "pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 }`
 
 var testPrivValidatorState = `{

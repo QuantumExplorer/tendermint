@@ -73,7 +73,7 @@ func (pkz privKeys) Extend(n int) privKeys {
 func (pkz privKeys) ToValidators(init, inc int64) *types.ValidatorSet {
 	res := make([]*types.Validator, len(pkz))
 	for i, k := range pkz {
-		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc, crypto.CRandBytes(32))
+		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc, crypto.Sha256(k.PubKey().Address()))
 	}
 	return types.NewValidatorSet(res)
 }
