@@ -2,14 +2,15 @@ package types
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"reflect"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
@@ -175,4 +176,15 @@ func (pb2tm) ValidatorUpdates(vals []abci.ValidatorUpdate) ([]*Validator, error)
 		tmVals[i] = NewValidator(pub, v.Power, v.ProTxHash)
 	}
 	return tmVals, nil
+}
+
+func (pb2tm) ThresholdPublicKeyUpdate(thresholdPublicKey *crypto2.PublicKey) (crypto.PubKey, error) {
+	if thresholdPublicKey == nil {
+		return nil, nil
+	}
+	pub, err := cryptoenc.PubKeyFromProto(*thresholdPublicKey)
+	if err != nil {
+		return nil, err
+	}
+	return pub, nil
 }

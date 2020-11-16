@@ -141,12 +141,35 @@ func CreatePrivLLMQDataDefaultThreshold(members int) ([]crypto.PrivKey, []crypto
 	return CreatePrivLLMQData(members, members * 2 / 3 + 1)
 }
 
-func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
+func CreateProTxHashes(members int) []crypto.ProTxHash {
 	proTxHashes := make([]crypto.ProTxHash, members)
+	for i := 0; i < members; i++ {
+		proTxHashes[i] = crypto.RandProTxHash()
+	}
+	return proTxHashes
+}
+
+func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
+	proTxHashes := CreateProTxHashes(members)
+	skShares, thresholdPublicKey := CreatePrivLLMQDataOnProTxHashes(proTxHashes, threshold)
+	return skShares, proTxHashes, thresholdPublicKey
+}
+
+func CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes []crypto.ProTxHash) ([]crypto.PrivKey, crypto.PubKey) {
+	return CreatePrivLLMQDataOnProTxHashes(proTxHashes, len(proTxHashes) * 2 / 3 + 1)
+}
+
+func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold int) ([]crypto.PrivKey, crypto.PubKey) {
+	members := len(proTxHashes)
+	if members < threshold {
+		panic("members must be bigger than threshold")
+	}
+	if threshold == 0 {
+		panic("threshold must not be 0")
+	}
 	ids := make([]bls.Hash, members)
 	secrets := make([]*bls.PrivateKey, threshold)
 	skShares := make([]crypto.PrivKey, members)
-	pkShares := make([]*bls.PublicKey, members)
 
 	for i := 0; i < threshold; i++ {
 		seed := make([]byte, SeedSize)
@@ -160,7 +183,6 @@ func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.
 	}
 
 	for i := 0; i < members; i++ {
-		proTxHashes[i] = crypto.RandProTxHash()
 		var hash bls.Hash
 		copy(hash[:], proTxHashes[i].Bytes())
 		ids[i] = hash
@@ -169,16 +191,9 @@ func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.
 			panic(err)
 		}
 		skShares[i] = PrivKey(skShare.Serialize())
-		pkShares[i] = skShare.PublicKey()
 	}
 
-	distributedKey, err := bls.PublicKeyRecover(pkShares, ids)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return skShares, proTxHashes, PubKey(distributedKey.Serialize())
+	return skShares, PubKey(secrets[0].PublicKey().Serialize())
 }
 
 //BLS Ids are the Pro_tx_hashes from validators

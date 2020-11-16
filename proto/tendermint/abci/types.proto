@@ -247,6 +247,7 @@ message ResponseEndBlock {
   repeated Event  events                  = 3
       [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];
   tendermint.types.ChainLock  next_chain_lock_update  = 4;
+  tendermint.crypto.PublicKey threshold_public_key = 5 [(gogoproto.nullable) = true];
 }
 
 message ResponseCommit {

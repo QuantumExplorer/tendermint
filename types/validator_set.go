@@ -26,6 +26,8 @@ const (
 	// and leaves room for defensive purposes.
 	MaxTotalVotingPower = int64(math.MaxInt64) / 8
 
+	DefaultDashVotingPower = int64(100)
+
 	// PriorityWindowSizeFactor - is a constant that when multiplied with the
 	// total voting power gives the maximum allowed distance between validator
 	// priorities.
@@ -270,6 +272,7 @@ func (vals *ValidatorSet) Copy() *ValidatorSet {
 		Validators:       validatorListCopy(vals.Validators),
 		Proposer:         vals.Proposer,
 		totalVotingPower: vals.totalVotingPower,
+		ThresholdPublicKey: vals.ThresholdPublicKey,
 	}
 }
 
@@ -321,12 +324,21 @@ func (vals *ValidatorSet) GetByAddress(address []byte) (index int32, val *Valida
 // index.
 // It returns nil values if index is less than 0 or greater or equal to
 // len(ValidatorSet.Validators).
-func (vals *ValidatorSet) GetByIndex(index int32) (proTxHash []byte, val *Validator) {
+func (vals *ValidatorSet) GetByIndex(index int32) (proTxHash crypto.ProTxHash, val *Validator) {
 	if index < 0 || int(index) >= len(vals.Validators) {
 		return nil, nil
 	}
 	val = vals.Validators[index]
 	return val.ProTxHash, val.Copy()
+}
+
+// GetProTxHashes returns the all validator proTxHashes
+func (vals *ValidatorSet) GetProTxHashes() []crypto.ProTxHash {
+	var proTxHashes []crypto.ProTxHash
+	for _, val := range vals.Validators {
+		proTxHashes = append(proTxHashes, val.ProTxHash)
+	}
+	return proTxHashes
 }
 
 // Size returns the length of the validator set.
@@ -474,6 +486,12 @@ func verifyUpdates(
 			return update.VotingPower - val.VotingPower
 		}
 		return update.VotingPower
+	}
+
+	for _, val := range updates {
+		if val.VotingPower != 0 || val.VotingPower != 100 {
+			return 0, fmt.Errorf("voting power of a node can only be 0 or 100")
+		}
 	}
 
 	updatesCopy := validatorListCopy(updates)
@@ -628,6 +646,10 @@ func (vals *ValidatorSet) applyRemovals(deletes []*Validator) {
 func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes bool, newThresholdPublicKey crypto.PubKey) error {
 	if len(changes) == 0 {
 		return nil
+	}
+
+	if newThresholdPublicKey == nil {
+		return errors.New("applying the validator changes would result in empty set")
 	}
 
 	// Check for duplicates within changes, split in 'updates' and 'deletes' lists (sorted).

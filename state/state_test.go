@@ -747,18 +747,20 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	genesisVotingPower := types.MaxTotalVotingPower / 1000
-	genesisPubKey := bls12381.GenPrivKey().PubKey()
-	genesisProTxHash := crypto.RandProTxHash()
+	proTxHashes := bls12381.CreateProTxHashes(12)
+
+	genesisPrivKey := bls12381.GenPrivKey()
+	genesisPubKey := genesisPrivKey.PubKey()
+	genesisProTxHash := proTxHashes[0]
 	// fmt.Println("genesis addr: ", genesisPubKey.Address())
 	genesisVal := &types.Validator{
 		Address:     genesisPubKey.Address(),
 		PubKey:      genesisPubKey,
-		VotingPower: genesisVotingPower,
+		VotingPower: types.DefaultDashVotingPower,
 		ProTxHash: genesisProTxHash,
 	}
 	// reset state validators to above validator
-	state.Validators = types.NewValidatorSet([]*types.Validator{genesisVal})
+	state.Validators = types.NewValidatorSet([]*types.Validator{genesisVal}, nil)
 	state.NextValidators = state.Validators
 	require.True(t, len(state.Validators.Validators) == 1)
 
@@ -773,13 +775,15 @@ func TestLargeGenesisValidator(t *testing.T) {
 		}
 		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)
+		thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ThresholdPublicKey)
+		require.NoError(t, err)
 		nextChainLock, err := types.ChainLockFromProto(abciResponses.EndBlock.NextChainLockUpdate)
 		require.NoError(t, err)
 
 		block := makeBlock(oldState, oldState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-		updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
+		updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKeyUpdate)
 		require.NoError(t, err)
 		// no changes in voting power (ProposerPrio += VotingPower == Voting in 1st round; than shiftByAvg == 0,
 		// than -Total == -Voting)
@@ -794,21 +798,27 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// let the genesis validator "unbond",
 	// see how long it takes until the effect wears off and both begin to alternate
 	// see: https://github.com/tendermint/tendermint/issues/2960
-	firstAddedValPubKey := bls12381.GenPrivKey().PubKey()
-	firstAddedValVotingPower := int64(10)
-	firstAddedProTxHash := crypto.RandProTxHash()
+	privateKeys2, thresholdPublicKey2 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[0:2])
+
+	//the added one will be at position 1
+	firstAddedValPubKey := privateKeys2[1].PubKey()
+	firstAddedProTxHash := proTxHashes[1]
 	fvp, err := cryptoenc.PubKeyToProto(firstAddedValPubKey)
 	require.NoError(t, err)
-	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: firstAddedValVotingPower, ProTxHash: firstAddedProTxHash}
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{firstAddedVal})
+	genesisUpdatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys2[0].PubKey())
+	require.NoError(t, err)
+	updateOriginalVal := abci.ValidatorUpdate{ProTxHash: genesisProTxHash, Power: types.DefaultDashVotingPower, PubKey: genesisUpdatedPubKey}
+	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: types.DefaultDashVotingPower, ProTxHash: firstAddedProTxHash}
+	validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{updateOriginalVal, firstAddedVal})
 	assert.NoError(t, err)
+
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{firstAddedVal}},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{updateOriginalVal, firstAddedVal}},
 	}
 	block := makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-	updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates)
+	updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey2)
 	require.NoError(t, err)
 
 	lastState := updatedState
@@ -826,7 +836,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		block := makeBlock(lastState, lastState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-		updatedStateInner, err := sm.UpdateState(lastState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
+		updatedStateInner, err := sm.UpdateState(lastState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
 		require.NoError(t, err)
 		lastState = updatedStateInner
 	}
@@ -845,32 +855,45 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 	// add 10 validators with the same voting power as the one added directly after genesis:
 	for i := 0; i < 10; i++ {
-		addedPubKey := bls12381.GenPrivKey().PubKey()
-		ap, err := cryptoenc.PubKeyToProto(addedPubKey)
-		require.NoError(t, err)
-		addedProTxHash := crypto.RandProTxHash()
-		addedVal := abci.ValidatorUpdate{PubKey: ap, Power: firstAddedValVotingPower, ProTxHash: addedProTxHash}
-		validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{addedVal})
+		privateKeys3, thresholdPublicKey3 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[0:3+i])
+		var abciValidatorUpdates []abci.ValidatorUpdate
+		for j := 0; j < i+3; j++ {
+			updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys3[j].PubKey())
+			require.NoError(t, err)
+			updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[i], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
+			abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
+		}
+
+		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciValidatorUpdates)
 		assert.NoError(t, err)
 
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{addedVal}},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: abciValidatorUpdates},
 		}
 		block := makeBlock(oldState, oldState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-		state, err = sm.UpdateState(state, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates)
+		state, err = sm.UpdateState(state, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey3)
 		require.NoError(t, err)
 	}
 	require.Equal(t, 10+2, len(state.NextValidators.Validators))
 
 	// remove genesis validator:
-	gp, err := cryptoenc.PubKeyToProto(genesisPubKey)
-	require.NoError(t, err)
-	removeGenesisVal := abci.ValidatorUpdate{PubKey: gp, Power: 0, ProTxHash: genesisProTxHash}
+	privateKeys4, thresholdPublicKey4 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[1:])
+	var abciValidatorUpdates []abci.ValidatorUpdate
+	updatedPubKey, err := cryptoenc.PubKeyToProto(genesisPubKey)
+	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey]}
+	abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
+	for i := 1; i < len(proTxHashes); i++ {
+		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys4[i].PubKey())
+		require.NoError(t, err)
+		updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[i], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
+		abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
+	}
+
 	abciResponses = &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{removeGenesisVal}},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: abciValidatorUpdates},
 	}
 	block = makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -878,7 +901,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	require.NoError(t, err)
 	nextChainLock, err := types.ChainLockFromProto(abciResponses.EndBlock.NextChainLockUpdate)
 	require.NoError(t, err)
-	updatedState, err = sm.UpdateState(state, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
+	updatedState, err = sm.UpdateState(state, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey4)
 	require.NoError(t, err)
 	// only the first added val (not the genesis val) should be left
 	assert.Equal(t, 11, len(updatedState.NextValidators.Validators))
@@ -899,7 +922,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		require.NoError(t, err)
 		block = makeBlock(curState, curState.LastBlockHeight+1)
 		blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-		curState, err = sm.UpdateState(curState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
+		curState, err = sm.UpdateState(curState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
 		require.NoError(t, err)
 		if !bytes.Equal(curState.Validators.Proposer.Address, curState.NextValidators.Proposer.Address) {
 			isProposerUnchanged = false
@@ -927,7 +950,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		block := makeBlock(updatedState, updatedState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-		updatedState, err = sm.UpdateState(updatedState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
+		updatedState, err = sm.UpdateState(updatedState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
 		require.NoError(t, err)
 		if i > numVals { // expect proposers to cycle through after the first iteration (of numVals blocks):
 			if proposers[i%numVals] == nil {
@@ -975,20 +998,23 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	err := stateStore.Save(state)
 	require.NoError(t, err)
 
+
 	_, val0 := state.Validators.GetByIndex(0)
 	var proTxHashOld = val0.ProTxHash //this is not really old, as it stays the same
 	pubkey := bls12381.GenPrivKey().PubKey()
 
 	// Swap the first validator with a new one (validator set size stays the same).
-	header, chainLock, blockID, responses := makeHeaderPartsResponsesValPubKeyChange(state, pubkey, val0)
+	header, chainLock, blockID, responses := makeHeaderPartsResponsesValKeysRegenerate(state, true)
 
 	// Save state etc.
 	var validatorUpdates []*types.Validator
 	validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorUpdates)
 	require.NoError(t, err)
+	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ThresholdPublicKey)
+	require.NoError(t, err)
 	nextChainLock, err := types.ChainLockFromProto(responses.EndBlock.NextChainLockUpdate)
 	require.NoError(t, err)
-	state, err = sm.UpdateState(state, blockID, &header, chainLock, nextChainLock, responses, validatorUpdates)
+	state, err = sm.UpdateState(state, blockID, &header, chainLock, nextChainLock, responses, validatorUpdates, thresholdPublicKeyUpdate)
 	require.Nil(t, err)
 	nextHeight := state.LastBlockHeight + 1
 	err = stateStore.Save(state)
@@ -1057,6 +1083,7 @@ func TestConsensusParamsChangesSaveLoad(t *testing.T) {
 	cp := params[changeIndex]
 	var err error
 	var validatorUpdates []*types.Validator
+	var thresholdPublicKeyUpdate crypto.PubKey
 	var nextChainLock *types.ChainLock
 	for i := int64(1); i < highestHeight; i++ {
 		// When we get to a change height, use the next params.
@@ -1067,9 +1094,11 @@ func TestConsensusParamsChangesSaveLoad(t *testing.T) {
 		header, lastChainLock, blockID, responses := makeHeaderPartsResponsesParams(state, cp)
 		validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorUpdates)
 		require.NoError(t, err)
+		thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ThresholdPublicKey)
+		require.NoError(t, err)
 		nextChainLock, err = types.ChainLockFromProto(responses.EndBlock.NextChainLockUpdate)
 		require.NoError(t, err)
-		state, err = sm.UpdateState(state, blockID, &header, lastChainLock, nextChainLock, responses, validatorUpdates)
+		state, err = sm.UpdateState(state, blockID, &header, lastChainLock, nextChainLock, responses, validatorUpdates, thresholdPublicKeyUpdate)
 
 		require.Nil(t, err)
 		err := stateStore.Save(state)
