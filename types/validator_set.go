@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"math"
 	"math/big"
 	"sort"
@@ -50,8 +52,9 @@ var ErrTotalVotingPowerOverflow = fmt.Errorf("total voting power of resulting va
 // NOTE: All get/set to validators should copy the value for safety.
 type ValidatorSet struct {
 	// NOTE: persisted via reflect, must be exported.
-	Validators []*Validator `json:"validators"`
-	Proposer   *Validator   `json:"proposer"`
+	Validators         []*Validator  `json:"validators"`
+	Proposer           *Validator    `json:"proposer"`
+	ThresholdPublicKey crypto.PubKey `json:"threshold_public_key"`
 
 	// cached (unexported)
 	totalVotingPower int64
@@ -67,9 +70,9 @@ type ValidatorSet struct {
 // Note the validator set size has an implied limit equal to that of the
 // MaxVotesCount - commits by a validator set larger than this will fail
 // validation.
-func NewValidatorSet(valz []*Validator) *ValidatorSet {
+func NewValidatorSet(valz []*Validator, newThresholdPublicKey crypto.PubKey) *ValidatorSet {
 	vals := &ValidatorSet{}
-	err := vals.updateWithChangeSet(valz, false)
+	err := vals.updateWithChangeSet(valz, false, newThresholdPublicKey)
 	if err != nil {
 		panic(fmt.Sprintf("Cannot create validator set: %v", err))
 	}
@@ -82,6 +85,10 @@ func NewValidatorSet(valz []*Validator) *ValidatorSet {
 func (vals *ValidatorSet) ValidateBasic() error {
 	if vals.IsNilOrEmpty() {
 		return errors.New("validator set is nil or empty")
+	}
+
+	if err := vals.ThresholdPublicKeyValid(); err != nil {
+		return err
 	}
 
 	for idx, val := range vals.Validators {
@@ -101,6 +108,18 @@ func (vals *ValidatorSet) ValidateBasic() error {
 func (vals *ValidatorSet) IsNilOrEmpty() bool {
 	return vals == nil || len(vals.Validators) == 0
 }
+
+// IsNilOrEmpty returns true if validator set is nil or empty.
+func (vals *ValidatorSet) ThresholdPublicKeyValid() error {
+	if vals.ThresholdPublicKey == nil {
+		return errors.New("threshold public key is not set")
+	}
+	if len(vals.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
+		return errors.New("threshold public key is wrong size")
+	}
+	return nil
+}
+
 
 // CopyIncrementProposerPriority increments ProposerPriority and updates the
 // proposer on a copy, and returns it.
@@ -606,7 +625,7 @@ func (vals *ValidatorSet) applyRemovals(deletes []*Validator) {
 // If 'allowDeletes' is false then delete operations (identified by validators with voting power 0)
 // are not allowed and will trigger an error if present in 'changes'.
 // The 'allowDeletes' flag is set to false by NewValidatorSet() and to true by UpdateWithChangeSet().
-func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes bool) error {
+func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes bool, newThresholdPublicKey crypto.PubKey) error {
 	if len(changes) == 0 {
 		return nil
 	}
@@ -655,6 +674,8 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 
 	sort.Sort(ValidatorsByVotingPower(vals.Validators))
 
+	vals.ThresholdPublicKey = newThresholdPublicKey
+
 	return nil
 }
 
@@ -670,8 +691,8 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 // - performs scaling and centering of priority values
 // If an error is detected during verification steps, it is returned and the validator set
 // is not changed.
-func (vals *ValidatorSet) UpdateWithChangeSet(changes []*Validator) error {
-	return vals.updateWithChangeSet(changes, true)
+func (vals *ValidatorSet) UpdateWithChangeSet(changes []*Validator, newThresholdPublicKey crypto.PubKey) error {
+	return vals.updateWithChangeSet(changes, true, newThresholdPublicKey)
 }
 
 // VerifyCommit verifies +2/3 of the set had signed the given commit.
@@ -1063,16 +1084,17 @@ func RandValidatorSet(numValidators int, votingPower int64) (*ValidatorSet, []Pr
 		valz           = make([]*Validator, numValidators)
 		privValidators = make([]PrivValidator, numValidators)
 	)
+	threshold := numValidators * 2 / 3 + 1
+	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQData(numValidators, threshold)
 
 	for i := 0; i < numValidators; i++ {
-		val, privValidator := RandValidator(false, votingPower)
-		valz[i] = val
-		privValidators[i] = privValidator
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		valz[i] = NewValidator(privateKeys[i].PubKey(), votingPower, proTxHashes[i])
 	}
 
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
 
-	return NewValidatorSet(valz), privValidators
+	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }
 
 // safe addition/subtraction/multiplication

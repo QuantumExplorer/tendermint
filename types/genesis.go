@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"time"
 
@@ -38,14 +39,15 @@ type GenesisValidator struct {
 
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.
 type GenesisDoc struct {
-	GenesisTime      time.Time                `json:"genesis_time"`
-	ChainID          string                   `json:"chain_id"`
-	InitialHeight    int64                    `json:"initial_height"`
-	GenesisChainLock *tmproto.ChainLock       `json:"genesis_chain_lock"`
-	ConsensusParams  *tmproto.ConsensusParams `json:"consensus_params,omitempty"`
-	Validators       []GenesisValidator       `json:"validators,omitempty"`
-	AppHash          tmbytes.HexBytes         `json:"app_hash"`
-	AppState         json.RawMessage          `json:"app_state,omitempty"`
+	GenesisTime        time.Time                `json:"genesis_time"`
+	ChainID            string                   `json:"chain_id"`
+	InitialHeight      int64                    `json:"initial_height"`
+	GenesisChainLock   *tmproto.ChainLock       `json:"genesis_chain_lock"`
+	ConsensusParams    *tmproto.ConsensusParams `json:"consensus_params,omitempty"`
+	Validators         []GenesisValidator       `json:"validators,omitempty"`
+	ThresholdPublicKey crypto.PubKey            `json:"threshold_public_key"`
+	AppHash            tmbytes.HexBytes         `json:"app_hash"`
+	AppState           json.RawMessage          `json:"app_state,omitempty"`
 }
 
 // SaveAs is a utility method for saving GenensisDoc as a JSON file.
@@ -63,7 +65,7 @@ func (genDoc *GenesisDoc) ValidatorHash() []byte {
 	for i, v := range genDoc.Validators {
 		vals[i] = NewValidator(v.PubKey, v.Power, v.ProTxHash)
 	}
-	vset := NewValidatorSet(vals)
+	vset := NewValidatorSet(vals, genDoc.ThresholdPublicKey)
 	return vset.Hash()
 }
 
@@ -101,6 +103,12 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 		}
 		if len(v.ProTxHash) != 32 {
 			return fmt.Errorf("validators must all contain a pro_tx_hash of size 32")
+		}
+		if genDoc.ThresholdPublicKey != nil {
+			return fmt.Errorf("the threshold public key must be set")
+		}
+		if len(genDoc.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
+			return fmt.Errorf("the threshold public key must be 48 bytes for BLS")
 		}
 	}
 

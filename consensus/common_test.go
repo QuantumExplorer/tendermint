@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -776,14 +777,17 @@ func getSwitchIndex(switches []*p2p.Switch, peer p2p.Peer) int {
 func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.GenesisDoc, []types.PrivValidator) {
 	validators := make([]types.GenesisValidator, numValidators)
 	privValidators := make([]types.PrivValidator, numValidators)
+
+	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
+
 	for i := 0; i < numValidators; i++ {
-		val, privVal := types.RandValidator(randPower, minPower)
+		val := types.NewValidatorWithRandomVotingPower(privateKeys[i].PubKey(), proTxHashes[i], randPower, minPower)
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
 			Power:  val.VotingPower,
 			ProTxHash: val.ProTxHash,
 		}
-		privValidators[i] = privVal
+		privValidators[i] = types.NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
 	}
 	sort.Sort(types.PrivValidatorsByProTxHash(privValidators))
 
@@ -795,6 +799,7 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 		ChainID:       config.ChainID(),
 		Validators:    validators,
 		GenesisChainLock: chainLock.ToProto(),
+		ThresholdPublicKey: thresholdPublicKey,
 	}, privValidators
 }
 

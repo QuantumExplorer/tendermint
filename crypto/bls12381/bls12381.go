@@ -137,6 +137,50 @@ func GenPrivKeyFromSecret(secret []byte) PrivKey {
 	return PrivKey(privKey.Serialize())
 }
 
+func CreatePrivLLMQDataDefaultThreshold(members int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
+	return CreatePrivLLMQData(members, members * 2 / 3 + 1)
+}
+
+func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
+	proTxHashes := make([]crypto.ProTxHash, members)
+	ids := make([]bls.Hash, members)
+	secrets := make([]*bls.PrivateKey, threshold)
+	skShares := make([]crypto.PrivKey, members)
+	pkShares := make([]*bls.PublicKey, members)
+
+	for i := 0; i < threshold; i++ {
+		seed := make([]byte, SeedSize)
+
+		_, err := io.ReadFull(crypto.CReader(), seed)
+		if err != nil {
+			panic(err)
+		}
+		privKey, err := bls.PrivateKeyFromSeed(seed)
+		secrets[i] = privKey
+	}
+
+	for i := 0; i < members; i++ {
+		proTxHashes[i] = crypto.RandProTxHash()
+		var hash bls.Hash
+		copy(hash[:], proTxHashes[i].Bytes())
+		ids[i] = hash
+		skShare, err := bls.PrivateKeyShare(secrets, ids[i])
+		if err != nil {
+			panic(err)
+		}
+		skShares[i] = PrivKey(skShare.Serialize())
+		pkShares[i] = skShare.PublicKey()
+	}
+
+	distributedKey, err := bls.PublicKeyRecover(pkShares, ids)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return skShares, proTxHashes, PubKey(distributedKey.Serialize())
+}
+
 //BLS Ids are the Pro_tx_hashes from validators
 func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte) ([]byte, error) {
 	var sigShares []*bls.InsecureSignature

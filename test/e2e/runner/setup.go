@@ -190,12 +190,14 @@ func MakeGenesis(testnet *e2e.Testnet) (types.GenesisDoc, error) {
 		ChainID:         testnet.Name,
 		ConsensusParams: types.DefaultConsensusParams(),
 		InitialHeight:   testnet.InitialHeight,
+		ThresholdPublicKey: testnet.ThresholdPublicKey,
 	}
 	for validator, power := range testnet.Validators {
 		genesis.Validators = append(genesis.Validators, types.GenesisValidator{
 			Name:    validator.Name,
 			Address: validator.Key.PubKey().Address(),
 			PubKey:  validator.Key.PubKey(),
+			ProTxHash: validator.ProTxHash,
 			Power:   power,
 		})
 	}

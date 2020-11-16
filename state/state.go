@@ -242,7 +242,7 @@ func StateFromProto(pb *tmstate.State) (*State, error) { //nolint:golint
 		}
 		state.LastValidators = lVals
 	} else {
-		state.LastValidators = types.NewValidatorSet(nil)
+		state.LastValidators = types.NewValidatorSet(nil, nil)
 	}
 
 	state.LastHeightValidatorsChanged = pb.LastHeightValidatorsChanged
@@ -342,15 +342,15 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 	var validatorSet, nextValidatorSet *types.ValidatorSet
 	if genDoc.Validators == nil {
-		validatorSet = types.NewValidatorSet(nil)
-		nextValidatorSet = types.NewValidatorSet(nil)
+		validatorSet = types.NewValidatorSet(nil, nil)
+		nextValidatorSet = types.NewValidatorSet(nil, nil)
 	} else {
 		validators := make([]*types.Validator, len(genDoc.Validators))
 		for i, val := range genDoc.Validators {
 			validators[i] = types.NewValidator(val.PubKey, val.Power, val.ProTxHash)
 		}
-		validatorSet = types.NewValidatorSet(validators)
-		nextValidatorSet = types.NewValidatorSet(validators).CopyIncrementProposerPriority(1)
+		validatorSet = types.NewValidatorSet(validators, genDoc.ThresholdPublicKey)
+		nextValidatorSet = types.NewValidatorSet(validators, genDoc.ThresholdPublicKey).CopyIncrementProposerPriority(1)
 	}
 
 	var initialChainLock types.ChainLock
@@ -371,7 +371,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		NextValidators:              nextValidatorSet,
 		Validators:                  validatorSet,
-		LastValidators:              types.NewValidatorSet(nil),
+		LastValidators:              types.NewValidatorSet(nil, nil),
 		LastHeightValidatorsChanged: genDoc.InitialHeight,
 
 		ConsensusParams:                  *genDoc.ConsensusParams,
