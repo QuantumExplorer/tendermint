@@ -7,7 +7,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"net"
 	"os"
-	"sort"
 	"sync"
 	"testing"
 
@@ -351,7 +350,7 @@ func TestReactorHelperMode(t *testing.T) {
 
 	config := cfg.ResetTestRoot("blockchain_reactor_v2_test")
 	defer os.RemoveAll(config.RootDir)
-	genDoc, privVals := randGenesisDoc(config.ChainID(), 1, false, 30)
+	genDoc, privVals := randGenesisDoc(config.ChainID(), 1)
 
 	params := testReactorParams{
 		logger:      log.TestingLogger(),
@@ -427,7 +426,7 @@ func TestReactorHelperMode(t *testing.T) {
 func TestReactorSetSwitchNil(t *testing.T) {
 	config := cfg.ResetTestRoot("blockchain_reactor_v2_test")
 	defer os.RemoveAll(config.RootDir)
-	genDoc, privVals := randGenesisDoc(config.ChainID(), 1, false, 30)
+	genDoc, privVals := randGenesisDoc(config.ChainID(), 1)
 
 	reactor := newTestReactor(testReactorParams{
 		logger:   log.TestingLogger(),
@@ -459,25 +458,14 @@ type testApp struct {
 	abci.BaseApplication
 }
 
-func randGenesisDoc(chainID string, numValidators int, randPower bool, minPower int64) (
+func randGenesisDoc(chainID string, numValidators int) (
 	*types.GenesisDoc, []types.PrivValidator) {
-	validators := make([]types.GenesisValidator, numValidators)
-	privValidators := make([]types.PrivValidator, numValidators)
-	for i := 0; i < numValidators; i++ {
-		val, privVal := types.RandValidator(randPower, minPower)
-		validators[i] = types.GenesisValidator{
-			PubKey: val.PubKey,
-			Power:  val.VotingPower,
-			ProTxHash: val.ProTxHash,
-		}
-		privValidators[i] = privVal
-	}
-	sort.Sort(types.PrivValidatorsByProTxHash(privValidators))
-
+	validators, privValidators, thresholdPublicKey := types.GenerateGenesisValidators(numValidators)
 	return &types.GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     chainID,
 		Validators:  validators,
+		ThresholdPublicKey: thresholdPublicKey,
 	}, privValidators
 }
 

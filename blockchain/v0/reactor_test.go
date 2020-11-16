@@ -3,7 +3,6 @@ package v0
 import (
 	"fmt"
 	"os"
-	"sort"
 	"testing"
 	"time"
 
@@ -26,24 +25,13 @@ import (
 
 var config *cfg.Config
 
-func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.GenesisDoc, []types.PrivValidator) {
-	validators := make([]types.GenesisValidator, numValidators)
-	privValidators := make([]types.PrivValidator, numValidators)
-	for i := 0; i < numValidators; i++ {
-		val, privVal := types.RandValidator(randPower, minPower)
-		validators[i] = types.GenesisValidator{
-			PubKey: val.PubKey,
-			Power:  val.VotingPower,
-			ProTxHash: val.ProTxHash,
-		}
-		privValidators[i] = privVal
-	}
-	sort.Sort(types.PrivValidatorsByProTxHash(privValidators))
-
+func randGenesisDoc(numValidators int) (*types.GenesisDoc, []types.PrivValidator) {
+	validators, privValidators, thresholdPublicKey := types.GenerateGenesisValidators(numValidators)
 	return &types.GenesisDoc{
 		GenesisTime: tmtime.Now(),
 		ChainID:     config.ChainID(),
 		Validators:  validators,
+		ThresholdPublicKey: thresholdPublicKey,
 	}, privValidators
 }
 
@@ -131,7 +119,7 @@ func newBlockchainReactor(logger log.Logger, genDoc *types.GenesisDoc, privVals 
 func TestNoBlockResponse(t *testing.T) {
 	config = cfg.ResetTestRoot("blockchain_reactor_test")
 	defer os.RemoveAll(config.RootDir)
-	genDoc, privVals := randGenesisDoc(1, false, 30)
+	genDoc, privVals := randGenesisDoc(1)
 
 	maxBlockHeight := int64(65)
 
@@ -193,12 +181,12 @@ func TestNoBlockResponse(t *testing.T) {
 func TestBadBlockStopsPeer(t *testing.T) {
 	config = cfg.ResetTestRoot("blockchain_reactor_test")
 	defer os.RemoveAll(config.RootDir)
-	genDoc, privVals := randGenesisDoc(1, false, 30)
+	genDoc, privVals := randGenesisDoc(1)
 
 	maxBlockHeight := int64(148)
 
 	// Other chain needs a different validator set
-	otherGenDoc, otherPrivVals := randGenesisDoc(1, false, 30)
+	otherGenDoc, otherPrivVals := randGenesisDoc(1)
 	otherChain := newBlockchainReactor(log.TestingLogger(), otherGenDoc, otherPrivVals, maxBlockHeight)
 
 	defer func() {

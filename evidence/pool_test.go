@@ -45,7 +45,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, privVals := types.RandValidatorSet(3, 10)
+	valSet, privVals := types.GenerateValidatorSet(3)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
@@ -148,13 +148,13 @@ func TestAddEvidenceFromConsensus(t *testing.T) {
 	pool, val := defaultTestPool(height)
 	ev := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultEvidenceTime, val, evidenceChainID)
 	err := pool.AddEvidenceFromConsensus(ev, defaultEvidenceTime,
-		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(2)}))
+		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(2)}, val.PrivKey.PubKey()))
 	assert.NoError(t, err)
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 	// shouldn't be able to submit the same evidence twice
 	err = pool.AddEvidenceFromConsensus(ev, defaultEvidenceTime.Add(-1*time.Second),
-		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(3)}))
+		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(3)}, val.PrivKey.PubKey()))
 	if assert.Error(t, err) {
 		assert.Equal(t, "evidence already verified and added", err.Error())
 	}
@@ -244,7 +244,7 @@ func TestVerifyDuplicatedEvidenceFails(t *testing.T) {
 // check that
 func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	nValidators := 5
-	conflictingVals, conflictingPrivVals := types.RandValidatorSet(nValidators, 10)
+	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(nValidators)
 	trustedHeader := makeHeaderRandom(10)
 
 	conflictingHeader := makeHeaderRandom(10)

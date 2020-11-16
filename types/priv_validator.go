@@ -166,3 +166,26 @@ func (pv *ErroringMockPV) SignProposal(chainID string, proposal *tmproto.Proposa
 func NewErroringMockPV() *ErroringMockPV {
 	return &ErroringMockPV{MockPV{bls12381.GenPrivKey(), crypto.CRandBytes(32), false, false}}
 }
+
+type MockPrivValidatorsByProTxHash []MockPV
+
+func (pvs MockPrivValidatorsByProTxHash) Len() int {
+	return len(pvs)
+}
+
+func (pvs MockPrivValidatorsByProTxHash) Less(i, j int) bool {
+	pvi, err := pvs[i].GetProTxHash()
+	if err != nil {
+		panic(err)
+	}
+	pvj, err := pvs[j].GetProTxHash()
+	if err != nil {
+		panic(err)
+	}
+
+	return bytes.Compare(pvi, pvj) == -1
+}
+
+func (pvs MockPrivValidatorsByProTxHash) Swap(i, j int) {
+	pvs[i], pvs[j] = pvs[j], pvs[i]
+}

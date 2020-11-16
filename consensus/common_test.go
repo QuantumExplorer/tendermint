@@ -781,7 +781,7 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
 
 	for i := 0; i < numValidators; i++ {
-		val := types.NewValidatorWithRandomVotingPower(privateKeys[i].PubKey(), proTxHashes[i], randPower, minPower)
+		val := types.NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
 		validators[i] = types.GenesisValidator{
 			PubKey: val.PubKey,
 			Power:  val.VotingPower,

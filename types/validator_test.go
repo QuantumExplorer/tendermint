@@ -8,7 +8,7 @@ import (
 )
 
 func TestValidatorProtoBuf(t *testing.T) {
-	val, _ := RandValidator(true, 100)
+	val, _ := RandValidator()
 	testCases := []struct {
 		msg      string
 		v1       *Validator

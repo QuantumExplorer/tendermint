@@ -159,6 +159,10 @@ func (blockExec *BlockExecutor) ApplyBlock(
 
 	// validate the validator updates and convert to tendermint types
 	abciValUpdates := abciResponses.EndBlock.ValidatorUpdates
+	abciThresholdPublicKeyUpdate := abciResponses.EndBlock.ThresholdPublicKey
+	if len(abciValUpdates) != 0 && abciThresholdPublicKeyUpdate == nil {
+		return state, 0, fmt.Errorf("received validator updates without a threshold public key")
+	}
 	nextChainLock, err := types.ChainLockFromProto(abciResponses.EndBlock.NextChainLockUpdate)
 	if err != nil {
 		return state, 0, fmt.Errorf("error in chain lock from proto: %v", err)
@@ -171,12 +175,16 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	if err != nil {
 		return state, 0, err
 	}
+	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciThresholdPublicKeyUpdate)
+	if err != nil {
+		return state, 0, err
+	}
 	if len(validatorUpdates) > 0 {
 		blockExec.logger.Info("Updates to validators", "updates", types.ValidatorListString(validatorUpdates))
 	}
 
 	// Update the state with the block and responses.
-	state, err = updateState(state, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates)
+	state, err = updateState(state, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKeyUpdate)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -419,6 +427,7 @@ func updateState(
 	nextChainLock *types.ChainLock,
 	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
+	newThresholdPublicKey crypto.PubKey,
 ) (State, error) {
 
 	// Copy the valset so we can apply changes from EndBlock
@@ -428,7 +437,7 @@ func updateState(
 	// Update the validator set with the latest abciResponses.
 	lastHeightValsChanged := state.LastHeightValidatorsChanged
 	if len(validatorUpdates) > 0 {
-		err := nValSet.UpdateWithChangeSet(validatorUpdates)
+		err := nValSet.UpdateWithChangeSet(validatorUpdates, newThresholdPublicKey)
 		if err != nil {
 			return state, fmt.Errorf("error changing validator set: %v", err)
 		}

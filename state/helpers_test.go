@@ -1,9 +1,9 @@
 package state_test
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/tendermint/tendermint/crypto/bls12381"
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -143,54 +143,51 @@ func makeBlock(state sm.State, height int64) *types.Block {
 	return block
 }
 
-func genValSet(size int) *types.ValidatorSet {
-	vals := make([]*types.Validator, size)
-	for i := 0; i < size; i++ {
-		vals[i] = types.NewValidator(bls12381.GenPrivKey().PubKey(), 10, crypto.CRandBytes(32))
-	}
-	return types.NewValidatorSet(vals)
-}
-
-func makeHeaderPartsResponsesValPubKeyChange(state sm.State, pubkey crypto.PubKey, val *types.Validator, ) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
+func makeHeaderPartsResponsesValKeysRegenerate(state sm.State, regenerate bool) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
 		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
 	}
-	if !bytes.Equal(pubkey.Bytes(), val.PubKey.Bytes()) {
+	if regenerate == true {
+		proTxHashes := state.Validators.GetProTxHashes()
+		valUpdates, thresholdPublicKey := validatorUpdatesRegenerateOnProTxHashes(proTxHashes)
+		abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(thresholdPublicKey)
+		if err != nil {
+			panic(err)
+		}
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
-			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(pubkey, val.VotingPower, val.ProTxHash),
-			},
+			ValidatorUpdates: valUpdates,
+			ThresholdPublicKey: &abciThresholdPublicKey,
 		}
 	}
 
 	return block.Header, block.ChainLock, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
 }
 
-func makeHeaderPartsResponsesValPowerChange(
-	state sm.State,
-	power int64,
-) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
-
-	block := makeBlock(state, state.LastBlockHeight+1)
-	abciResponses := &tmstate.ABCIResponses{
-		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
-	}
-
-	// If the pubkey is new, remove the old and add the new.
-	_, val := state.NextValidators.GetByIndex(0)
-	if val.VotingPower != power {
-		abciResponses.EndBlock = &abci.ResponseEndBlock{
-			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, power, val.ProTxHash),
-			},
-		}
-	}
-
-	return block.Header, block.ChainLock, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
-}
+//func makeHeaderPartsResponsesValPowerChange(
+//	state sm.State,
+//	power int64,
+//) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
+//
+//	block := makeBlock(state, state.LastBlockHeight+1)
+//	abciResponses := &tmstate.ABCIResponses{
+//		BeginBlock: &abci.ResponseBeginBlock{},
+//		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+//	}
+//
+//	// If the pubkey is new, remove the old and add the new.
+//	_, val := state.NextValidators.GetByIndex(0)
+//	if val.VotingPower != power {
+//		abciResponses.EndBlock = &abci.ResponseEndBlock{
+//			ValidatorUpdates: []abci.ValidatorUpdate{
+//				types.TM2PB.NewValidatorUpdate(val.PubKey, power, val.ProTxHash),
+//			},
+//		}
+//	}
+//
+//	return block.Header, block.ChainLock, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
+//}
 
 func makeHeaderPartsResponsesParams(
 	state sm.State,
