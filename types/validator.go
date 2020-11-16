@@ -39,6 +39,15 @@ func NewValidator(pubKey crypto.PubKey, votingPower int64, proTxHash []byte) *Va
 	}
 }
 
+func NewValidatorWithRandomVotingPower(pubKey crypto.PubKey, proTxHash []byte, randPower bool, minPower int64) *Validator {
+	votingPower := minPower
+	if randPower {
+		votingPower += int64(tmrand.Uint32())
+	}
+	return NewValidator(pubKey, votingPower, proTxHash)
+}
+
+
 // ValidateBasic performs basic validation.
 func (v *Validator) ValidateBasic() error {
 	if v == nil {

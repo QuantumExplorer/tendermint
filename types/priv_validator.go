@@ -55,7 +55,7 @@ type MockPV struct {
 }
 
 func NewMockPV() MockPV {
-	return MockPV{bls12381.GenPrivKey(), crypto.CRandBytes(32), false, false}
+	return MockPV{bls12381.GenPrivKey(), crypto.RandProTxHash(), false, false}
 }
 
 // NewMockPVWithParams allows one to create a MockPV instance, but with finer
