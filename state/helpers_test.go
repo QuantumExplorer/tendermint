@@ -143,34 +143,6 @@ func makeBlock(state sm.State, height int64) *types.Block {
 	return block
 }
 
-func genValSetOnProTxHashes(proTxHashes []crypto.ProTxHash) *types.ValidatorSet {
-	vals := make([]*types.Validator, len(proTxHashes))
-	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
-	for i := 0; i < len(proTxHashes); i++ {
-		vals[i] = types.NewValidator(privateKeys[i].PubKey(), types.DefaultDashVotingPower, proTxHashes[i])
-	}
-	return types.NewValidatorSet(vals, thresholdPublicKey)
-}
-
-func genValSet(size int) *types.ValidatorSet {
-	vals := make([]*types.Validator, size)
-	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(size)
-	for i := 0; i < size; i++ {
-		vals[i] = types.NewValidator(privateKeys[i].PubKey(), types.DefaultDashVotingPower, proTxHashes[i])
-	}
-	return types.NewValidatorSet(vals, thresholdPublicKey)
-}
-
-func validatorUpdatesRegenerateOnProTxHashes(proTxHashes []crypto.ProTxHash) ([]abci.ValidatorUpdate, crypto.PubKey) {
-	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
-	var valUpdates []abci.ValidatorUpdate
-	for i := 0; i < len(proTxHashes) ; i++ {
-		valUpdate := types.TM2PB.NewValidatorUpdate(privateKeys[i].PubKey(), types.DefaultDashVotingPower, proTxHashes[i])
-		valUpdates = append(valUpdates,valUpdate)
-	}
-	return valUpdates, thresholdPublicKey
-}
-
 func makeHeaderPartsResponsesValKeysRegenerate(state sm.State, regenerate bool) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{

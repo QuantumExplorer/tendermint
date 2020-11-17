@@ -24,7 +24,7 @@ import (
 )
 
 func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
-	commonVals, commonPrivVals := types.RandValidatorSet(2, 10)
+	commonVals, commonPrivVals := types.GenerateValidatorSet(2, 10)
 
 	newVal, newPrivVal := types.RandValidator(false, 9)
 
@@ -63,7 +63,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	}
 	trustedBlockID := makeBlockID(trustedHeader.Hash(), 1000, []byte("partshash"))
 	trustedStateID := makeStateID(trustedHeader.AppHash)
-	vals, privVals := types.RandValidatorSet(3, 8)
+	vals, privVals := types.GenerateValidatorSet(3, 8)
 	trustedVoteSet := types.NewVoteSet(evidenceChainID, 10, 1, tmproto.SignedMsgType(2), vals)
 	trustedCommit, err := types.MakeCommit(trustedBlockID, trustedStateID, 10, 1, trustedVoteSet, privVals)
 	require.NoError(t, err)
@@ -132,7 +132,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 }
 
 func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
-	conflictingVals, conflictingPrivVals := types.RandValidatorSet(5, 10)
+	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(5, 10)
 	trustedHeader := makeHeaderRandom(10)
 
 	conflictingHeader := makeHeaderRandom(10)
@@ -242,7 +242,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 }
 
 func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
-	conflictingVals, conflictingPrivVals := types.RandValidatorSet(5, 10)
+	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(5, 10)
 
 	conflictingHeader := makeHeaderRandom(10)
 	conflictingHeader.ValidatorsHash = conflictingVals.Hash()

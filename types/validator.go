@@ -8,7 +8,6 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	ce "github.com/tendermint/tendermint/crypto/encoding"
-	tmrand "github.com/tendermint/tendermint/libs/rand"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
@@ -26,27 +25,18 @@ type Validator struct {
 }
 
 // NewValidator returns a new validator with the given pubkey and voting power.
-func NewValidator(pubKey crypto.PubKey, votingPower int64, proTxHash []byte) *Validator {
+func NewValidator(pubKey crypto.PubKey, proTxHash []byte) *Validator {
 	if len(proTxHash) != 32 {
 		panic("proTxHash wrong length")
 	}
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
-		VotingPower:      votingPower,
+		VotingPower:      DefaultDashVotingPower,
 		ProposerPriority: 0,
 		ProTxHash:        proTxHash,
 	}
 }
-
-func NewValidatorWithRandomVotingPower(pubKey crypto.PubKey, proTxHash []byte, randPower bool, minPower int64) *Validator {
-	votingPower := minPower
-	if randPower {
-		votingPower += int64(tmrand.Uint32())
-	}
-	return NewValidator(pubKey, votingPower, proTxHash)
-}
-
 
 // ValidateBasic performs basic validation.
 func (v *Validator) ValidateBasic() error {
@@ -204,12 +194,8 @@ func ValidatorFromProto(vp *tmproto.Validator) (*Validator, error) {
 
 // RandValidator returns a randomized validator, useful for testing.
 // UNSTABLE
-func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
+func RandValidator() (*Validator, PrivValidator) {
 	privVal := NewMockPV()
-	votePower := minPower
-	if randPower {
-		votePower += int64(tmrand.Uint32())
-	}
 	proTxHash, err := privVal.GetProTxHash()
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve proTxHash %w", err))
@@ -218,6 +204,6 @@ func RandValidator(randPower bool, minPower int64) (*Validator, PrivValidator) {
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
 	}
-	val := NewValidator(pubKey, votePower, proTxHash)
+	val := NewValidator(pubKey, proTxHash)
 	return val, privVal
 }

@@ -342,7 +342,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 //		// run each case 5 times to sample different
 //		// initial priorities
 //		for i := 0; i < 5; i++ {
-//			valSet := genValSetWithPowers(testCase.powers)
+//			valSet := types.GenerateValidatorSetWithPowers(testCase.powers)
 //			testProposerFreq(t, caseNum, valSet)
 //		}
 //	}
@@ -374,7 +374,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 //}
 //
 //// new val set with given powers and random initial priorities
-//func genValSetWithPowers(powers []int64) *types.ValidatorSet {
+//func types.GenerateValidatorSetWithPowers(powers []int64) *types.ValidatorSet {
 //	size := len(powers)
 //	vals := make([]*types.Validator, size)
 //	totalVotePower := int64(0)
@@ -753,21 +753,11 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	proTxHashes := bls12381.CreateProTxHashes(12)
-
-	genesisPrivKey := bls12381.GenPrivKey()
-	genesisPubKey := genesisPrivKey.PubKey()
-	genesisProTxHash := proTxHashes[0]
-	// fmt.Println("genesis addr: ", genesisPubKey.Address())
-	genesisVal := &types.Validator{
-		Address:     genesisPubKey.Address(),
-		PubKey:      genesisPubKey,
-		VotingPower: types.DefaultDashVotingPower,
-		ProTxHash: genesisProTxHash,
-	}
+	originalValidatorSet := types.GenerateValidatorSet(4)
+	originalProTxHashes := originalValidatorSet.GetProTxHashes()
 	// reset state validators to above validator
-	state.Validators = types.NewValidatorSet([]*types.Validator{genesisVal}, nil)
-	state.NextValidators = state.Validators
+	state.Validators = originalValidatorSet
+	state.NextValidators = originalValidatorSet
 	require.True(t, len(state.Validators.Validators) == 1)
 
 	// update state a few times with no validator updates
@@ -799,32 +789,27 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 		oldState = updatedState
 	}
-	// add another validator, do a few iterations (create blocks),
+	// add another 4 validators, do a few iterations (create blocks),
 	// add more validators with same voting power as the 2nd
 	// let the genesis validator "unbond",
 	// see how long it takes until the effect wears off and both begin to alternate
 	// see: https://github.com/tendermint/tendermint/issues/2960
-	privateKeys2, thresholdPublicKey2 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[0:2])
+	addedProTxHashes := bls12381.CreateProTxHashes(4)
+	proTxHashes := append(originalValidatorSet.GetProTxHashes(), addedProTxHashes...)
+	abciValidatorUpdates0, thresholdPublicKey0 := validatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 
-	//the added one will be at position 1
-	firstAddedValPubKey := privateKeys2[1].PubKey()
-	firstAddedProTxHash := proTxHashes[1]
-	fvp, err := cryptoenc.PubKeyToProto(firstAddedValPubKey)
+	abciThresholdPublicKey0, err := cryptoenc.PubKeyToProto(thresholdPublicKey0)
 	require.NoError(t, err)
-	genesisUpdatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys2[0].PubKey())
-	require.NoError(t, err)
-	updateOriginalVal := abci.ValidatorUpdate{ProTxHash: genesisProTxHash, Power: types.DefaultDashVotingPower, PubKey: genesisUpdatedPubKey}
-	firstAddedVal := abci.ValidatorUpdate{PubKey: fvp, Power: types.DefaultDashVotingPower, ProTxHash: firstAddedProTxHash}
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{updateOriginalVal, firstAddedVal})
-	assert.NoError(t, err)
-
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{updateOriginalVal, firstAddedVal}},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: abciValidatorUpdates0, ThresholdPublicKey: &abciThresholdPublicKey0},
 	}
+	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	require.NoError(t, err)
+
 	block := makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-	updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey2)
+	updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey0)
 	require.NoError(t, err)
 
 	lastState := updatedState
@@ -851,24 +836,25 @@ func TestLargeGenesisValidator(t *testing.T) {
 
 	// set oldState to state before above iteration
 	oldState = updatedState
-	_, oldGenesisVal := oldState.NextValidators.GetByProTxHash(genesisVal.ProTxHash)
-	_, newGenesisVal := state.NextValidators.GetByProTxHash(genesisVal.ProTxHash)
-	_, addedOldVal := oldState.NextValidators.GetByProTxHash(firstAddedProTxHash)
-	_, addedNewVal := state.NextValidators.GetByProTxHash(firstAddedProTxHash)
+
+	_, oldGenesisVal := oldState.NextValidators.GetByProTxHash(originalProTxHashes[0])
+	_, newGenesisVal := state.NextValidators.GetByProTxHash(originalProTxHashes[0])
+	_, addedOldVal := oldState.NextValidators.GetByProTxHash(addedProTxHashes[0])
+	_, addedNewVal := state.NextValidators.GetByProTxHash(addedProTxHashes[0])
 	// expect large negative proposer priority for both (genesis validator decreased, 2nd validator increased):
 	assert.True(t, oldGenesisVal.ProposerPriority > newGenesisVal.ProposerPriority)
 	assert.True(t, addedOldVal.ProposerPriority < addedNewVal.ProposerPriority)
 
 	// add 10 validators with the same voting power as the one added directly after genesis:
 	for i := 0; i < 10; i++ {
-		privateKeys3, thresholdPublicKey3 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[0:3+i])
+		addedProTxHash := crypto.RandProTxHash()
+		proTxHashes := append(proTxHashes, addedProTxHash)
+		privateKeys3, thresholdPublicKey3 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 		var abciValidatorUpdates []abci.ValidatorUpdate
-		for j := 0; j < i+3; j++ {
-			updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys3[j].PubKey())
-			require.NoError(t, err)
-			updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[i], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
-			abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
-		}
+		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys3[len(proTxHashes) - 1].PubKey())
+		require.NoError(t, err)
+		updatePreviousVal := abci.ValidatorUpdate{ProTxHash: addedProTxHash, Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
+		abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
 
 		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciValidatorUpdates)
 		assert.NoError(t, err)
@@ -884,11 +870,11 @@ func TestLargeGenesisValidator(t *testing.T) {
 	}
 	require.Equal(t, 10+2, len(state.NextValidators.Validators))
 
-	// remove genesis validator:
+	// remove one genesis validator:
 	privateKeys4, thresholdPublicKey4 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[1:])
 	var abciValidatorUpdates []abci.ValidatorUpdate
-	updatedPubKey, err := cryptoenc.PubKeyToProto(genesisPubKey)
-	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey]}
+	updatedPubKey, err := cryptoenc.PubKeyToProto(originalValidatorSet.Validators[0].PubKey)
+	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
 	abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
 	for i := 1; i < len(proTxHashes); i++ {
 		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys4[i].PubKey())
@@ -973,7 +959,7 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	tearDown, stateDB, state := setupTestCase(t)
 	t.Cleanup(func() { tearDown(t) })
 	stateStore := sm.NewStore(stateDB)
-	state.Validators = genValSet(valSetSize)
+	state.Validators = types.GenerateValidatorSet(valSetSize)
 	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
@@ -999,7 +985,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	defer tearDown(t)
 	stateStore := sm.NewStore(stateDB)
 	require.Equal(t, int64(0), state.LastBlockHeight)
-	state.Validators = genValSet(valSetSize)
+	state.Validators = types.GenerateValidatorSet(valSetSize)
 	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
 	err := stateStore.Save(state)
 	require.NoError(t, err)

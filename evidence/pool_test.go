@@ -45,7 +45,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, privVals := types.RandValidatorSet(3, 10)
+	valSet, privVals := types.GenerateValidatorSet(3, 10)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
@@ -244,7 +244,7 @@ func TestVerifyDuplicatedEvidenceFails(t *testing.T) {
 // check that
 func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	nValidators := 5
-	conflictingVals, conflictingPrivVals := types.RandValidatorSet(nValidators, 10)
+	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(nValidators, 10)
 	trustedHeader := makeHeaderRandom(10)
 
 	conflictingHeader := makeHeaderRandom(10)

@@ -24,7 +24,8 @@ import (
 func TestStoreLoadValidators(t *testing.T) {
 	stateDB := dbm.NewMemDB()
 	stateStore := sm.NewStore(stateDB)
-	val, _ := types.RandValidator(true, 10)
+	proTxHashes, privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(4)
+	val, _ := types.RandValidator(false, types.DefaultDashVotingPower)
 	vals := types.NewValidatorSet([]*types.Validator{val})
 
 	// 1) LoadValidators loads validators using a height where they were last changed
@@ -60,7 +61,7 @@ func BenchmarkLoadValidators(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	state.Validators = genValSet(valSetSize)
+	state.Validators, _ = types.GenerateValidatorSet(valSetSize)
 	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
 	err = stateStore.Save(state)
 	require.NoError(b, err)

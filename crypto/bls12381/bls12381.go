@@ -167,6 +167,13 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 	if threshold == 0 {
 		panic("threshold must not be 0")
 	}
+	if len(proTxHashes) == 0 {
+		panic("there must be at least one pro_tx_hash")
+	}
+	if len(proTxHashes) == 1 {
+		privKey := GenPrivKey()
+		return []crypto.PrivKey{privKey}, privKey.PubKey()
+	}
 	ids := make([]bls.Hash, members)
 	secrets := make([]*bls.PrivateKey, threshold)
 	skShares := make([]crypto.PrivKey, members)

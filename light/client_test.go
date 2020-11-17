@@ -3,6 +3,7 @@ package light_test
 import (
 	"context"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"sync"
 	"testing"
 	"time"
@@ -119,9 +120,8 @@ func TestMock(t *testing.T) {
 }
 
 func TestClient_SequentialVerification(t *testing.T) {
-	newKeys := genPrivKeys(4, crypto.BLS12381)
-	newVals := newKeys.ToValidators(10, 1)
-	differentVals, _ := types.RandValidatorSet(10, 100)
+	newVals, _ := types.GenerateValidatorSet(10)
+	differentVals, _ := types.GenerateValidatorSet(10)
 
 	testCases := []struct {
 		name         string
@@ -256,12 +256,14 @@ func TestClient_SequentialVerification(t *testing.T) {
 
 func TestClient_SkippingVerification(t *testing.T) {
 	// required for 2nd test case
-	newKeys := genPrivKeys(4, crypto.BLS12381)
-	newVals := newKeys.ToValidators(10, 1)
+	newVals, newPVals := types.GenerateValidatorSet(4)
+    newValsProTxHashes := newVals.GetProTxHashes()
 
 	// 1/3+ of vals, 2/3- of newVals
-	transitKeys := keys.Extend(3)
-	transitVals := transitKeys.ToValidators(10, 1)
+	transitExtraProTxHashes := bls12381.CreateProTxHashes(3)
+	transitProTxHashes := append(newValsProTxHashes,transitExtraProTxHashes...)
+	transitVals, transitPVals := types.GenerateValidatorSetUsingProTxHashes(transitProTxHashes)
+
 
 	testCases := []struct {
 		name         string
@@ -970,7 +972,7 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 }
 
 func TestClient_TrustedValidatorSet(t *testing.T) {
-	differentVals, _ := types.RandValidatorSet(10, 100)
+	differentVals, _ := types.GenerateValidatorSet(10, 100)
 	badValSetNode := mockp.New(
 		chainID,
 		map[int64]*types.SignedHeader{

@@ -70,10 +70,10 @@ func (pkz privKeys) Extend(n int) privKeys {
 // The first key has weight `init` and it increases by `inc` every step
 // so we can have all the same weight, or a simple linear distribution
 // (should be enough for testing).
-func (pkz privKeys) ToValidators(init, inc int64) *types.ValidatorSet {
+func (pkz privKeys) ToValidators() *types.ValidatorSet {
 	res := make([]*types.Validator, len(pkz))
 	for i, k := range pkz {
-		res[i] = types.NewValidator(k.PubKey(), init+int64(i)*inc, crypto.Sha256(k.PubKey().Address()))
+		res[i] = types.NewValidator(k.PubKey(), crypto.Sha256(k.PubKey().Address()))
 	}
 	return types.NewValidatorSet(res)
 }

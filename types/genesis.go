@@ -63,7 +63,7 @@ func (genDoc *GenesisDoc) SaveAs(file string) error {
 func (genDoc *GenesisDoc) ValidatorHash() []byte {
 	vals := make([]*Validator, len(genDoc.Validators))
 	for i, v := range genDoc.Validators {
-		vals[i] = NewValidator(v.PubKey, v.Power, v.ProTxHash)
+		vals[i] = NewValidator(v.PubKey, v.ProTxHash)
 	}
 	vset := NewValidatorSet(vals, genDoc.ThresholdPublicKey)
 	return vset.Hash()
@@ -104,7 +104,7 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 		if len(v.ProTxHash) != 32 {
 			return fmt.Errorf("validators must all contain a pro_tx_hash of size 32")
 		}
-		if genDoc.ThresholdPublicKey != nil {
+		if genDoc.ThresholdPublicKey == nil {
 			return fmt.Errorf("the threshold public key must be set")
 		}
 		if len(genDoc.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
