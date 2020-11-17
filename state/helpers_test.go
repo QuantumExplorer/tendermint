@@ -193,29 +193,29 @@ func makeHeaderPartsResponsesValKeysRegenerate(state sm.State, regenerate bool) 
 	return block.Header, block.ChainLock, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
 }
 
-func makeHeaderPartsResponsesValPowerChange(
-	state sm.State,
-	power int64,
-) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
-
-	block := makeBlock(state, state.LastBlockHeight+1)
-	abciResponses := &tmstate.ABCIResponses{
-		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
-	}
-
-	// If the pubkey is new, remove the old and add the new.
-	_, val := state.NextValidators.GetByIndex(0)
-	if val.VotingPower != power {
-		abciResponses.EndBlock = &abci.ResponseEndBlock{
-			ValidatorUpdates: []abci.ValidatorUpdate{
-				types.TM2PB.NewValidatorUpdate(val.PubKey, power, val.ProTxHash),
-			},
-		}
-	}
-
-	return block.Header, block.ChainLock, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
-}
+//func makeHeaderPartsResponsesValPowerChange(
+//	state sm.State,
+//	power int64,
+//) (types.Header, *types.ChainLock, types.BlockID, *tmstate.ABCIResponses) {
+//
+//	block := makeBlock(state, state.LastBlockHeight+1)
+//	abciResponses := &tmstate.ABCIResponses{
+//		BeginBlock: &abci.ResponseBeginBlock{},
+//		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+//	}
+//
+//	// If the pubkey is new, remove the old and add the new.
+//	_, val := state.NextValidators.GetByIndex(0)
+//	if val.VotingPower != power {
+//		abciResponses.EndBlock = &abci.ResponseEndBlock{
+//			ValidatorUpdates: []abci.ValidatorUpdate{
+//				types.TM2PB.NewValidatorUpdate(val.PubKey, power, val.ProTxHash),
+//			},
+//		}
+//	}
+//
+//	return block.Header, block.ChainLock, types.BlockID{Hash: block.Hash(), PartSetHeader: types.PartSetHeader{}}, abciResponses
+//}
 
 func makeHeaderPartsResponsesParams(
 	state sm.State,
