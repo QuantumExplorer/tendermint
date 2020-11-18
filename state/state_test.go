@@ -262,7 +262,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	var validatorUpdates []*types.Validator
 	var thresholdPublicKeyUpdate crypto.PubKey
 	var nextChainLock *types.ChainLock
-	testCases := make([]crypto.PubKey, highestHeight)
+	testCases := make([]crypto.PubKey, highestHeight - 1)
 
 	for i := int64(1); i < highestHeight; i++ {
 		// When we get to a change height, use the next pubkey.

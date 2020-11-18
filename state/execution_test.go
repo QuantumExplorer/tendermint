@@ -350,21 +350,26 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	block := makeBlock(state, 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-	proTxHash := crypto.CRandBytes(32)
-	pubkey := bls12381.GenPrivKey().PubKey()
-	pk, err := cryptoenc.PubKeyToProto(pubkey)
-	require.NoError(t, err)
-	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{PubKey: pk, Power: 10, ProTxHash: proTxHash},
+	vals := state.Validators
+	proTxHashes := vals.GetProTxHashes()
+	addProTxHash := crypto.RandProTxHash()
+	proTxHashes = append(proTxHashes, addProTxHash)
+	newVals, _ := types.GenerateValidatorSetUsingProTxHashes(proTxHashes)
+
+	app.ValidatorUpdates = newVals.ABCIEquivalentValidatorUpdates()
+	if newVals.ThresholdPublicKey != nil {
+		abciThresholdPublicKeyUpdate, err := cryptoenc.PubKeyToProto(newVals.ThresholdPublicKey)
+		require.NoError(t, err)
+		app.ThresholdPublicKeyUpdate = &abciThresholdPublicKeyUpdate
 	}
 
 	state, _, err = blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
 	// test new validator was added to NextValidators
 	if assert.Equal(t, state.Validators.Size()+1, state.NextValidators.Size()) {
-		idx, _ := state.NextValidators.GetByProTxHash(proTxHash)
+		idx, _ := state.NextValidators.GetByProTxHash(addProTxHash)
 		if idx < 0 {
-			t.Fatalf("can't find address %v in the set %v", pubkey.Address(), state.NextValidators)
+			t.Fatalf("can't find proTxHash %v in the set %v", addProTxHash, state.NextValidators)
 		}
 	}
 
@@ -374,8 +379,8 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		event, ok := msg.Data().(types.EventDataValidatorSetUpdates)
 		require.True(t, ok, "Expected event of type EventDataValidatorSetUpdates, got %T", msg.Data())
 		if assert.NotEmpty(t, event.ValidatorUpdates) {
-			assert.Equal(t, pubkey, event.ValidatorUpdates[0].PubKey)
-			assert.EqualValues(t, 10, event.ValidatorUpdates[0].VotingPower)
+			assert.Equal(t, addProTxHash, event.ValidatorUpdates[1].ProTxHash)
+			assert.EqualValues(t, types.DefaultDashVotingPower, event.ValidatorUpdates[1].VotingPower)
 		}
 	case <-updatesSub.Cancelled():
 		t.Fatalf("updatesSub was cancelled (reason: %v)", updatesSub.Err())
@@ -410,10 +415,16 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 
 	proTxHash := state.Validators.Validators[0].ProTxHash
 	require.NoError(t, err)
+	publicKey, err := cryptoenc.PubKeyToProto(bls12381.GenPrivKey().PubKey())
+	require.NoError(t, err)
 	// Remove the only validator
 	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{ProTxHash: proTxHash, Power: 0},
+		{PubKey:publicKey, ProTxHash: proTxHash, Power: 0},
 	}
+
+	abciThresholdPublicKeyUpdate, err := cryptoenc.PubKeyToProto(state.Validators.ThresholdPublicKey)
+	require.NoError(t, err)
+	app.ThresholdPublicKeyUpdate = &abciThresholdPublicKeyUpdate
 
 	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })
 	assert.NotNil(t, err)
