@@ -24,13 +24,13 @@ import (
 )
 
 func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
-	commonVals, commonPrivVals := types.GenerateValidatorSet(2)
+	commonVals, _ :=
 
 	newVal, newPrivVal := types.RandValidator()
 
-	conflictingVals, err := types.ValidatorSetFromExistingValidators(append(commonVals.Validators, newVal))
-	require.NoError(t, err)
-	conflictingPrivVals := append(commonPrivVals, newPrivVal)
+	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(3)
+
+	commonVals := conflictingVals[0:2]
 
 	commonHeader := makeHeaderRandom(4)
 	commonHeader.Time = defaultEvidenceTime.Add(-1 * time.Hour)

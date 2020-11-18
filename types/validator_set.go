@@ -1122,8 +1122,8 @@ func ValidatorSetFromExistingValidators(valz []*Validator, thresholdPublicKey cr
 
 //----------------------------------------
 
-// RandValidatorSet returns a randomized validator set (size: +numValidators+),
-// where each validator has a voting power of +votingPower+.
+// GenerateValidatorSet returns a randomized validator set (size: +numValidators+),
+// where each validator has the same default voting power.
 //
 // EXPOSED FOR TESTING.
 func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {

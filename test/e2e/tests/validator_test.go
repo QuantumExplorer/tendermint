@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"bytes"
+	"github.com/tendermint/tendermint/crypto"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,17 +33,24 @@ func TestValidator_Sets(t *testing.T) {
 
 		for h := first; h <= last; h++ {
 			validators := []*types.Validator{}
+			var thresholdPublicKey crypto.PubKey
 			perPage := 100
 			for page := 1; ; page++ {
-				resp, err := client.Validators(ctx, &(h), &(page), &perPage)
+				requestThresholdPublicKey := page == 1
+				resp, err := client.Validators(ctx, &(h), &(page), &perPage, &requestThresholdPublicKey)
 				require.NoError(t, err)
 				validators = append(validators, resp.Validators...)
+				if requestThresholdPublicKey {
+					thresholdPublicKey = *resp.ThresholdPublicKey
+				}
 				if len(validators) == resp.Total {
 					break
 				}
 			}
 			require.Equal(t, valSchedule.Set.Validators, validators,
 				"incorrect validator set at height %v", h)
+			require.Equal(t, valSchedule.Set.ThresholdPublicKey, thresholdPublicKey,
+				"incorrect thresholdPublicKey at height %v", h)
 			valSchedule.Increment(1)
 		}
 	})
@@ -127,12 +135,16 @@ type validatorSchedule struct {
 
 func newValidatorSchedule(testnet e2e.Testnet) *validatorSchedule {
 	valMap := testnet.Validators                  // genesis validators
+	thresholdPublicKey := testnet.ThresholdPublicKey
+	if thresholdPublicKey == nil {
+		panic("threshold public key must be set")
+	}
 	if v, ok := testnet.ValidatorUpdates[0]; ok { // InitChain validators
 		valMap = v
 	}
 	return &validatorSchedule{
 		height:  testnet.InitialHeight,
-		Set:     types.NewValidatorSet(makeVals(valMap)),
+		Set:     types.NewValidatorSet(makeVals(valMap), thresholdPublicKey),
 		updates: testnet.ValidatorUpdates,
 	}
 }
@@ -144,7 +156,7 @@ func (s *validatorSchedule) Increment(heights int64) {
 			// validator set updates are offset by 2, since they only take effect
 			// two blocks after they're returned.
 			if update, ok := s.updates[s.height-2]; ok {
-				if err := s.Set.UpdateWithChangeSet(makeVals(update)); err != nil {
+				if err := s.Set.UpdateWithChangeSet(makeVals(update), s.Set.ThresholdPublicKey); err != nil {
 					panic(err)
 				}
 			}
@@ -155,8 +167,8 @@ func (s *validatorSchedule) Increment(heights int64) {
 
 func makeVals(valMap map[*e2e.Node]int64) []*types.Validator {
 	vals := make([]*types.Validator, 0, len(valMap))
-	for node, power := range valMap {
-		vals = append(vals, types.NewValidator(node.Key.PubKey(), power, node.ProTxHash))
+	for node, _ := range valMap {
+		vals = append(vals, types.NewValidator(node.Key.PubKey(), node.ProTxHash))
 	}
 	return vals
 }

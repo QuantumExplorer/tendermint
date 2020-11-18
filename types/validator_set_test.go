@@ -165,12 +165,12 @@ func TestIncrementProposerPriorityPositiveTimes(t *testing.T) {
 
 func BenchmarkValidatorSetCopy(b *testing.B) {
 	b.StopTimer()
-	vset := NewValidatorSet([]*Validator{})
+	vset := NewValidatorSet([]*Validator{}, nil)
 	for i := 0; i < 1000; i++ {
 		privKey := bls12381.GenPrivKey()
 		pubKey := privKey.PubKey()
-		val := NewValidator(pubKey, 10, crypto.CRandBytes(32))
-		err := vset.UpdateWithChangeSet([]*Validator{val})
+		val := NewValidator(pubKey, crypto.ProTxHash{})
+		err := vset.UpdateWithChangeSet([]*Validator{val}, nil)
 		if err != nil {
 			panic("Failed to add validator")
 		}
@@ -385,7 +385,7 @@ func randPubKey() crypto.PubKey {
 func randValidator(totalVotingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/VotingPower to stay in the
 	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), int64(tmrand.Uint64()%uint64(MaxTotalVotingPower-totalVotingPower)), crypto.CRandBytes(32))
+	val := NewValidator(randPubKey(), crypto.RandProTxHash())
 	val.ProposerPriority = tmrand.Int64() % (MaxTotalVotingPower - totalVotingPower)
 	return val
 }
@@ -680,8 +680,8 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 		proTxHash = crypto.CRandBytes(crypto.DefaultHashSize)
 		privKey = bls12381.GenPrivKey()
 		pubKey  = privKey.PubKey()
-		v1      = NewValidator(pubKey, 1000, proTxHash)
-		vset    = NewValidatorSet([]*Validator{v1})
+		v1      = NewValidator(pubKey, proTxHash)
+		vset    = NewValidatorSet([]*Validator{v1}, nil)
 
 		chainID = "Lalande21185"
 	)
@@ -1548,7 +1548,7 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 		stateID                       = makeStateIDRandom()
 		voteSet, originalValset, vals = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
 		commit, err                   = MakeCommit(blockID, stateID, 1, 1, voteSet, vals)
-		newValSet, _                  = RandValidatorSet(2, 1)
+		newValSet, _                  = GenerateValidatorSet(2)
 	)
 	require.NoError(t, err)
 
@@ -1627,14 +1627,14 @@ func TestSafeMul(t *testing.T) {
 }
 
 func TestValidatorSetProtoBuf(t *testing.T) {
-	valset, _ := RandValidatorSet(10, 100)
-	valset2, _ := RandValidatorSet(10, 100)
+	valset, _ := GenerateValidatorSet(10)
+	valset2, _ := GenerateValidatorSet(10)
 	valset2.Validators[0] = &Validator{}
 
-	valset3, _ := RandValidatorSet(10, 100)
+	valset3, _ := GenerateValidatorSet(10)
 	valset3.Proposer = nil
 
-	valset4, _ := RandValidatorSet(10, 100)
+	valset4, _ := GenerateValidatorSet(10)
 	valset4.Proposer = &Validator{}
 
 	testCases := []struct {

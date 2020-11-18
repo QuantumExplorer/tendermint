@@ -142,10 +142,10 @@ func makeTxSearchFunc(c *lrpc.Client) rpcTxSearchFunc {
 }
 
 type rpcValidatorsFunc func(ctx *rpctypes.Context, height *int64,
-	page, perPage *int, requestThresholdPublicKey bool) (*ctypes.ResultValidators, error)
+	page, perPage *int, requestThresholdPublicKey *bool) (*ctypes.ResultValidators, error)
 
 func makeValidatorsFunc(c *lrpc.Client) rpcValidatorsFunc {
-	return func(ctx *rpctypes.Context, height *int64, page, perPage *int, requestThresholdPublicKey bool) (*ctypes.ResultValidators, error) {
+	return func(ctx *rpctypes.Context, height *int64, page, perPage *int, requestThresholdPublicKey *bool) (*ctypes.ResultValidators, error) {
 		return c.Validators(ctx.Context(), height, page, perPage, requestThresholdPublicKey)
 	}
 }
