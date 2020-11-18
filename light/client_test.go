@@ -2,7 +2,6 @@ package light_test
 
 import (
 	"context"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"sync"
 	"testing"

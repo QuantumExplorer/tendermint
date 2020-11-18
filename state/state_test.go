@@ -441,7 +441,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	val1PubKey := privateKeys[0].PubKey()
 	val1 := &types.Validator{ProTxHash: val1ProTxHash, Address: val1PubKey.Address(), PubKey: val1PubKey, VotingPower: val1VotingPower}
 
-	state.Validators = types.NewValidatorSet([]*types.Validator{val1}, nil)
+	state.Validators = types.NewValidatorSet([]*types.Validator{val1}, val1PubKey)
 	state.NextValidators = state.Validators
 
 	// NewValidatorSet calls IncrementProposerPriority but uses on a copy of val1
@@ -507,7 +507,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 
 	// Updating validators does not reset the ProposerPriority to zero:
 	// 1. Add - Val2 VotingPower change to 1 =>
-	abciValidatorUpdates, thresholdPublicKey := validatorUpdatesRegenerateOnProTxHashes(proTxHashes)
+	abciValidatorUpdates, thresholdPublicKey := types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciValidatorUpdates)
 	assert.NoError(t, err)
 
@@ -538,7 +538,7 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 
 	// 3. Center - noop
 	// 4. IncrementProposerPriority() ->
-	// v1(10):-9+10, v2(1):9+1 -> v2 proposer so subsract tvp(11)
+	// v1(10):-9+10, v2(1):9+1 -> v2 proposer so subtract tvp(11)
 	// v1(10):1, v2(1):-1
 	wantVal2Prio += updatedVal2.VotingPower // 10 -> prop
 	wantVal1Prio += updatedVal1.VotingPower // 1
@@ -959,7 +959,7 @@ func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
 	tearDown, stateDB, state := setupTestCase(t)
 	t.Cleanup(func() { tearDown(t) })
 	stateStore := sm.NewStore(stateDB)
-	state.Validators = types.GenerateValidatorSet(valSetSize)
+	state.Validators, _ = types.GenerateValidatorSet(valSetSize)
 	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
 	err := stateStore.Save(state)
 	require.NoError(t, err)
@@ -985,7 +985,7 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	defer tearDown(t)
 	stateStore := sm.NewStore(stateDB)
 	require.Equal(t, int64(0), state.LastBlockHeight)
-	state.Validators = types.GenerateValidatorSet(valSetSize)
+	state.Validators, _ = types.GenerateValidatorSet(valSetSize)
 	state.NextValidators = state.Validators.CopyIncrementProposerPriority(1)
 	err := stateStore.Save(state)
 	require.NoError(t, err)

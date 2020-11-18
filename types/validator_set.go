@@ -1187,6 +1187,27 @@ func GenerateGenesisValidators(numValidators int) ([]GenesisValidator, []PrivVal
 	return genesisValidators, privValidators, thresholdPublicKey
 }
 
+func GenerateMockGenesisValidators(numValidators int) ([]GenesisValidator, []MockPV, crypto.PubKey) {
+	var (
+		genesisValidators = make([]GenesisValidator, numValidators)
+		privValidators = make([]MockPV, numValidators)
+	)
+	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
+
+	for i := 0; i < numValidators; i++ {
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		genesisValidators[i] = GenesisValidator{
+			PubKey: privateKeys[i].PubKey(),
+			Power:  DefaultDashVotingPower,
+			ProTxHash: proTxHashes[i],
+		}
+	}
+
+	sort.Sort(MockPrivValidatorsByProTxHash(privValidators))
+
+	return genesisValidators, privValidators, thresholdPublicKey
+}
+
 func GenerateValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*ValidatorSet, []PrivValidator) {
 	numValidators := len(proTxHashes)
 	if numValidators < 2 {
