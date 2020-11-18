@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"bytes"
 	"context"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
@@ -355,6 +356,12 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	addProTxHash := crypto.RandProTxHash()
 	proTxHashes = append(proTxHashes, addProTxHash)
 	newVals, _ := types.GenerateValidatorSetUsingProTxHashes(proTxHashes)
+	var pos int
+	for i, proTxHash := range newVals.GetProTxHashes() {
+		if bytes.Equal(proTxHash.Bytes(),addProTxHash.Bytes()) {
+			pos = i
+		}
+	}
 
 	app.ValidatorUpdates = newVals.ABCIEquivalentValidatorUpdates()
 	if newVals.ThresholdPublicKey != nil {
@@ -379,7 +386,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		event, ok := msg.Data().(types.EventDataValidatorSetUpdates)
 		require.True(t, ok, "Expected event of type EventDataValidatorSetUpdates, got %T", msg.Data())
 		if assert.NotEmpty(t, event.ValidatorUpdates) {
-			assert.Equal(t, addProTxHash, event.ValidatorUpdates[1].ProTxHash)
+			assert.Equal(t, addProTxHash, event.ValidatorUpdates[pos].ProTxHash)
 			assert.EqualValues(t, types.DefaultDashVotingPower, event.ValidatorUpdates[1].VotingPower)
 		}
 	case <-updatesSub.Cancelled():

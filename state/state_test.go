@@ -708,10 +708,10 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 
 	oldState, err = sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
 	assert.NoError(t, err)
-	expectedVal1Prio2 = 1
-	expectedVal2Prio2 = -1
-	expectedVal1Prio = -9
-	expectedVal2Prio = 9
+	expectedVal1Prio2 = 13
+	expectedVal2Prio2 = -12
+	expectedVal1Prio = -87
+	expectedVal2Prio = 88
 
 	for i := 0; i < 1000; i++ {
 		// no validator updates:
@@ -759,7 +759,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	originalValidatorSet, _ := types.GenerateValidatorSet(4)
+	originalValidatorSet, _ := types.GenerateValidatorSet(1)
 	originalProTxHashes := originalValidatorSet.GetProTxHashes()
 	// reset state validators to above validator
 	state.Validators = originalValidatorSet
@@ -790,17 +790,17 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// no changes in voting power (ProposerPrio += VotingPower == Voting in 1st round; than shiftByAvg == 0,
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
-		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
+		assert.EqualValues(t, oldState.NextValidators.GetProTxHashesOrdered(), updatedState.NextValidators.GetProTxHashesOrdered())
 		assert.EqualValues(t, 0, updatedState.NextValidators.Proposer.ProposerPriority)
 
 		oldState = updatedState
 	}
-	// add another 4 validators, do a few iterations (create blocks),
-	// add more validators with same voting power as the 2nd
-	// let the genesis validator "unbond",
+	// add another validator, do a few iterations (create blocks),
+	// add more validators with same default voting power
+	// let the genesis validators "unbond",
 	// see how long it takes until the effect wears off and both begin to alternate
 	// see: https://github.com/tendermint/tendermint/issues/2960
-	addedProTxHashes := bls12381.CreateProTxHashes(4)
+	addedProTxHashes := bls12381.CreateProTxHashes(1)
 	proTxHashes := append(originalValidatorSet.GetProTxHashes(), addedProTxHashes...)
 	abciValidatorUpdates0, thresholdPublicKey0 :=  types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 
@@ -880,10 +880,10 @@ func TestLargeGenesisValidator(t *testing.T) {
 	privateKeys4, thresholdPublicKey4 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[1:])
 	var abciValidatorUpdates []abci.ValidatorUpdate
 	updatedPubKey, err := cryptoenc.PubKeyToProto(originalValidatorSet.Validators[0].PubKey)
-	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
+	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: 0, PubKey: updatedPubKey}
 	abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
 	for i := 1; i < len(proTxHashes); i++ {
-		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys4[i].PubKey())
+		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys4[i - 1].PubKey())
 		require.NoError(t, err)
 		updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[i], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
 		abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
