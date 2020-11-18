@@ -32,9 +32,9 @@ func TestABCIValidators(t *testing.T) {
 	proTxHash := crypto.CRandBytes(32)
 
 	// correct validator
-	tmValExpected := NewValidator(pkEd, 10, proTxHash)
+	tmValExpected := NewValidatorDefaultVotingPower(pkEd, proTxHash)
 
-	tmVal := NewValidator(pkEd, 10, proTxHash)
+	tmVal := NewValidatorDefaultVotingPower(pkEd, proTxHash)
 
 	abciVal := TM2PB.ValidatorUpdate(tmVal)
 	tmVals, err := PB2TM.ValidatorUpdates([]abci.ValidatorUpdate{abciVal})
@@ -75,7 +75,7 @@ func TestABCIEvidence(t *testing.T) {
 	}
 	abciEv := TM2PB.Evidence(
 		ev,
-		NewValidatorSet([]*Validator{NewValidator(pubKey, 10, val.ProTxHash)}),
+		NewValidatorSet([]*Validator{NewValidatorDefaultVotingPower(pubKey, val.ProTxHash)}),
 	)
 
 	assert.Equal(t, abci.EvidenceType_DUPLICATE_VOTE, abciEv.Type)
@@ -108,7 +108,7 @@ func TestABCIValidatorWithoutPubKey(t *testing.T) {
 	pkBLS := bls12381.GenPrivKey().PubKey()
 	proTxHash := crypto.CRandBytes(32)
 
-	abciVal := TM2PB.Validator(NewValidator(pkBLS, 10, proTxHash))
+	abciVal := TM2PB.Validator(NewValidatorDefaultVotingPower(pkBLS, proTxHash))
 
 	// pubkey must be nil
 	tmValExpected := abci.Validator{

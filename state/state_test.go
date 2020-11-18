@@ -363,7 +363,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 //			pubKey, err := privVal.GetPubKey()
 //			proTxHash := tmrand.Bytes(32)
 //			require.NoError(t, err)
-//			val := types.NewValidator(pubKey, votePower, proTxHash)
+//			val := types.NewValidatorDefaultVotingPower(pubKey, proTxHash)
 //			val.ProposerPriority = tmrand.Int64()
 //			vals[j] = val
 //		}
@@ -523,26 +523,32 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	_, updatedVal2 := updatedState3.NextValidators.GetByProTxHash(val2ProTxHash)
 
 	// 2. Scale
-	// old prios: v1(10):-38, v2(1):39
+	// old prios: v1(100):13, v2(100):-12
 	wantVal1Prio = prevVal1.ProposerPriority
 	wantVal2Prio = prevVal2.ProposerPriority
-	// scale to diffMax = 22 = 2 * tvp, diff=39-(-38)=77
+	// scale to diffMax = 400 = 2 * tvp, diff=13-(-12)=25
 	// new totalPower
 	totalPower := updatedVal1.VotingPower + updatedVal2.VotingPower
 	dist := wantVal2Prio - wantVal1Prio
-	// ratio := (dist + 2*totalPower - 1) / 2*totalPower = 98/22 = 4
-	ratio := (dist + 2*totalPower - 1) / (2 * totalPower)
-	// v1(10):-38/4, v2(1):39/4
-	wantVal1Prio /= ratio // -9
-	wantVal2Prio /= ratio // 9
+	if dist < 0 { //get the absolute distance
+		dist *= -1
+	}
+	// ratio := (dist + 2*totalPower - 1) / 2*totalPower = 224/200 = 1
+	ratio := int64(float64(dist + 2*totalPower - 1) / float64(2 * totalPower))
+	// v1(100):13/1, v2(100):-12/1
+	if ratio != 0 {
+		wantVal1Prio /= ratio // 13
+		wantVal2Prio /= ratio // -12
+	}
+
 
 	// 3. Center - noop
 	// 4. IncrementProposerPriority() ->
-	// v1(10):-9+10, v2(1):9+1 -> v2 proposer so subtract tvp(11)
-	// v1(10):1, v2(1):-1
-	wantVal2Prio += updatedVal2.VotingPower // 10 -> prop
-	wantVal1Prio += updatedVal1.VotingPower // 1
-	wantVal2Prio -= totalPower              // -1
+	// v1(100):13+100, v2(100):-12+100 -> v2 proposer so subtract tvp(11)
+	// v1(100):-87, v2(1):88
+	wantVal2Prio += updatedVal2.VotingPower // 88 -> prop
+	wantVal1Prio += updatedVal1.VotingPower // 113
+	wantVal1Prio -= totalPower              // -87
 
 	assert.Equal(t, wantVal2Prio, updatedVal2.ProposerPriority)
 	assert.Equal(t, wantVal1Prio, updatedVal1.ProposerPriority)

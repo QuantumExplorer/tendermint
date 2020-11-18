@@ -956,7 +956,7 @@ func (e ErrNotEnoughVotingPowerSigned) Error() string {
 func (vals *ValidatorSet) ABCIEquivalentValidatorUpdates() []abci.ValidatorUpdate {
 	var valUpdates []abci.ValidatorUpdate
 	for i := 0; i < len(vals.Validators) ; i++ {
-		valUpdate := TM2PB.NewValidatorUpdate(vals.Validators[0].PubKey, DefaultDashVotingPower, vals.Validators[0].ProTxHash)
+		valUpdate := TM2PB.NewValidatorUpdate(vals.Validators[i].PubKey, DefaultDashVotingPower, vals.Validators[i].ProTxHash)
 		valUpdates = append(valUpdates,valUpdate)
 	}
 	return valUpdates
@@ -1140,7 +1140,7 @@ func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
-		valz[i] = NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
+		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
 	}
 
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
@@ -1158,7 +1158,7 @@ func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []MockPV) {
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
-		valz[i] = NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
+		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
 	}
 
 	sort.Sort(MockPrivValidatorsByProTxHash(privValidators))
@@ -1221,7 +1221,7 @@ func GenerateValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*Vali
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
-		valz[i] = NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
+		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
 	}
 
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
@@ -1242,7 +1242,7 @@ func GenerateMockValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
-		valz[i] = NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
+		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
 	}
 
 	sort.Sort(MockPrivValidatorsByProTxHash(privValidators))

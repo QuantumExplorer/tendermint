@@ -61,7 +61,7 @@ func TestMsgToProto(t *testing.T) {
 	pv := types.NewMockPV()
 	pk, err := pv.GetPubKey()
 	require.NoError(t, err)
-	val := types.NewValidator(pk, pv.ProTxHash)
+	val := types.NewValidatorDefaultVotingPower(pk, pv.ProTxHash)
 
 	vote, err := types.MakeVote(
 		1, types.BlockID{}, types.StateID{}, &types.ValidatorSet{Proposer: val, Validators: []*types.Validator{val}},
