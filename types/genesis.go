@@ -63,7 +63,7 @@ func (genDoc *GenesisDoc) SaveAs(file string) error {
 func (genDoc *GenesisDoc) ValidatorHash() []byte {
 	vals := make([]*Validator, len(genDoc.Validators))
 	for i, v := range genDoc.Validators {
-		vals[i] = NewValidator(v.PubKey, v.ProTxHash)
+		vals[i] = NewValidatorDefaultVotingPower(v.PubKey, v.ProTxHash)
 	}
 	vset := NewValidatorSet(vals, genDoc.ThresholdPublicKey)
 	return vset.Hash()

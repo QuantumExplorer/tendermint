@@ -84,8 +84,8 @@ func (pv MockPV) SignVote(chainID string, vote *tmproto.Vote) error {
 
 	blockSignBytes := VoteBlockSignBytes(useChainID, vote)
 	stateSignBytes := VoteStateSignBytes(useChainID, vote)
-
 	blockSignature, err := pv.PrivKey.Sign(blockSignBytes)
+	//fmt.Printf("block sign bytes are %X by %X using key %X resulting in sig %X\n", blockSignBytes, pv.ProTxHash, pv.PrivKey.PubKey().Bytes(), blockSignature)
 	if err != nil {
 		return err
 	}
@@ -188,4 +188,20 @@ func (pvs MockPrivValidatorsByProTxHash) Less(i, j int) bool {
 
 func (pvs MockPrivValidatorsByProTxHash) Swap(i, j int) {
 	pvs[i], pvs[j] = pvs[j], pvs[i]
+}
+
+type GenesisValidatorsByProTxHash []GenesisValidator
+
+func (vs GenesisValidatorsByProTxHash) Len() int {
+	return len(vs)
+}
+
+func (vs GenesisValidatorsByProTxHash) Less(i, j int) bool {
+	pvi := vs[i].ProTxHash
+	pvj := vs[j].ProTxHash
+	return bytes.Compare(pvi, pvj) == -1
+}
+
+func (vs GenesisValidatorsByProTxHash) Swap(i, j int) {
+	vs[i], vs[j] = vs[j], vs[i]
 }

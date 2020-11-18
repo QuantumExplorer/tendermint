@@ -169,7 +169,7 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		privKey := bls12381.GenPrivKey()
 		pubKey := privKey.PubKey()
-		val := NewValidator(pubKey, crypto.ProTxHash{})
+		val := NewValidatorDefaultVotingPower(pubKey, crypto.ProTxHash{})
 		err := vset.UpdateWithChangeSet([]*Validator{val}, nil)
 		if err != nil {
 			panic("Failed to add validator")
@@ -385,7 +385,7 @@ func randPubKey() crypto.PubKey {
 func randValidator(totalVotingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/VotingPower to stay in the
 	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidator(randPubKey(), crypto.RandProTxHash())
+	val := NewValidatorDefaultVotingPower(randPubKey(), crypto.RandProTxHash())
 	val.ProposerPriority = tmrand.Int64() % (MaxTotalVotingPower - totalVotingPower)
 	return val
 }
@@ -680,7 +680,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 		proTxHash = crypto.CRandBytes(crypto.DefaultHashSize)
 		privKey = bls12381.GenPrivKey()
 		pubKey  = privKey.PubKey()
-		v1      = NewValidator(pubKey, proTxHash)
+		v1      = NewValidatorDefaultVotingPower(pubKey, proTxHash)
 		vset    = NewValidatorSet([]*Validator{v1}, nil)
 
 		chainID = "Lalande21185"

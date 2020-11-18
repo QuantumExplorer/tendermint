@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	bytes2 "bytes"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bytes"
 )
@@ -38,6 +39,20 @@ func ProTxHashFromSeedBytes(bz []byte) ProTxHash {
 
 func RandProTxHash() ProTxHash {
 	return ProTxHash(CRandBytes(32))
+}
+
+type SortProTxHash []ProTxHash
+
+func (sptxh SortProTxHash) Len() int {
+	return len(sptxh)
+}
+
+func (sptxh SortProTxHash) Less(i, j int) bool {
+	return bytes2.Compare(sptxh[i], sptxh[j]) == -1
+}
+
+func (sptxh SortProTxHash) Swap(i, j int) {
+	sptxh[i], sptxh[j] = sptxh[j], sptxh[i]
 }
 
 type PubKey interface {

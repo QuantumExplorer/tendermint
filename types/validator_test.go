@@ -47,7 +47,7 @@ func TestValidatorValidateBasic(t *testing.T) {
 		msg string
 	}{
 		{
-			val: NewValidator(pubKey, 1, priv.ProTxHash),
+			val: NewValidatorDefaultVotingPower(pubKey, priv.ProTxHash),
 			err: false,
 			msg: "",
 		},

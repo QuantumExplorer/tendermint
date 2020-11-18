@@ -262,7 +262,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 	var validatorUpdates []*types.Validator
 	var thresholdPublicKeyUpdate crypto.PubKey
 	var nextChainLock *types.ChainLock
-	testCases := make([]crypto.PubKey, highestHeight)
+	testCases := make([]crypto.PubKey, highestHeight - 1)
 
 	for i := int64(1); i < highestHeight; i++ {
 		// When we get to a change height, use the next pubkey.
@@ -363,7 +363,7 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 //			pubKey, err := privVal.GetPubKey()
 //			proTxHash := tmrand.Bytes(32)
 //			require.NoError(t, err)
-//			val := types.NewValidator(pubKey, votePower, proTxHash)
+//			val := types.NewValidatorDefaultVotingPower(pubKey, proTxHash)
 //			val.ProposerPriority = tmrand.Int64()
 //			vals[j] = val
 //		}
@@ -523,26 +523,32 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	_, updatedVal2 := updatedState3.NextValidators.GetByProTxHash(val2ProTxHash)
 
 	// 2. Scale
-	// old prios: v1(10):-38, v2(1):39
+	// old prios: v1(100):13, v2(100):-12
 	wantVal1Prio = prevVal1.ProposerPriority
 	wantVal2Prio = prevVal2.ProposerPriority
-	// scale to diffMax = 22 = 2 * tvp, diff=39-(-38)=77
+	// scale to diffMax = 400 = 2 * tvp, diff=13-(-12)=25
 	// new totalPower
 	totalPower := updatedVal1.VotingPower + updatedVal2.VotingPower
 	dist := wantVal2Prio - wantVal1Prio
-	// ratio := (dist + 2*totalPower - 1) / 2*totalPower = 98/22 = 4
-	ratio := (dist + 2*totalPower - 1) / (2 * totalPower)
-	// v1(10):-38/4, v2(1):39/4
-	wantVal1Prio /= ratio // -9
-	wantVal2Prio /= ratio // 9
+	if dist < 0 { //get the absolute distance
+		dist *= -1
+	}
+	// ratio := (dist + 2*totalPower - 1) / 2*totalPower = 224/200 = 1
+	ratio := int64(float64(dist + 2*totalPower - 1) / float64(2 * totalPower))
+	// v1(100):13/1, v2(100):-12/1
+	if ratio != 0 {
+		wantVal1Prio /= ratio // 13
+		wantVal2Prio /= ratio // -12
+	}
+
 
 	// 3. Center - noop
 	// 4. IncrementProposerPriority() ->
-	// v1(10):-9+10, v2(1):9+1 -> v2 proposer so subtract tvp(11)
-	// v1(10):1, v2(1):-1
-	wantVal2Prio += updatedVal2.VotingPower // 10 -> prop
-	wantVal1Prio += updatedVal1.VotingPower // 1
-	wantVal2Prio -= totalPower              // -1
+	// v1(100):13+100, v2(100):-12+100 -> v2 proposer so subtract tvp(11)
+	// v1(100):-87, v2(1):88
+	wantVal2Prio += updatedVal2.VotingPower // 88 -> prop
+	wantVal1Prio += updatedVal1.VotingPower // 113
+	wantVal1Prio -= totalPower              // -87
 
 	assert.Equal(t, wantVal2Prio, updatedVal2.ProposerPriority)
 	assert.Equal(t, wantVal1Prio, updatedVal1.ProposerPriority)
@@ -702,10 +708,10 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 
 	oldState, err = sm.UpdateState(oldState, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
 	assert.NoError(t, err)
-	expectedVal1Prio2 = 1
-	expectedVal2Prio2 = -1
-	expectedVal1Prio = -9
-	expectedVal2Prio = 9
+	expectedVal1Prio2 = 13
+	expectedVal2Prio2 = -12
+	expectedVal1Prio = -87
+	expectedVal2Prio = 88
 
 	for i := 0; i < 1000; i++ {
 		// no validator updates:
@@ -753,7 +759,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	originalValidatorSet, _ := types.GenerateValidatorSet(4)
+	originalValidatorSet, _ := types.GenerateValidatorSet(1)
 	originalProTxHashes := originalValidatorSet.GetProTxHashes()
 	// reset state validators to above validator
 	state.Validators = originalValidatorSet
@@ -784,17 +790,17 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// no changes in voting power (ProposerPrio += VotingPower == Voting in 1st round; than shiftByAvg == 0,
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
-		assert.EqualValues(t, oldState.NextValidators, updatedState.NextValidators)
+		assert.EqualValues(t, oldState.NextValidators.GetProTxHashesOrdered(), updatedState.NextValidators.GetProTxHashesOrdered())
 		assert.EqualValues(t, 0, updatedState.NextValidators.Proposer.ProposerPriority)
 
 		oldState = updatedState
 	}
-	// add another 4 validators, do a few iterations (create blocks),
-	// add more validators with same voting power as the 2nd
-	// let the genesis validator "unbond",
+	// add another validator, do a few iterations (create blocks),
+	// add more validators with same default voting power
+	// let the genesis validators "unbond",
 	// see how long it takes until the effect wears off and both begin to alternate
 	// see: https://github.com/tendermint/tendermint/issues/2960
-	addedProTxHashes := bls12381.CreateProTxHashes(4)
+	addedProTxHashes := bls12381.CreateProTxHashes(1)
 	proTxHashes := append(originalValidatorSet.GetProTxHashes(), addedProTxHashes...)
 	abciValidatorUpdates0, thresholdPublicKey0 :=  types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 
@@ -874,10 +880,10 @@ func TestLargeGenesisValidator(t *testing.T) {
 	privateKeys4, thresholdPublicKey4 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[1:])
 	var abciValidatorUpdates []abci.ValidatorUpdate
 	updatedPubKey, err := cryptoenc.PubKeyToProto(originalValidatorSet.Validators[0].PubKey)
-	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
+	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: 0, PubKey: updatedPubKey}
 	abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
 	for i := 1; i < len(proTxHashes); i++ {
-		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys4[i].PubKey())
+		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys4[i - 1].PubKey())
 		require.NoError(t, err)
 		updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[i], Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
 		abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)

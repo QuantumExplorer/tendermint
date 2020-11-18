@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
 	memmock "github.com/tendermint/tendermint/mempool/mock"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"

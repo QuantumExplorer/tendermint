@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"bytes"
 	"context"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
@@ -234,7 +235,8 @@ func TestUpdateValidators(t *testing.T) {
 	combinedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(combinedProTxHashes)
 	regeneratedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(combinedProTxHashes)
 	abciRegeneratedValidatorUpdates := regeneratedValidatorSet.ABCIEquivalentValidatorUpdates()
-	removedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(combinedProTxHashes[0:len(combinedProTxHashes)-1]) //size 6
+	removedProTxHashes := combinedValidatorSet.GetProTxHashes()[0:len(combinedProTxHashes)-2] //these are sorted
+	removedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(removedProTxHashes) //size 6
 	abciRemovalValidatorUpdates := removedValidatorSet.ABCIEquivalentValidatorUpdates()
 	abciRemovalValidatorUpdates = append(abciRemovalValidatorUpdates,abciRegeneratedValidatorUpdates[6:]...)
 	abciRemovalValidatorUpdates[6].Power = 0
@@ -349,21 +351,32 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	block := makeBlock(state, 1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-	proTxHash := crypto.CRandBytes(32)
-	pubkey := bls12381.GenPrivKey().PubKey()
-	pk, err := cryptoenc.PubKeyToProto(pubkey)
-	require.NoError(t, err)
-	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{PubKey: pk, Power: 10, ProTxHash: proTxHash},
+	vals := state.Validators
+	proTxHashes := vals.GetProTxHashes()
+	addProTxHash := crypto.RandProTxHash()
+	proTxHashes = append(proTxHashes, addProTxHash)
+	newVals, _ := types.GenerateValidatorSetUsingProTxHashes(proTxHashes)
+	var pos int
+	for i, proTxHash := range newVals.GetProTxHashes() {
+		if bytes.Equal(proTxHash.Bytes(),addProTxHash.Bytes()) {
+			pos = i
+		}
+	}
+
+	app.ValidatorUpdates = newVals.ABCIEquivalentValidatorUpdates()
+	if newVals.ThresholdPublicKey != nil {
+		abciThresholdPublicKeyUpdate, err := cryptoenc.PubKeyToProto(newVals.ThresholdPublicKey)
+		require.NoError(t, err)
+		app.ThresholdPublicKeyUpdate = &abciThresholdPublicKeyUpdate
 	}
 
 	state, _, err = blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
 	// test new validator was added to NextValidators
 	if assert.Equal(t, state.Validators.Size()+1, state.NextValidators.Size()) {
-		idx, _ := state.NextValidators.GetByProTxHash(proTxHash)
+		idx, _ := state.NextValidators.GetByProTxHash(addProTxHash)
 		if idx < 0 {
-			t.Fatalf("can't find address %v in the set %v", pubkey.Address(), state.NextValidators)
+			t.Fatalf("can't find proTxHash %v in the set %v", addProTxHash, state.NextValidators)
 		}
 	}
 
@@ -373,8 +386,8 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		event, ok := msg.Data().(types.EventDataValidatorSetUpdates)
 		require.True(t, ok, "Expected event of type EventDataValidatorSetUpdates, got %T", msg.Data())
 		if assert.NotEmpty(t, event.ValidatorUpdates) {
-			assert.Equal(t, pubkey, event.ValidatorUpdates[0].PubKey)
-			assert.EqualValues(t, 10, event.ValidatorUpdates[0].VotingPower)
+			assert.Equal(t, addProTxHash, event.ValidatorUpdates[pos].ProTxHash)
+			assert.EqualValues(t, types.DefaultDashVotingPower, event.ValidatorUpdates[1].VotingPower)
 		}
 	case <-updatesSub.Cancelled():
 		t.Fatalf("updatesSub was cancelled (reason: %v)", updatesSub.Err())
@@ -409,10 +422,16 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 
 	proTxHash := state.Validators.Validators[0].ProTxHash
 	require.NoError(t, err)
+	publicKey, err := cryptoenc.PubKeyToProto(bls12381.GenPrivKey().PubKey())
+	require.NoError(t, err)
 	// Remove the only validator
 	app.ValidatorUpdates = []abci.ValidatorUpdate{
-		{ProTxHash: proTxHash, Power: 0},
+		{PubKey:publicKey, ProTxHash: proTxHash, Power: 0},
 	}
+
+	abciThresholdPublicKeyUpdate, err := cryptoenc.PubKeyToProto(state.Validators.ThresholdPublicKey)
+	require.NoError(t, err)
+	app.ThresholdPublicKeyUpdate = &abciThresholdPublicKeyUpdate
 
 	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })
 	assert.NotNil(t, err)

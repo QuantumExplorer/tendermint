@@ -24,15 +24,16 @@ type Validator struct {
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
+func NewValidatorDefaultVotingPower(pubKey crypto.PubKey, proTxHash []byte) *Validator {
+	return NewValidator(pubKey, DefaultDashVotingPower, proTxHash)
+}
+
 // NewValidator returns a new validator with the given pubkey and voting power.
-func NewValidator(pubKey crypto.PubKey, proTxHash []byte) *Validator {
-	if len(proTxHash) != 32 {
-		panic("proTxHash wrong length")
-	}
+func NewValidator(pubKey crypto.PubKey, votingPower int64,  proTxHash []byte) *Validator {
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
-		VotingPower:      DefaultDashVotingPower,
+		VotingPower:      votingPower,
 		ProposerPriority: 0,
 		ProTxHash:        proTxHash,
 	}
@@ -204,6 +205,6 @@ func RandValidator() (*Validator, PrivValidator) {
 	if err != nil {
 		panic(fmt.Errorf("could not retrieve pubkey %w", err))
 	}
-	val := NewValidator(pubKey, proTxHash)
+	val := NewValidatorDefaultVotingPower(pubKey, proTxHash)
 	return val, privVal
 }

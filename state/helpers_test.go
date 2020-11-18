@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -95,6 +96,7 @@ func makeTxs(height int64) (txs []types.Tx) {
 func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValidator) {
 	privValsByProTxHash := make(map[string]types.PrivValidator, nVals)
 	vals, privVals, thresholdPublicKey := types.GenerateMockGenesisValidators(nVals)
+	//vals and privals are sorted
 	for i := 0; i < nVals; i++ {
 		vals[i].Name = fmt.Sprintf("test%d", i)
 		proTxHash := vals[i].ProTxHash
@@ -220,6 +222,7 @@ type testApp struct {
 	CommitVotes         []abci.VoteInfo
 	ByzantineValidators []abci.Evidence
 	ValidatorUpdates    []abci.ValidatorUpdate
+	ThresholdPublicKeyUpdate *crypto2.PublicKey
 }
 
 var _ abci.Application = (*testApp)(nil)
@@ -237,6 +240,7 @@ func (app *testApp) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlo
 func (app *testApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return abci.ResponseEndBlock{
 		ValidatorUpdates: app.ValidatorUpdates,
+		ThresholdPublicKey: app.ThresholdPublicKeyUpdate,
 		ConsensusParamUpdates: &abci.ConsensusParams{
 			Version: &tmproto.VersionParams{
 				AppVersion: 1}}}

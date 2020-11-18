@@ -303,9 +303,9 @@ func (h *Handshaker) ReplayBlocks(
 	if appBlockHeight == 0 {
 		validators := make([]*types.Validator, len(h.genDoc.Validators))
 		for i, val := range h.genDoc.Validators {
-			validators[i] = types.NewValidator(val.PubKey, val.Power, val.ProTxHash)
+			validators[i] = types.NewValidatorDefaultVotingPower(val.PubKey, val.ProTxHash)
 		}
-		validatorSet := types.NewValidatorSet(validators)
+		validatorSet := types.NewValidatorSet(validators, h.genDoc.ThresholdPublicKey)
 		nextVals := types.TM2PB.ValidatorUpdates(validatorSet)
 		csParams := types.TM2PB.ConsensusParams(h.genDoc.ConsensusParams)
 		req := abci.RequestInitChain{
