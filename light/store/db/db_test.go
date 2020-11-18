@@ -171,7 +171,7 @@ func Test_Concurrency(t *testing.T) {
 }
 
 func randLightBlock(height int64) *types.LightBlock {
-	vals, _ := types.GenerateValidatorSet(2, 1)
+	vals, _ := types.GenerateValidatorSet(2)
 	return &types.LightBlock{
 		SignedHeader: &types.SignedHeader{
 			Header: &types.Header{

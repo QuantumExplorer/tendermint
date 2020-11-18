@@ -651,7 +651,7 @@ func (vals *ValidatorSet) updateWithChangeSet(changes []*Validator, allowDeletes
 	}
 
 	if newThresholdPublicKey == nil {
-		return errors.New("applying the validator changes would result in empty set")
+		return errors.New("the threshold public key can not be nil")
 	}
 
 	// Check for duplicates within changes, split in 'updates' and 'deletes' lists (sorted).
@@ -1143,6 +1143,24 @@ func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }
 
+func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []MockPV) {
+	var (
+		valz           = make([]*Validator, numValidators)
+		privValidators = make([]MockPV, numValidators)
+	)
+	threshold := numValidators * 2 / 3 + 1
+	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQData(numValidators, threshold)
+
+	for i := 0; i < numValidators; i++ {
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		valz[i] = NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
+	}
+
+	sort.Sort(MockPrivValidatorsByProTxHash(privValidators))
+
+	return NewValidatorSet(valz, thresholdPublicKey), privValidators
+}
+
 func GenerateGenesisValidators(numValidators int) ([]GenesisValidator, []PrivValidator, crypto.PubKey) {
 	var (
 		genesisValidators = make([]GenesisValidator, numValidators)
@@ -1181,6 +1199,27 @@ func GenerateValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*Vali
 	}
 
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
+
+	return NewValidatorSet(valz, thresholdPublicKey), privValidators
+}
+
+func GenerateMockValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*ValidatorSet, []MockPV) {
+	numValidators := len(proTxHashes)
+	if numValidators < 2 {
+		panic("there should be at least 2 validators")
+	}
+	var (
+		valz           = make([]*Validator, numValidators)
+		privValidators = make([]MockPV, numValidators)
+	)
+	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
+
+	for i := 0; i < numValidators; i++ {
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		valz[i] = NewValidator(privateKeys[i].PubKey(), proTxHashes[i])
+	}
+
+	sort.Sort(MockPrivValidatorsByProTxHash(privValidators))
 
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }

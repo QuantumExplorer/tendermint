@@ -65,11 +65,15 @@ const (
 			"type": "tendermint/PubKeyBLS12381",
 			"value": "F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
 		},
-		"power": "10",
+		"power": "100",
 		"name": "",
 		"pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 		}
 	],
+    "threshold_public_key": {
+		"type": "tendermint/PubKeyBLS12381",
+        "value": "F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
+    },
 	"app_hash": ""
 }`
 

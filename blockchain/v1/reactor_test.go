@@ -244,7 +244,7 @@ func TestFastSyncBadBlockStopsPeer(t *testing.T) {
 
 	config = cfg.ResetTestRoot("blockchain_reactor_test")
 	defer os.RemoveAll(config.RootDir)
-	genDoc, privVals := randGenesisDoc(4)
+	genDoc, privVals := randGenesisDoc(1)
 
 	otherChain := newBlockchainReactorPair(t, log.TestingLogger(), genDoc, privVals, maxBlockHeight)
 	defer func() {

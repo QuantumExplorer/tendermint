@@ -753,7 +753,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	originalValidatorSet := types.GenerateValidatorSet(4)
+	originalValidatorSet, _ := types.GenerateValidatorSet(4)
 	originalProTxHashes := originalValidatorSet.GetProTxHashes()
 	// reset state validators to above validator
 	state.Validators = originalValidatorSet
@@ -796,7 +796,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// see: https://github.com/tendermint/tendermint/issues/2960
 	addedProTxHashes := bls12381.CreateProTxHashes(4)
 	proTxHashes := append(originalValidatorSet.GetProTxHashes(), addedProTxHashes...)
-	abciValidatorUpdates0, thresholdPublicKey0 := validatorUpdatesRegenerateOnProTxHashes(proTxHashes)
+	abciValidatorUpdates0, thresholdPublicKey0 :=  types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 
 	abciThresholdPublicKey0, err := cryptoenc.PubKeyToProto(thresholdPublicKey0)
 	require.NoError(t, err)

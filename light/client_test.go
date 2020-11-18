@@ -25,10 +25,12 @@ const (
 	chainID = "test"
 )
 
+
+
 var (
+	vals, privVals = types.GenerateMockValidatorSet(4)
+	keys     = exposeMockPVKeys(privVals)
 	ctx      = context.Background()
-	keys     = genPrivKeys(4, crypto.BLS12381)
-	vals     = keys.ToValidators(20, 10)
 	bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	h1       = keys.GenSignedHeader(chainID, 1, bTime, nil, vals, vals,
 		hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
@@ -256,14 +258,21 @@ func TestClient_SequentialVerification(t *testing.T) {
 
 func TestClient_SkippingVerification(t *testing.T) {
 	// required for 2nd test case
-	newVals, newPVals := types.GenerateValidatorSet(4)
+	newVals, newPVals := types.GenerateMockValidatorSet(4)
+	var newPrivKeys privKeys
+	for _, pVal := range newPVals {
+		newPrivKeys = append(newPrivKeys, pVal.PrivKey)
+	}
     newValsProTxHashes := newVals.GetProTxHashes()
 
 	// 1/3+ of vals, 2/3- of newVals
 	transitExtraProTxHashes := bls12381.CreateProTxHashes(3)
 	transitProTxHashes := append(newValsProTxHashes,transitExtraProTxHashes...)
-	transitVals, transitPVals := types.GenerateValidatorSetUsingProTxHashes(transitProTxHashes)
-
+	transitVals, transitPVals := types.GenerateMockValidatorSetUsingProTxHashes(transitProTxHashes)
+	var transitPrivKeys privKeys
+	for _, pVal := range transitPVals {
+		transitPrivKeys = append(transitPrivKeys, pVal.PrivKey)
+	}
 
 	testCases := []struct {
 		name         string
@@ -289,8 +298,8 @@ func TestClient_SkippingVerification(t *testing.T) {
 			map[int64]*types.SignedHeader{
 				// trusted header
 				1: h1,
-				3: transitKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, transitVals, transitVals,
-					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(transitKeys)),
+				3: transitPrivKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, transitVals, transitVals,
+					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(transitPrivKeys)),
 			},
 			map[int64]*types.ValidatorSet{
 				1: vals,
@@ -309,8 +318,8 @@ func TestClient_SkippingVerification(t *testing.T) {
 				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, vals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
 				// last header (0/4 of the original val set signed)
-				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVals, newVals,
-					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newKeys)),
+				3: newPrivKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVals, newVals,
+					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newPrivKeys)),
 			},
 			map[int64]*types.ValidatorSet{
 				1: vals,
@@ -329,8 +338,8 @@ func TestClient_SkippingVerification(t *testing.T) {
 				2: keys.GenSignedHeader(chainID, 2, bTime.Add(1*time.Hour), nil, vals, newVals,
 					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, 0),
 				// last header (0/4 of the original val set signed)
-				3: newKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVals, newVals,
-					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newKeys)),
+				3: newPrivKeys.GenSignedHeader(chainID, 3, bTime.Add(2*time.Hour), nil, newVals, newVals,
+					hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(newPrivKeys)),
 			},
 			map[int64]*types.ValidatorSet{
 				1: vals,
@@ -972,7 +981,7 @@ func TestClientRemovesWitnessIfItSendsUsIncorrectHeader(t *testing.T) {
 }
 
 func TestClient_TrustedValidatorSet(t *testing.T) {
-	differentVals, _ := types.GenerateValidatorSet(10, 100)
+	differentVals, _ := types.GenerateValidatorSet(10)
 	badValSetNode := mockp.New(
 		chainID,
 		map[int64]*types.SignedHeader{
