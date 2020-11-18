@@ -755,16 +755,15 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	}
 }
 
-func TestLargeGenesisValidator(t *testing.T) {
+func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 	tearDown, _, state := setupTestCase(t)
 	defer tearDown(t)
 
-	originalValidatorSet, _ := types.GenerateValidatorSet(1)
-	originalProTxHashes := originalValidatorSet.GetProTxHashes()
+	originalValidatorSet, _ := types.GenerateValidatorSet(4)
 	// reset state validators to above validator
 	state.Validators = originalValidatorSet
 	state.NextValidators = originalValidatorSet
-	require.True(t, len(state.Validators.Validators) == 1)
+	require.True(t, len(state.Validators.Validators) == 4)
 
 	// update state a few times with no validator updates
 	// asserts that the single validator's ProposerPrio stays the same
@@ -791,16 +790,11 @@ func TestLargeGenesisValidator(t *testing.T) {
 		// than -Total == -Voting)
 		// -> no change in ProposerPrio (stays zero):
 		assert.EqualValues(t, oldState.NextValidators.GetProTxHashesOrdered(), updatedState.NextValidators.GetProTxHashesOrdered())
-		assert.EqualValues(t, 0, updatedState.NextValidators.Proposer.ProposerPriority)
 
 		oldState = updatedState
 	}
-	// add another validator, do a few iterations (create blocks),
-	// add more validators with same default voting power
-	// let the genesis validators "unbond",
-	// see how long it takes until the effect wears off and both begin to alternate
-	// see: https://github.com/tendermint/tendermint/issues/2960
-	addedProTxHashes := bls12381.CreateProTxHashes(1)
+
+	addedProTxHashes := bls12381.CreateProTxHashes(4)
 	proTxHashes := append(originalValidatorSet.GetProTxHashes(), addedProTxHashes...)
 	abciValidatorUpdates0, thresholdPublicKey0 :=  types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 
@@ -843,13 +837,6 @@ func TestLargeGenesisValidator(t *testing.T) {
 	// set oldState to state before above iteration
 	oldState = updatedState
 
-	_, oldGenesisVal := oldState.NextValidators.GetByProTxHash(originalProTxHashes[0])
-	_, newGenesisVal := state.NextValidators.GetByProTxHash(originalProTxHashes[0])
-	_, addedOldVal := oldState.NextValidators.GetByProTxHash(addedProTxHashes[0])
-	_, addedNewVal := state.NextValidators.GetByProTxHash(addedProTxHashes[0])
-	// expect large negative proposer priority for both (genesis validator decreased, 2nd validator increased):
-	assert.True(t, oldGenesisVal.ProposerPriority > newGenesisVal.ProposerPriority)
-	assert.True(t, addedOldVal.ProposerPriority < addedNewVal.ProposerPriority)
 
 	// add 10 validators with the same voting power as the one added directly after genesis:
 	for i := 0; i < 10; i++ {
@@ -874,7 +861,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		state, err = sm.UpdateState(state, blockID, &block.Header, block.ChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey3)
 		require.NoError(t, err)
 	}
-	require.Equal(t, 10+2, len(state.NextValidators.Validators))
+	require.Equal(t, 18, len(state.NextValidators.Validators))
 
 	// remove one genesis validator:
 	privateKeys4, thresholdPublicKey4 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[1:])
@@ -902,7 +889,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	updatedState, err = sm.UpdateState(state, blockID, &block.Header, block.ChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey4)
 	require.NoError(t, err)
 	// only the first added val (not the genesis val) should be left
-	assert.Equal(t, 11, len(updatedState.NextValidators.Validators))
+	assert.Equal(t, 17, len(updatedState.NextValidators.Validators))
 
 	// call update state until the effect for the 3rd added validator
 	// being proposer for a long time after the genesis validator left wears off:
@@ -998,8 +985,8 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 
 
 	_, val0 := state.Validators.GetByIndex(0)
-	var proTxHashOld = val0.ProTxHash //this is not really old, as it stays the same
-	pubkey := bls12381.GenPrivKey().PubKey()
+	proTxHash := val0.ProTxHash //this is not really old, as it stays the same
+	oldPubkey := val0.PubKey
 
 	// Swap the first validator with a new one (validator set size stays the same).
 	header, chainLock, blockID, responses := makeHeaderPartsResponsesValKeysRegenerate(state, true)
@@ -1018,12 +1005,20 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	err = stateStore.Save(state)
 	require.NoError(t, err)
 
+	var newPubkey crypto.PubKey
+	for _, valUpdate := range validatorUpdates {
+		if bytes.Equal(valUpdate.ProTxHash.Bytes(),proTxHash.Bytes()) {
+			newPubkey = valUpdate.PubKey
+		}
+	}
+
 	// Load nextheight, it should be the oldpubkey.
 	v0, err := stateStore.LoadValidators(nextHeight)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v0.Size())
-	index, val := v0.GetByProTxHash(proTxHashOld)
+	index, val := v0.GetByProTxHash(proTxHash)
 	assert.NotNil(t, val)
+	assert.Equal(t, val.PubKey, oldPubkey, "the public key should match the old public key")
 	if index < 0 {
 		t.Fatal("expected to find old validator")
 	}
@@ -1032,8 +1027,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 	v1, err := stateStore.LoadValidators(nextHeight + 1)
 	assert.Nil(t, err)
 	assert.Equal(t, valSetSize, v1.Size())
-	index, val = v1.GetByAddress(pubkey.Address())
+	index, val = v1.GetByProTxHash(proTxHash)
 	assert.NotNil(t, val)
+	assert.Equal(t, val.PubKey, newPubkey, "the public key should match the regenerated public key")
 	if index < 0 {
 		t.Fatal("expected to find same validator by new address")
 	}
