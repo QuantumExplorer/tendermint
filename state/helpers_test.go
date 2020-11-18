@@ -93,25 +93,17 @@ func makeTxs(height int64) (txs []types.Tx) {
 }
 
 func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValidator) {
-	vals := make([]types.GenesisValidator, nVals)
-	privVals := make(map[string]types.PrivValidator, nVals)
+	privValsByProTxHash := make(map[string]types.PrivValidator, nVals)
+	vals, privVals, thresholdPublicKey := types.GenerateMockGenesisValidators(nVals)
 	for i := 0; i < nVals; i++ {
-		secret := []byte(fmt.Sprintf("test%d", i))
-		pk := bls12381.GenPrivKeyFromSecret(secret)
-		valAddr := pk.PubKey().Address()
-		proTxHash := crypto.RandProTxHash()
-		vals[i] = types.GenesisValidator{
-			Address: valAddr,
-			PubKey:  pk.PubKey(),
-			Power:   1000,
-			Name:    fmt.Sprintf("test%d", i),
-			ProTxHash: proTxHash,
-		}
-		privVals[proTxHash.String()] = types.NewMockPVWithParams(pk, proTxHash, false, false)
+		vals[i].Name = fmt.Sprintf("test%d", i)
+		proTxHash := vals[i].ProTxHash
+		privValsByProTxHash[proTxHash.String()] = types.NewMockPVWithParams(privVals[i].PrivKey, vals[i].ProTxHash, false, false)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
 		ChainID:    chainID,
 		Validators: vals,
+		ThresholdPublicKey: thresholdPublicKey,
 		AppHash:    nil,
 	})
 
@@ -129,7 +121,7 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 		}
 	}
 
-	return s, stateDB, privVals
+	return s, stateDB, privValsByProTxHash
 }
 
 func makeBlock(state sm.State, height int64) *types.Block {
@@ -151,7 +143,7 @@ func makeHeaderPartsResponsesValKeysRegenerate(state sm.State, regenerate bool) 
 	}
 	if regenerate == true {
 		proTxHashes := state.Validators.GetProTxHashes()
-		valUpdates, thresholdPublicKey := validatorUpdatesRegenerateOnProTxHashes(proTxHashes)
+		valUpdates, thresholdPublicKey := types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 		abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(thresholdPublicKey)
 		if err != nil {
 			panic(err)

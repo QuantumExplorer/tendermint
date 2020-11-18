@@ -1053,6 +1053,10 @@ func (vals *ValidatorSet) ToProto() (*tmproto.ValidatorSet, error) {
 
 	vp.TotalVotingPower = vals.totalVotingPower
 
+	if vals.ThresholdPublicKey == nil {
+		return nil, fmt.Errorf("thresholdPublicKey is not set")
+	}
+
 	thresholdPublicKey, err := cryptoenc.PubKeyToProto(vals.ThresholdPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("toProto: thresholdPublicKey error: %w", err)
@@ -1179,6 +1183,27 @@ func GenerateGenesisValidators(numValidators int) ([]GenesisValidator, []PrivVal
 	}
 
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
+
+	return genesisValidators, privValidators, thresholdPublicKey
+}
+
+func GenerateMockGenesisValidators(numValidators int) ([]GenesisValidator, []MockPV, crypto.PubKey) {
+	var (
+		genesisValidators = make([]GenesisValidator, numValidators)
+		privValidators = make([]MockPV, numValidators)
+	)
+	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
+
+	for i := 0; i < numValidators; i++ {
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		genesisValidators[i] = GenesisValidator{
+			PubKey: privateKeys[i].PubKey(),
+			Power:  DefaultDashVotingPower,
+			ProTxHash: proTxHashes[i],
+		}
+	}
+
+	sort.Sort(MockPrivValidatorsByProTxHash(privValidators))
 
 	return genesisValidators, privValidators, thresholdPublicKey
 }

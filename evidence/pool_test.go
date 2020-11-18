@@ -148,13 +148,13 @@ func TestAddEvidenceFromConsensus(t *testing.T) {
 	pool, val := defaultTestPool(height)
 	ev := types.NewMockDuplicateVoteEvidenceWithValidator(height, defaultEvidenceTime, val, evidenceChainID)
 	err := pool.AddEvidenceFromConsensus(ev, defaultEvidenceTime,
-		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(2)}, val.PrivKey.PubKey()))
+		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator()}, val.PrivKey.PubKey()))
 	assert.NoError(t, err)
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 	// shouldn't be able to submit the same evidence twice
 	err = pool.AddEvidenceFromConsensus(ev, defaultEvidenceTime.Add(-1*time.Second),
-		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(3)}, val.PrivKey.PubKey()))
+		types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator()}, val.PrivKey.PubKey()))
 	if assert.Error(t, err) {
 		assert.Equal(t, "evidence already verified and added", err.Error())
 	}
@@ -194,10 +194,10 @@ func TestEvidencePoolUpdate(t *testing.T) {
 	expectedByzVals := []abci.Evidence{
 		{
 			Type:             abci.EvidenceType_DUPLICATE_VOTE,
-			Validator:        types.TM2PB.Validator(val.ExtractIntoValidator(10)),
+			Validator:        types.TM2PB.Validator(val.ExtractIntoValidator()),
 			Height:           height,
 			Time:             defaultEvidenceTime.Add(time.Duration(height) * time.Minute),
-			TotalVotingPower: 10,
+			TotalVotingPower: 100,
 		},
 	}
 	assert.Equal(t, expectedByzVals, byzVals)
@@ -399,18 +399,18 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 }
 
 func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Store {
-
 	pubKey, _ := privVal.GetPubKey()
     proTxHash, _ := privVal.GetProTxHash()
     if len(proTxHash) != 32 {
     	panic("proTxHash len not correct")
 	}
-	validator := &types.Validator{Address: pubKey.Address(), VotingPower: 10, PubKey: pubKey, ProTxHash: proTxHash}
+	validator := &types.Validator{Address: pubKey.Address(), VotingPower: types.DefaultDashVotingPower, PubKey: pubKey, ProTxHash: proTxHash}
 
 	// create validator set and state
 	valSet := &types.ValidatorSet{
 		Validators: []*types.Validator{validator},
 		Proposer:   validator,
+		ThresholdPublicKey: validator.PubKey,
 	}
 
 	return initializeStateFromValidatorSet(valSet, height)

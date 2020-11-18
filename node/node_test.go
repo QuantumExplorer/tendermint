@@ -407,22 +407,14 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 }
 
 func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
-	privVals := make([]types.PrivValidator, nVals)
-	vals := make([]types.GenesisValidator, nVals)
+	vals, privVals, thresholdPublicKey := types.GenerateGenesisValidators(nVals)
 	for i := 0; i < nVals; i++ {
-		privVal := types.NewMockPV()
-		privVals[i] = privVal
-		vals[i] = types.GenesisValidator{
-			Address: privVal.PrivKey.PubKey().Address(),
-			PubKey:  privVal.PrivKey.PubKey(),
-			Power:   1000,
-			ProTxHash: privVal.ProTxHash,
-			Name:    fmt.Sprintf("test%d", i),
-		}
+		vals[i].Name = fmt.Sprintf("test%d", i)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
 		ChainID:    "test-chain",
 		Validators: vals,
+		ThresholdPublicKey: thresholdPublicKey,
 		AppHash:    nil,
 	})
 
