@@ -24,13 +24,12 @@ import (
 )
 
 func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
-	commonVals, _ :=
-
-	newVal, newPrivVal := types.RandValidator()
 
 	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(3)
 
-	commonVals := conflictingVals[0:2]
+	commonVals := types.NewValidatorSet(conflictingVals.Validators[0:2], conflictingVals.ThresholdPublicKey)
+
+	newPrivVal := conflictingPrivVals[2]
 
 	commonHeader := makeHeaderRandom(4)
 	commonHeader.Time = defaultEvidenceTime.Add(-1 * time.Hour)
@@ -339,7 +338,7 @@ type voteData struct {
 func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	val := types.NewMockPV()
 	val2 := types.NewMockPV()
-	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(1)}, val.PrivKey.PubKey())
+	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator()}, val.PrivKey.PubKey())
 
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))

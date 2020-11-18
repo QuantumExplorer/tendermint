@@ -1053,6 +1053,10 @@ func (vals *ValidatorSet) ToProto() (*tmproto.ValidatorSet, error) {
 
 	vp.TotalVotingPower = vals.totalVotingPower
 
+	if vals.ThresholdPublicKey == nil {
+		return nil, fmt.Errorf("thresholdPublicKey is not set")
+	}
+
 	thresholdPublicKey, err := cryptoenc.PubKeyToProto(vals.ThresholdPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("toProto: thresholdPublicKey error: %w", err)

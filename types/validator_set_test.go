@@ -1453,12 +1453,7 @@ func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg tes
 
 func TestNewValidatorSetFromExistingValidators(t *testing.T) {
 	size := 5
-	vals := make([]*Validator, size)
-	for i := 0; i < size; i++ {
-		pv := NewMockPV()
-		vals[i] = pv.ExtractIntoValidator(int64(i + 1))
-	}
-	valSet := NewValidatorSet(vals)
+	valSet, _ := GenerateValidatorSet(size)
 	valSet.IncrementProposerPriority(5)
 
 	newValSet := NewValidatorSet(valSet.Validators)
