@@ -1103,7 +1103,7 @@ func ValidatorSetFromProto(vp *tmproto.ValidatorSet) (*ValidatorSet, error) {
 // ValidatorSetFromExistingValidators takes an existing array of validators and rebuilds
 // the exact same validator set that corresponds to it without changing the proposer priority or power
 // if any of the validators fail validate basic then an empty set is returned.
-func ValidatorSetFromExistingValidators(valz []*Validator) (*ValidatorSet, error) {
+func ValidatorSetFromExistingValidators(valz []*Validator, thresholdPublicKey crypto.PubKey) (*ValidatorSet, error) {
 	for _, val := range valz {
 		err := val.ValidateBasic()
 		if err != nil {
@@ -1112,6 +1112,7 @@ func ValidatorSetFromExistingValidators(valz []*Validator) (*ValidatorSet, error
 	}
 	vals := &ValidatorSet{
 		Validators: valz,
+		ThresholdPublicKey: thresholdPublicKey,
 	}
 	vals.Proposer = vals.findPreviousProposer()
 	vals.updateTotalVotingPower()
@@ -1121,8 +1122,8 @@ func ValidatorSetFromExistingValidators(valz []*Validator) (*ValidatorSet, error
 
 //----------------------------------------
 
-// RandValidatorSet returns a randomized validator set (size: +numValidators+),
-// where each validator has a voting power of +votingPower+.
+// GenerateValidatorSet returns a randomized validator set (size: +numValidators+),
+// where each validator has the same default voting power.
 //
 // EXPOSED FOR TESTING.
 func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {

@@ -15,12 +15,12 @@ import (
 func TestLightBlockValidateBasic(t *testing.T) {
 	header := makeRandHeader()
 	commit := randCommit()
-	vals, _ := RandValidatorSet(5, 1)
+	vals, _ := GenerateValidatorSet(5)
 	header.Height = commit.Height
 	header.LastBlockID = commit.BlockID
 	header.ValidatorsHash = vals.Hash()
 	header.Version.Block = version.BlockProtocol
-	vals2, _ := RandValidatorSet(3, 1)
+	vals2, _ := GenerateValidatorSet(3)
 	vals3 := vals.Copy()
 	vals3.Proposer = &Validator{}
 	commit.BlockID.Hash = header.Hash()
@@ -60,7 +60,7 @@ func TestLightBlockValidateBasic(t *testing.T) {
 func TestLightBlockProtobuf(t *testing.T) {
 	header := makeRandHeader()
 	commit := randCommit()
-	vals, _ := RandValidatorSet(5, 1)
+	vals, _ := GenerateValidatorSet(5)
 	header.Height = commit.Height
 	header.LastBlockID = commit.BlockID
 	header.Version.Block = version.BlockProtocol

@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -101,12 +102,14 @@ func (p *http) validatorSet(ctx context.Context, height *int64) (*types.Validato
 	var (
 		maxPerPage = 100
 		vals       = []*types.Validator{}
+		thresholdPublicKey crypto.PubKey
 		page       = 1
 	)
 
 	for len(vals)%maxPerPage == 0 {
 		for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
-			res, err := p.client.Validators(ctx, height, &page, &maxPerPage)
+			requestThresholdPublicKey := attempt == 1
+			res, err := p.client.Validators(ctx, height, &page, &maxPerPage, &requestThresholdPublicKey)
 			if err != nil {
 				// TODO: standardize errors on the RPC side
 				if regexpMissingHeight.MatchString(err.Error()) {
@@ -121,18 +124,21 @@ func (p *http) validatorSet(ctx context.Context, height *int64) (*types.Validato
 				continue
 			}
 			if len(res.Validators) == 0 { // no more validators left
-				valSet, err := types.ValidatorSetFromExistingValidators(vals)
+				valSet, err := types.ValidatorSetFromExistingValidators(vals, thresholdPublicKey)
 				if err != nil {
 					return nil, provider.ErrBadLightBlock{Reason: err}
 				}
 				return valSet, nil
 			}
 			vals = append(vals, res.Validators...)
+			if requestThresholdPublicKey {
+				thresholdPublicKey = *res.ThresholdPublicKey
+			}
 			page++
 			break
 		}
 	}
-	valSet, err := types.ValidatorSetFromExistingValidators(vals)
+	valSet, err := types.ValidatorSetFromExistingValidators(vals, thresholdPublicKey)
 	if err != nil {
 		return nil, provider.ErrBadLightBlock{Reason: err}
 	}
