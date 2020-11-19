@@ -731,7 +731,7 @@ func TestValidatorSet_VerifyCommitLightTrusting_ReturnsAsSoonAsTrustLevelOfVotin
 func TestEmptySet(t *testing.T) {
 
 	var valList []*Validator
-	valSet := NewValidatorSet(valList)
+	valSet := NewValidatorSet(valList, bls12381.PubKey{})
 	assert.Panics(t, func() { valSet.IncrementProposerPriority(1) })
 	assert.Panics(t, func() { valSet.RescalePriorities(100) })
 	assert.Panics(t, func() { valSet.shiftByAvgProposerPriority() })
@@ -739,20 +739,19 @@ func TestEmptySet(t *testing.T) {
 	valSet.GetProposer()
 
 	// Add to empty set
-	v1 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
-	v2 := NewTestValidatorGeneratedFromAddress([]byte("v2"))
-	valList = []*Validator{v1, v2}
-	assert.NoError(t, valSet.UpdateWithChangeSet(valList))
+	addresses := []crypto.Address{[]byte("v1"),[]byte("v2")}
+	valSetAdd, _ := GenerateTestValidatorSetWithAddresses(addresses)
+	assert.NoError(t, valSet.UpdateWithChangeSet(valSetAdd.Validators, valSetAdd.ThresholdPublicKey))
 	verifyValidatorSet(t, valSet)
 
 	// Delete all validators from set
-	v1 = NewTestValidatorGeneratedFromAddress([]byte("v1"))
-	v2 = NewTestValidatorGeneratedFromAddress([]byte("v2"))
+	v1 := NewTestRemoveValidatorGeneratedFromAddress([]byte("v1"))
+	v2 := NewTestRemoveValidatorGeneratedFromAddress([]byte("v2"))
 	delList := []*Validator{v1, v2}
-	assert.Error(t, valSet.UpdateWithChangeSet(delList))
+	assert.Error(t, valSet.UpdateWithChangeSet(delList, bls12381.PubKey{}))
 
 	// Attempt delete from empty set
-	assert.Error(t, valSet.UpdateWithChangeSet(delList))
+	assert.Error(t, valSet.UpdateWithChangeSet(delList, bls12381.PubKey{}))
 
 }
 
@@ -851,7 +850,6 @@ func verifyValidatorSet(t *testing.T, valSet *ValidatorSet) {
 	recoveredPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(valSet.GetPublicKeys(), valSet.GetProTxHashesAsByteArrays())
 	assert.NoError(t, err)
 	assert.Equal(t, valSet.ThresholdPublicKey, recoveredPublicKey, "the validator set threshold public key must match the recovered public key")
-	valSet.ThresholdPublicKey
 }
 
 func toTestValList(valList []*Validator) []testVal {
