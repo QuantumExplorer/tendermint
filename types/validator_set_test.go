@@ -810,14 +810,19 @@ func permutation(valList []testVal) []testVal {
 func createNewValidatorList(testValList []testVal) []*Validator {
 	valList := make([]*Validator, 0, len(testValList))
 	for _, val := range testValList {
-		valList = append(valList, newValidatorWithProTxHashFromAddress([]byte(val.name), val.power))
+		valList = append(valList, NewTestValidatorGeneratedFromAddress([]byte(val.name)))
 	}
 	sort.Sort(ValidatorsByProTxHashes(valList))
 	return valList
 }
 
 func createNewValidatorSet(testValList []testVal) *ValidatorSet {
-	return NewValidatorSet(createNewValidatorList(testValList))
+	addressList := make([]Address, 0, len(testValList))
+	for _, val := range testValList {
+		addressList = append(addressList, []byte(val.name))
+	}
+	vals, _ := GenerateTestValidatorSetWithAddresses(addressList)
+	return vals
 }
 
 func valSetTotalProposerPriority(valSet *ValidatorSet) int64 {
@@ -1614,23 +1619,27 @@ func BenchmarkUpdates(b *testing.B) {
 		m = 2000
 	)
 	// Init with n validators
-	vs := make([]*Validator, n)
+	addresses0 := make([]crypto.Address, n)
 	for j := 0; j < n; j++ {
-		vs[j] = newValidatorWithRandProTxHash([]byte(fmt.Sprintf("v%d", j)), 100)
+		addresses0[j] = []byte(fmt.Sprintf("v%d", j))
 	}
-	valSet := NewValidatorSet(vs)
-	l := len(valSet.Validators)
+	valSet, _ := GenerateTestValidatorSetWithAddresses(addresses0)
 
-	// Make m new validators
+	addresses1 := make([]crypto.Address, n + m)
 	newValList := make([]*Validator, m)
-	for j := 0; j < m; j++ {
-		newValList[j] = newValidatorWithRandProTxHash([]byte(fmt.Sprintf("v%d", j+l)), 1000)
+	for j := 0; j < n + m; j++ {
+		addresses1[j] = []byte(fmt.Sprintf("v%d", j))
+		if j >= n {
+			newValList[j - n] = NewTestValidatorGeneratedFromAddress([]byte(fmt.Sprintf("v%d", j)))
+		}
 	}
+	valSet2, _ := GenerateTestValidatorSetWithAddresses(addresses1)
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		// Add m validators to valSetCopy
 		valSetCopy := valSet.Copy()
-		assert.NoError(b, valSetCopy.UpdateWithChangeSet(newValList))
+		assert.NoError(b, valSetCopy.UpdateWithChangeSet(newValList, valSet2.ThresholdPublicKey))
 	}
 }
