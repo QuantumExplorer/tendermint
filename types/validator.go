@@ -24,6 +24,15 @@ type Validator struct {
 	ProposerPriority int64 `json:"proposer_priority"`
 }
 
+func NewTestValidatorGeneratedFromAddress(address crypto.Address) *Validator {
+	return &Validator{
+		Address:          address,
+		VotingPower:      DefaultDashVotingPower,
+		ProposerPriority: 0,
+		ProTxHash:        crypto.Sha256(address),
+	}
+}
+
 func NewValidatorDefaultVotingPower(pubKey crypto.PubKey, proTxHash []byte) *Validator {
 	return NewValidator(pubKey, DefaultDashVotingPower, proTxHash)
 }
