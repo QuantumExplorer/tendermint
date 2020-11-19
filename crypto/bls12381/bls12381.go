@@ -7,6 +7,7 @@ import (
 	"fmt"
 	bls "github.com/xdustinface/bls-signatures/go-bindings"
 	"io"
+	"sort"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -174,6 +175,10 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 		privKey := GenPrivKey()
 		return []crypto.PrivKey{privKey}, privKey.PubKey()
 	}
+
+	//sorting makes this easier
+	sort.Sort(crypto.SortProTxHash(proTxHashes))
+
 	ids := make([]bls.Hash, members)
 	secrets := make([]*bls.PrivateKey, threshold)
 	skShares := make([]crypto.PrivKey, members)

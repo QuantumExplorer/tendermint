@@ -358,6 +358,26 @@ func (vals *ValidatorSet) Size() int {
 	return len(vals.Validators)
 }
 
+func (vals *ValidatorSet) RegenerateWithNewKeys() (*ValidatorSet, []PrivValidator) {
+	var (
+		proTxHashes    = vals.GetProTxHashes()
+		numValidators  = len(vals.Validators)
+		valz           = make([]*Validator, numValidators)
+		privValidators = make([]PrivValidator, numValidators)
+	)
+	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
+
+	for i := 0; i < numValidators; i++ {
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
+	}
+
+	//Just to make sure
+	sort.Sort(PrivValidatorsByProTxHash(privValidators))
+
+	return NewValidatorSet(valz, thresholdPublicKey), privValidators
+}
+
 // Forces recalculation of the set's total voting power.
 // Panics if total voting power is bigger than MaxTotalVotingPower.
 func (vals *ValidatorSet) updateTotalVotingPower() {
