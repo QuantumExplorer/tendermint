@@ -186,9 +186,9 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 
 func TestProposerSelection1(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidatorWithProTxHashFromAddress([]byte("foo")),
-		newValidatorWithProTxHashFromAddress([]byte("bar")),
-		newValidatorWithProTxHashFromAddress([]byte("baz")),
+		NewTestValidatorGeneratedFromAddress([]byte("foo")),
+		NewTestValidatorGeneratedFromAddress([]byte("bar")),
+		NewTestValidatorGeneratedFromAddress([]byte("baz")),
 	}, pubKeyBLS{})
 	var proposers []string
 	for i := 0; i < 99; i++ {
