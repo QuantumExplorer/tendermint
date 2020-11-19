@@ -136,7 +136,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 }
 
 func TestCopy(t *testing.T) {
-	vset := randValidatorSet(10)
+	vset, _ := GenerateValidatorSet(10)
 	vsetHash := vset.Hash()
 	if len(vsetHash) == 0 {
 		t.Fatalf("ValidatorSet had unexpected zero hash")
@@ -153,9 +153,9 @@ func TestCopy(t *testing.T) {
 // Test that IncrementProposerPriority requires positive times.
 func TestIncrementProposerPriorityPositiveTimes(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidatorWithProTxHashFromAddress([]byte("foo")),
-		newValidatorWithProTxHashFromAddress([]byte("bar")),
-		newValidatorWithProTxHashFromAddress([]byte("baz")),
+		NewTestValidatorGeneratedFromAddress([]byte("foo")),
+		NewTestValidatorGeneratedFromAddress([]byte("bar")),
+		NewTestValidatorGeneratedFromAddress([]byte("baz")),
 	}, pubKeyBLS{})
 
 	assert.Panics(t, func() { vset.IncrementProposerPriority(-1) })
@@ -239,13 +239,11 @@ func TestProposerSelection2(t *testing.T) {
 
 func TestProposerSelection3(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidatorWithProTxHashFromAddress([]byte("avalidator_address12")),
-		newValidatorWithProTxHashFromAddress([]byte("bvalidator_address12")),
-		newValidatorWithProTxHashFromAddress([]byte("cvalidator_address12")),
-		newValidatorWithProTxHashFromAddress([]byte("dvalidator_address12")),
+		NewTestValidatorGeneratedFromAddress([]byte("avalidator_address12")),
+		NewTestValidatorGeneratedFromAddress([]byte("bvalidator_address12")),
+		NewTestValidatorGeneratedFromAddress([]byte("cvalidator_address12")),
+		NewTestValidatorGeneratedFromAddress([]byte("dvalidator_address12")),
 	}, pubKeyBLS{})
-
-	vset
 
 	proposerOrder := make([]*Validator, 4)
 	for i := 0; i < 4; i++ {
@@ -302,23 +300,12 @@ func TestProposerSelection3(t *testing.T) {
 	}
 }
 
-
 func randValidator(totalVotingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/VotingPower to stay in the
 	// bounds of MaxTotalVotingPower minus the already existing voting power:
-	val := NewValidatorDefaultVotingPower(randPubKey(), crypto.RandProTxHash())
+	val, _ := RandValidator()
 	val.ProposerPriority = tmrand.Int64() % (MaxTotalVotingPower - totalVotingPower)
 	return val
-}
-
-func randValidatorSet(numValidators int) *ValidatorSet {
-	validators := make([]*Validator, numValidators)
-	totalVotingPower := int64(0)
-	for i := 0; i < numValidators; i++ {
-		validators[i] = randValidator(totalVotingPower)
-		totalVotingPower += validators[i].VotingPower
-	}
-	return NewValidatorSet(validators)
 }
 
 func (vals *ValidatorSet) toBytes() []byte {
@@ -752,15 +739,15 @@ func TestEmptySet(t *testing.T) {
 	valSet.GetProposer()
 
 	// Add to empty set
-	v1 := newValidatorWithRandProTxHash([]byte("v1"), 100)
-	v2 := newValidatorWithRandProTxHash([]byte("v2"), 100)
+	v1 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	v2 := NewTestValidatorGeneratedFromAddress([]byte("v2"))
 	valList = []*Validator{v1, v2}
 	assert.NoError(t, valSet.UpdateWithChangeSet(valList))
 	verifyValidatorSet(t, valSet)
 
 	// Delete all validators from set
-	v1 = newValidatorWithRandProTxHash([]byte("v1"), 0)
-	v2 = newValidatorWithRandProTxHash([]byte("v2"), 0)
+	v1 = NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	v2 = NewTestValidatorGeneratedFromAddress([]byte("v2"))
 	delList := []*Validator{v1, v2}
 	assert.Error(t, valSet.UpdateWithChangeSet(delList))
 
@@ -771,8 +758,8 @@ func TestEmptySet(t *testing.T) {
 
 func TestUpdatesForNewValidatorSet(t *testing.T) {
 
-	v1 := newValidatorWithProTxHashFromAddress([]byte("v1"), 100)
-	v2 := newValidatorWithProTxHashFromAddress([]byte("v2"), 100)
+	v1 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	v2 := NewTestValidatorGeneratedFromAddress([]byte("v2"))
 	valList := []*Validator{v1, v2}
 	valSet := NewValidatorSet(valList)
 	verifyValidatorSet(t, valSet)
@@ -860,6 +847,11 @@ func verifyValidatorSet(t *testing.T, valSet *ValidatorSet) {
 	dist := computeMaxMinPriorityDiff(valSet)
 	assert.True(t, dist <= PriorityWindowSizeFactor*tvp,
 		"expected priority distance < %d. Got %d", PriorityWindowSizeFactor*tvp, dist)
+
+	recoveredPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(valSet.GetPublicKeys(), valSet.GetProTxHashesAsByteArrays())
+	assert.NoError(t, err)
+	assert.Equal(t, valSet.ThresholdPublicKey, recoveredPublicKey, "the validator set threshold public key must match the recovered public key")
+	valSet.ThresholdPublicKey
 }
 
 func toTestValList(valList []*Validator) []testVal {

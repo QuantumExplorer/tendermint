@@ -343,6 +343,24 @@ func (vals *ValidatorSet) GetProTxHashes() []crypto.ProTxHash {
 	return proTxHashes
 }
 
+// GetProTxHashes returns the all validator proTxHashes as byte arrays for convenience
+func (vals *ValidatorSet) GetProTxHashesAsByteArrays() [][]byte {
+	proTxHashes := make([][]byte,len(vals.Validators))
+	for i, val := range vals.Validators {
+		proTxHashes[i] = val.ProTxHash
+	}
+	return proTxHashes
+}
+
+// GetPublicKeys returns the all validator publicKeys
+func (vals *ValidatorSet) GetPublicKeys() []crypto.PubKey {
+	publicKeys := make([]crypto.PubKey,len(vals.Validators))
+	for i, val := range vals.Validators {
+		publicKeys[i] = val.PubKey
+	}
+	return publicKeys
+}
+
 // GetProTxHashes returns the all validator proTxHashes
 func (vals *ValidatorSet) GetProTxHashesOrdered() []crypto.ProTxHash {
 	proTxHashes := make([]crypto.ProTxHash,len(vals.Validators))
