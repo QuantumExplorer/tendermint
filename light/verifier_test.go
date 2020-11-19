@@ -122,9 +122,9 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		},
 		// vals does not match with what we have -> error
 		8: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(), vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(nil), vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(),
+			keys.ToValidators(nil),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -134,7 +134,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		9: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(),
+			keys.ToValidators(nil),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -144,7 +144,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		10: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(),
+			keys.ToValidators(nil),
 			1 * time.Hour,
 			bTime.Add(1 * time.Hour),
 			nil,
@@ -184,15 +184,15 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 
 		// 30, 40, 50
 		twoThirds     = keys[1:]
-		twoThirdsVals = twoThirds.ToValidators()
+		twoThirdsVals = twoThirds.ToValidators(nil)
 
 		// 50
 		oneThird     = keys[len(keys)-1:]
-		oneThirdVals = oneThird.ToValidators()
+		oneThirdVals = oneThird.ToValidators(nil)
 
 		// 20
 		lessThanOneThird     = keys[0:1]
-		lessThanOneThirdVals = lessThanOneThird.ToValidators()
+		lessThanOneThirdVals = lessThanOneThird.ToValidators(nil)
 	)
 
 	testCases := []struct {
