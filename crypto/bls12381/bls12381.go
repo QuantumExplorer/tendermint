@@ -208,29 +208,74 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 	return skShares, PubKey(secrets[0].PublicKey().Serialize())
 }
 
-//BLS Ids are the Pro_tx_hashes from validators
-func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte) ([]byte, error) {
-	var sigShares []*bls.InsecureSignature
-	var hashes []bls.Hash
+func RecoverThresholdPublicKeyFromPublicKeys(publicKeys []crypto.PubKey, blsIds [][]byte) (crypto.PubKey, error) {
+	if len(publicKeys) != len(blsIds) {
+		return nil, errors.New("the length of the public keys must match the length of the blsIds")
+	}
+	//if there is only 1 key use it
+	if len(publicKeys) == 1 {
+		return publicKeys[0], nil
+	}
+	publicKeyShares := make([]*bls.PublicKey, len(publicKeys))
+	hashes := make([]bls.Hash, len(publicKeys))
 	// Create and validate sigShares for each member and populate BLS-IDs from members into ids
-	for _, sigShareData := range sigSharesData {
-		sigShare, error := bls.InsecureSignatureFromBytes(sigShareData)
+	for i, publicKey := range publicKeys {
+		publicKeyShare, error := bls.PublicKeyFromBytes(publicKey.Bytes())
 		if error != nil {
 			return nil, error
 		}
-		sigShares = append(sigShares, sigShare)
+		publicKeyShares[i] = publicKeyShare
 	}
 
-	for _, blsId := range blsIds {
-		if len(blsId) != 32 {
+	for i, blsId := range blsIds {
+		if len(blsId) != tmhash.Size {
 			return nil, errors.New("blsId incorrect size, expected 32 bytes")
 		}
 		var hash bls.Hash
 		copy(hash[:],blsId)
-		hashes = append(hashes, hash)
+		hashes[i] = hash
+	}
+
+	thresholdPublicKey, error := bls.PublicKeyRecover(publicKeyShares, hashes)
+	if error != nil {
+		return nil, error
+	}
+	return PubKey(thresholdPublicKey.Serialize()), nil
+}
+
+//BLS Ids are the Pro_tx_hashes from validators
+func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte) ([]byte, error) {
+	sigShares := make([]*bls.InsecureSignature, len(sigSharesData))
+	hashes := make([]bls.Hash, len(sigSharesData))
+	if len(sigSharesData) != len(blsIds) {
+		return nil, errors.New("the length of the signature shares must match the length of the blsIds")
+	}
+	//if there is only 1 share use it
+	if len(sigSharesData) == 1 {
+		return sigSharesData[0], nil
+	}
+	// Create and validate sigShares for each member and populate BLS-IDs from members into ids
+	for i, sigShareData := range sigSharesData {
+		sigShare, error := bls.InsecureSignatureFromBytes(sigShareData)
+		if error != nil {
+			return nil, error
+		}
+		sigShares[i] = sigShare
+	}
+
+	for i, blsId := range blsIds {
+		if len(blsId) != tmhash.Size {
+			return nil, errors.New("blsId incorrect size, expected 32 bytes")
+		}
+		var hash bls.Hash
+		copy(hash[:], blsId)
+		hashes[i] = hash
 	}
 
 	thresholdSignature, error := bls.InsecureSignatureRecover(sigShares, hashes)
+	if error != nil {
+		return nil, error
+	}
 	return thresholdSignature.Serialize(), error
 }
 
