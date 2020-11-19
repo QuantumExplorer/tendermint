@@ -153,10 +153,10 @@ func TestCopy(t *testing.T) {
 // Test that IncrementProposerPriority requires positive times.
 func TestIncrementProposerPriorityPositiveTimes(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidatorWithRandProTxHash([]byte("foo"), 1000),
-		newValidatorWithRandProTxHash([]byte("bar"), 300),
-		newValidatorWithRandProTxHash([]byte("baz"), 330),
-	})
+		newValidatorWithProTxHashFromAddress([]byte("foo")),
+		newValidatorWithProTxHashFromAddress([]byte("bar")),
+		newValidatorWithProTxHashFromAddress([]byte("baz")),
+	}, pubKeyBLS{})
 
 	assert.Panics(t, func() { vset.IncrementProposerPriority(-1) })
 	assert.Panics(t, func() { vset.IncrementProposerPriority(0) })
@@ -186,10 +186,10 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 
 func TestProposerSelection1(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidatorWithRandProTxHash([]byte("foo"), 1000),
-		newValidatorWithRandProTxHash([]byte("bar"), 300),
-		newValidatorWithRandProTxHash([]byte("baz"), 330),
-	})
+		newValidatorWithProTxHashFromAddress([]byte("foo")),
+		newValidatorWithProTxHashFromAddress([]byte("bar")),
+		newValidatorWithProTxHashFromAddress([]byte("baz")),
+	}, pubKeyBLS{})
 	var proposers []string
 	for i := 0; i < 99; i++ {
 		val := vset.GetProposer()
@@ -207,104 +207,45 @@ func TestProposerSelection1(t *testing.T) {
 }
 
 func TestProposerSelection2(t *testing.T) {
-	addr0 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	addr1 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
-	addr2 := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
+	proTxHashes := make([]crypto.ProTxHash, 3)
+	addresses := make([]crypto.Address, 3)
+	proTxHashes[0] = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	proTxHashes[1] = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	proTxHashes[2] = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
+	addresses[0] = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}
+	addresses[1] = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	addresses[2] = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
-	// when all voting power is same, we go in order of addresses
-	val0, val1, val2 := newValidatorWithRandProTxHash(addr0, 100), newValidatorWithRandProTxHash(addr1, 100), newValidatorWithRandProTxHash(addr2, 100)
-	valList := []*Validator{val0, val1, val2}
-	vals := NewValidatorSet(valList)
-	for i := 0; i < len(valList)*5; i++ {
-		ii := (i) % len(valList)
+	vals, _ := GenerateValidatorSetUsingProTxHashes(proTxHashes)
+	for i := 0; i < len(proTxHashes)*5; i++ {
+		ii := (i) % len(proTxHashes)
 		prop := vals.GetProposer()
-		if !bytes.Equal(prop.Address, valList[ii].Address) {
-			t.Fatalf("(%d): Expected %X. Got %X", i, valList[ii].Address, prop.Address)
+		if !bytes.Equal(prop.ProTxHash, vals.Validators[ii].ProTxHash) {
+			t.Fatalf("(%d): Expected %X. Got %X", i, vals.Validators[ii].ProTxHash, prop.ProTxHash)
 		}
 		vals.IncrementProposerPriority(1)
 	}
 
-	// One validator has more than the others, but not enough to propose twice in a row
-	*val2 = *newValidatorWithRandProTxHash(addr2, 400)
-	vals = NewValidatorSet(valList)
-	// vals.IncrementProposerPriority(1)
 	prop := vals.GetProposer()
-	if !bytes.Equal(prop.Address, addr2) {
-		t.Fatalf("Expected address with highest voting power to be first proposer. Got %X", prop.Address)
+	if !bytes.Equal(prop.ProTxHash, proTxHashes[0]) {
+		t.Fatalf("Expected proposer with smallest pro_tx_hash to be first proposer. Got %X", prop.ProTxHash)
 	}
 	vals.IncrementProposerPriority(1)
 	prop = vals.GetProposer()
-	if !bytes.Equal(prop.Address, addr0) {
-		t.Fatalf("Expected smallest address to be validator. Got %X", prop.Address)
-	}
-
-	// One validator has more than the others, and enough to be proposer twice in a row
-	*val2 = *newValidatorWithRandProTxHash(addr2, 401)
-	vals = NewValidatorSet(valList)
-	prop = vals.GetProposer()
-	if !bytes.Equal(prop.Address, addr2) {
-		t.Fatalf("Expected address with highest voting power to be first proposer. Got %X", prop.Address)
-	}
-	vals.IncrementProposerPriority(1)
-	prop = vals.GetProposer()
-	if !bytes.Equal(prop.Address, addr2) {
-		t.Fatalf("Expected address with highest voting power to be second proposer. Got %X", prop.Address)
-	}
-	vals.IncrementProposerPriority(1)
-	prop = vals.GetProposer()
-	if !bytes.Equal(prop.Address, addr0) {
-		t.Fatalf("Expected smallest address to be validator. Got %X", prop.Address)
-	}
-
-	// each validator should be the proposer a proportional number of times
-	val0, val1, val2 = newValidatorWithRandProTxHash(addr0, 4), newValidatorWithRandProTxHash(addr1, 5), newValidatorWithRandProTxHash(addr2, 3)
-	valList = []*Validator{val0, val1, val2}
-	propCount := make([]int, 3)
-	vals = NewValidatorSet(valList)
-	N := 1
-	for i := 0; i < 120*N; i++ {
-		prop := vals.GetProposer()
-		ii := prop.Address[19]
-		propCount[ii]++
-		vals.IncrementProposerPriority(1)
-	}
-
-	if propCount[0] != 40*N {
-		t.Fatalf(
-			"Expected prop count for validator with 4/12 of voting power to be %d/%d. Got %d/%d",
-			40*N,
-			120*N,
-			propCount[0],
-			120*N,
-		)
-	}
-	if propCount[1] != 50*N {
-		t.Fatalf(
-			"Expected prop count for validator with 5/12 of voting power to be %d/%d. Got %d/%d",
-			50*N,
-			120*N,
-			propCount[1],
-			120*N,
-		)
-	}
-	if propCount[2] != 30*N {
-		t.Fatalf(
-			"Expected prop count for validator with 3/12 of voting power to be %d/%d. Got %d/%d",
-			30*N,
-			120*N,
-			propCount[2],
-			120*N,
-		)
+	if !bytes.Equal(prop.ProTxHash, proTxHashes[1]) {
+		t.Fatalf("Expected proposer with second smallest pro_tx_hash to be second proposer. Got %X", prop.ProTxHash)
 	}
 }
 
 func TestProposerSelection3(t *testing.T) {
 	vset := NewValidatorSet([]*Validator{
-		newValidatorWithRandProTxHash([]byte("avalidator_address12"), 1),
-		newValidatorWithRandProTxHash([]byte("bvalidator_address12"), 1),
-		newValidatorWithRandProTxHash([]byte("cvalidator_address12"), 1),
-		newValidatorWithRandProTxHash([]byte("dvalidator_address12"), 1),
-	})
+		newValidatorWithProTxHashFromAddress([]byte("avalidator_address12")),
+		newValidatorWithProTxHashFromAddress([]byte("bvalidator_address12")),
+		newValidatorWithProTxHashFromAddress([]byte("cvalidator_address12")),
+		newValidatorWithProTxHashFromAddress([]byte("dvalidator_address12")),
+	}, pubKeyBLS{})
+
+	vset
 
 	proposerOrder := make([]*Validator, 4)
 	for i := 0; i < 4; i++ {
@@ -340,7 +281,7 @@ func TestProposerSelection3(t *testing.T) {
 					fmt.Sprintf(
 						"vset.Proposer (%X) does not match computed proposer (%X) for (%d, %d)",
 						got,
-						computed.Address,
+						computed.ProTxHash,
 						i,
 						j,
 					),
@@ -361,26 +302,6 @@ func TestProposerSelection3(t *testing.T) {
 	}
 }
 
-func newValidatorWithRandProTxHash(address []byte, power int64) *Validator {
-	return &Validator{Address: address, VotingPower: power, ProTxHash: crypto.CRandBytes(32)}
-}
-
-func newValidatorWithProTxHashFromAddress(address []byte, power int64) *Validator {
-	return &Validator{Address: address, VotingPower: power, ProTxHash: crypto.Sha256(address)}
-}
-
-func newValidator(address []byte, power int64, proTxHash []byte) *Validator {
-	if len(proTxHash) != 32 {
-		panic("proTxHash wrong length")
-	}
-	return &Validator{Address: address, VotingPower: power, ProTxHash: proTxHash}
-}
-
-func randPubKey() crypto.PubKey {
-	pubKey := make(bls12381.PubKey, bls12381.PubKeySize)
-	copy(pubKey, tmrand.Bytes(bls12381.PubKeySize))
-	return bls12381.PubKey(tmrand.Bytes(bls12381.PubKeySize))
-}
 
 func randValidator(totalVotingPower int64) *Validator {
 	// this modulo limits the ProposerPriority/VotingPower to stay in the
