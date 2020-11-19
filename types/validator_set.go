@@ -1196,6 +1196,29 @@ func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }
 
+func GenerateTestValidatorSetWithAddresses(addresses []crypto.Address) (*ValidatorSet, []PrivValidator) {
+	var (
+		numValidators  = len(addresses)
+		proTxHashes    = make([]ProTxHash, numValidators)
+		valz           = make([]*Validator, numValidators)
+		privValidators = make([]PrivValidator, numValidators)
+	)
+	for i := 0; i < numValidators; i++ {
+		proTxHashes[i] = crypto.Sha256(addresses[i])
+	}
+	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
+
+	for i := 0; i < numValidators; i++ {
+		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
+		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
+		valz[i].Address = addresses[i]
+	}
+
+	sort.Sort(PrivValidatorsByProTxHash(privValidators))
+
+	return NewValidatorSet(valz, thresholdPublicKey), privValidators
+}
+
 func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []MockPV) {
 	var (
 		valz           = make([]*Validator, numValidators)

@@ -33,6 +33,15 @@ func NewTestValidatorGeneratedFromAddress(address crypto.Address) *Validator {
 	}
 }
 
+func NewTestRemoveValidatorGeneratedFromAddress(address crypto.Address) *Validator {
+	return &Validator{
+		Address:          address,
+		VotingPower:      0,
+		ProposerPriority: 0,
+		ProTxHash:        crypto.Sha256(address),
+	}
+}
+
 func NewValidatorDefaultVotingPower(pubKey crypto.PubKey, proTxHash []byte) *Validator {
 	return NewValidator(pubKey, DefaultDashVotingPower, proTxHash)
 }
