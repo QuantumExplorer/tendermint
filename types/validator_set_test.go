@@ -757,32 +757,36 @@ func TestEmptySet(t *testing.T) {
 
 func TestUpdatesForNewValidatorSet(t *testing.T) {
 
-	v1 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
-	v2 := NewTestValidatorGeneratedFromAddress([]byte("v2"))
-	valList := []*Validator{v1, v2}
-	valSet := NewValidatorSet(valList)
+	addresses12 := []crypto.Address{[]byte("v1"), []byte("v2")}
+
+	valSet, _ := GenerateTestValidatorSetWithAddresses(addresses12)
 	verifyValidatorSet(t, valSet)
 
 	// Verify duplicates are caught in NewValidatorSet() and it panics
-	v111 := newValidatorWithProTxHashFromAddress([]byte("v1"), 100)
-	v112 := newValidatorWithProTxHashFromAddress([]byte("v1"), 123)
-	v113 := newValidatorWithProTxHashFromAddress([]byte("v1"), 234)
-	valList = []*Validator{v111, v112, v113}
-	assert.Panics(t, func() { NewValidatorSet(valList) })
+	v111 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	v112 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	v113 := NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	valList := []*Validator{v111, v112, v113}
+	assert.Panics(t, func() { NewValidatorSet(valList, bls12381.PubKey{}) })
 
 	// Verify set including validator with voting power 0 cannot be created
-	v1 = newValidatorWithProTxHashFromAddress([]byte("v1"), 0)
-	v2 = newValidatorWithProTxHashFromAddress([]byte("v2"), 22)
-	v3 := newValidatorWithProTxHashFromAddress([]byte("v3"), 33)
+	v1 := NewTestRemoveValidatorGeneratedFromAddress([]byte("v1"))
+	v2 := NewTestValidatorGeneratedFromAddress([]byte("v2"))
+	v3 := NewTestValidatorGeneratedFromAddress([]byte("v3"))
 	valList = []*Validator{v1, v2, v3}
-	assert.Panics(t, func() { NewValidatorSet(valList) })
+	assert.Panics(t, func() { NewValidatorSet(valList, bls12381.PubKey{}) })
 
 	// Verify set including validator with negative voting power cannot be created
-	v1 = newValidatorWithProTxHashFromAddress([]byte("v1"), 10)
-	v2 = newValidatorWithProTxHashFromAddress([]byte("v2"), -20)
-	v3 = newValidatorWithProTxHashFromAddress([]byte("v3"), 30)
+	v1 = NewTestValidatorGeneratedFromAddress([]byte("v1"))
+	v2 = &Validator{
+		Address:          []byte("v2"),
+		VotingPower:      -20,
+		ProposerPriority: 0,
+		ProTxHash:        crypto.Sha256([]byte("v2")),
+	}
+	v3 = NewTestValidatorGeneratedFromAddress([]byte("v3"))
 	valList = []*Validator{v1, v2, v3}
-	assert.Panics(t, func() { NewValidatorSet(valList) })
+	assert.Panics(t, func() { NewValidatorSet(valList, bls12381.PubKey{}) })
 
 }
 
