@@ -825,6 +825,40 @@ func createNewValidatorSet(testValList []testVal) *ValidatorSet {
 	return vals
 }
 
+func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) *ValidatorSet {
+	addedAddresses := make([]Address, 0, len(testValList))
+	removedAddresses := make([]Address, 0, len(testValList))
+	combinedAddresses := make([]Address, 0, len(testValList) + len(vals.Validators))
+	for _, val := range testValList {
+		if val.power != 0 {
+			_, value := vals.GetByAddress([]byte(val.name))
+			if value == nil {
+				addedAddresses = append(addedAddresses, []byte(val.name))
+			}
+		} else {
+			_, value := vals.GetByAddress([]byte(val.name))
+			if value != nil {
+				removedAddresses = append(removedAddresses, []byte(val.name))
+			}
+		}
+	}
+	originalAddresses := vals.GetAddresses()
+	for _, oAddress := range originalAddresses {
+		found := false
+		for _, removedAddresses := range removedAddresses {
+			if bytes.Equal(oAddress.Bytes(),removedAddresses.Bytes()) {
+				found = true
+			}
+		}
+		if !found {
+			combinedAddresses = append(combinedAddresses, oAddress)
+		}
+	}
+	combinedAddresses = append(combinedAddresses, addedAddresses...)
+	rVals, _ := GenerateTestValidatorSetWithAddresses(combinedAddresses)
+	return rVals
+}
+
 func valSetTotalProposerPriority(valSet *ValidatorSet) int64 {
 	sum := int64(0)
 	for _, val := range valSet.Validators {
@@ -870,10 +904,10 @@ func toTestValList(valList []*Validator) []testVal {
 	return testList
 }
 
-func testValSet(nVals int, power int64) []testVal {
+func testValSet(nVals int) []testVal {
 	vals := make([]testVal, nVals)
 	for i := 0; i < nVals; i++ {
-		vals[i] = testVal{fmt.Sprintf("v%d", i+1), power}
+		vals[i] = testVal{fmt.Sprintf("v%d", i+1), DefaultDashVotingPower}
 	}
 	return vals
 }
@@ -887,9 +921,10 @@ func executeValSetErrTestCase(t *testing.T, idx int, tt valSetErrTestCase) {
 	// create a new set and apply updates, keeping copies for the checks
 	valSet := createNewValidatorSet(tt.startVals)
 	valSetCopy := valSet.Copy()
-	valList := createNewValidatorList(tt.updateVals)
+	newValSet := addValidatorsToValidatorSet(valSet, tt.updateVals)
+	valList := newValSet.Validators
 	valListCopy := validatorListCopy(valList)
-	err := valSet.UpdateWithChangeSet(valList)
+	err := valSet.UpdateWithChangeSet(valList, newValSet.ThresholdPublicKey)
 
 	// for errors check the validator set has not been changed
 	assert.Error(t, err, "test %d", idx)
@@ -903,85 +938,51 @@ func TestValSetUpdatesDuplicateEntries(t *testing.T) {
 	testCases := []valSetErrTestCase{
 		// Duplicate entries in changes
 		{ // first entry is duplicated change
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", 11}, {"v1", 22}},
 		},
 		{ // second entry is duplicated change
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v2", 11}, {"v2", 22}},
 		},
 		{ // change duplicates are separated by a valid change
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", 11}, {"v2", 22}, {"v1", 12}},
 		},
 		{ // change duplicates are separated by a valid change
-			testValSet(3, 10),
+			testValSet(3),
 			[]testVal{{"v1", 11}, {"v3", 22}, {"v1", 12}},
 		},
 
 		// Duplicate entries in remove
 		{ // first entry is duplicated remove
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", 0}, {"v1", 0}},
 		},
 		{ // second entry is duplicated remove
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v2", 0}, {"v2", 0}},
 		},
 		{ // remove duplicates are separated by a valid remove
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", 0}, {"v2", 0}, {"v1", 0}},
 		},
 		{ // remove duplicates are separated by a valid remove
-			testValSet(3, 10),
+			testValSet(3),
 			[]testVal{{"v1", 0}, {"v3", 0}, {"v1", 0}},
 		},
 
 		{ // remove and update same val
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", 0}, {"v2", 20}, {"v1", 30}},
 		},
 		{ // duplicate entries in removes + changes
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", 0}, {"v2", 20}, {"v2", 30}, {"v1", 0}},
 		},
 		{ // duplicate entries in removes + changes
-			testValSet(3, 10),
+			testValSet(3),
 			[]testVal{{"v1", 0}, {"v3", 5}, {"v2", 20}, {"v2", 30}, {"v1", 0}},
-		},
-	}
-
-	for i, tt := range testCases {
-		executeValSetErrTestCase(t, i, tt)
-	}
-}
-
-func TestValSetUpdatesOverflows(t *testing.T) {
-	maxVP := MaxTotalVotingPower
-	testCases := []valSetErrTestCase{
-		{ // single update leading to overflow
-			testValSet(2, 10),
-			[]testVal{{"v1", math.MaxInt64}},
-		},
-		{ // single update leading to overflow
-			testValSet(2, 10),
-			[]testVal{{"v2", math.MaxInt64}},
-		},
-		{ // add validator leading to overflow
-			testValSet(1, maxVP),
-			[]testVal{{"v2", math.MaxInt64}},
-		},
-		{ // add validator leading to exceed Max
-			testValSet(1, maxVP-1),
-			[]testVal{{"v2", 5}},
-		},
-		{ // add validator leading to exceed Max
-			testValSet(2, maxVP/3),
-			[]testVal{{"v3", maxVP / 2}},
-		},
-		{ // add validator leading to exceed Max
-			testValSet(1, maxVP),
-			[]testVal{{"v2", maxVP}},
 		},
 	}
 
@@ -993,19 +994,23 @@ func TestValSetUpdatesOverflows(t *testing.T) {
 func TestValSetUpdatesOtherErrors(t *testing.T) {
 	testCases := []valSetErrTestCase{
 		{ // update with negative voting power
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v1", -123}},
 		},
 		{ // update with negative voting power
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v2", -123}},
 		},
+		{ // update with non default voting power
+			testValSet(2),
+			[]testVal{{"v2", DefaultDashVotingPower + 1}},
+		},
 		{ // remove non-existing validator
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{{"v3", 0}},
 		},
 		{ // delete all validators
-			[]testVal{{"v1", 10}, {"v2", 20}, {"v3", 30}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
 			[]testVal{{"v1", 0}, {"v2", 0}, {"v3", 0}},
 		},
 	}
@@ -1022,42 +1027,43 @@ func TestValSetUpdatesBasicTestsExecute(t *testing.T) {
 		expectedVals []testVal
 	}{
 		{ // no changes
-			testValSet(2, 10),
+			testValSet(2),
 			[]testVal{},
-			testValSet(2, 10),
+			testValSet(2),
 		},
 		{ // voting power changes
-			testValSet(2, 10),
-			[]testVal{{"v2", 22}, {"v1", 11}},
-			[]testVal{{"v2", 22}, {"v1", 11}},
+			testValSet(2),
+			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 		{ // add new validators
-			[]testVal{{"v2", 20}, {"v1", 10}},
-			[]testVal{{"v4", 40}, {"v3", 30}},
-			[]testVal{{"v4", 40}, {"v3", 30}, {"v2", 20}, {"v1", 10}},
+			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 		{ // add new validator to middle
-			[]testVal{{"v3", 20}, {"v1", 10}},
-			[]testVal{{"v2", 30}},
-			[]testVal{{"v2", 30}, {"v3", 20}, {"v1", 10}},
+			[]testVal{{"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v2", DefaultDashVotingPower}},
+			[]testVal{{"v2", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 		{ // add new validator to beginning
-			[]testVal{{"v3", 20}, {"v2", 10}},
-			[]testVal{{"v1", 30}},
-			[]testVal{{"v1", 30}, {"v3", 20}, {"v2", 10}},
+			[]testVal{{"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		{ // delete validators
-			[]testVal{{"v3", 30}, {"v2", 20}, {"v1", 10}},
+			[]testVal{{"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			[]testVal{{"v2", 0}},
-			[]testVal{{"v3", 30}, {"v1", 10}},
+			[]testVal{{"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 	}
 
 	for i, tt := range valSetUpdatesBasicTests {
 		// create a new set and apply updates, keeping copies for the checks
 		valSet := createNewValidatorSet(tt.startVals)
-		valList := createNewValidatorList(tt.updateVals)
-		err := valSet.UpdateWithChangeSet(valList)
+		newValSet := addValidatorsToValidatorSet(valSet, tt.updateVals)
+		valList := newValSet.Validators
+		err := valSet.UpdateWithChangeSet(valList, newValSet.ThresholdPublicKey)
 		assert.NoError(t, err, "test %d", i)
 
 		valListCopy := validatorListCopy(valSet.Validators)
@@ -1086,19 +1092,19 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 		updateVals []testVal
 	}{
 		0: { // order of changes should not matter, the final validator sets should be the same
-			[]testVal{{"v4", 40}, {"v3", 30}, {"v2", 10}, {"v1", 10}},
-			[]testVal{{"v4", 44}, {"v3", 33}, {"v2", 22}, {"v1", 11}}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}}},
 
 		1: { // order of additions should not matter
-			[]testVal{{"v2", 20}, {"v1", 10}},
-			[]testVal{{"v3", 30}, {"v4", 40}, {"v5", 50}, {"v6", 60}}},
+			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v3", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}}},
 
 		2: { // order of removals should not matter
-			[]testVal{{"v4", 40}, {"v3", 30}, {"v2", 20}, {"v1", 10}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			[]testVal{{"v1", 0}, {"v3", 0}, {"v4", 0}}},
 
 		3: { // order of mixed operations should not matter
-			[]testVal{{"v4", 40}, {"v3", 30}, {"v2", 20}, {"v1", 10}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			[]testVal{{"v1", 0}, {"v3", 0}, {"v2", 22}, {"v5", 50}, {"v4", 44}}},
 	}
 
@@ -1106,8 +1112,8 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 		// create a new set and apply updates
 		valSet := createNewValidatorSet(tt.startVals)
 		valSetCopy := valSet.Copy()
-		valList := createNewValidatorList(tt.updateVals)
-		assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList))
+		valList := addValidatorsToValidatorSet(valSet, tt.updateVals)
+		assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList.Validators, valList.ThresholdPublicKey))
 
 		// save the result as expected for next updates
 		valSetExp := valSetCopy.Copy()
@@ -1118,10 +1124,10 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 		for j := 0; j < maxNumPerms; j++ {
 			// create a copy of original set and apply a random permutation of updates
 			valSetCopy := valSet.Copy()
-			valList := createNewValidatorList(permutation(tt.updateVals))
+			valList := addValidatorsToValidatorSet(valSetCopy, permutation(tt.updateVals))
 
 			// check there was no error and the set is properly scaled and centered.
-			assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList),
+			assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList.Validators, valList.ThresholdPublicKey),
 				"test %v failed for permutation %v", i, valList)
 			verifyValidatorSet(t, valSetCopy)
 
@@ -1135,6 +1141,7 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 // This tests the private function validator_set.go:applyUpdates() function, used only for additions and changes.
 // Should perform a proper merge of updatedVals and startVals
 func TestValSetApplyUpdatesTestsExecute(t *testing.T) {
+
 	valSetUpdatesBasicTests := []struct {
 		startVals    []testVal
 		updateVals   []testVal
@@ -1142,43 +1149,43 @@ func TestValSetApplyUpdatesTestsExecute(t *testing.T) {
 	}{
 		// additions
 		0: { // prepend
-			[]testVal{{"v4", 44}, {"v5", 55}},
-			[]testVal{{"v1", 11}},
-			[]testVal{{"v1", 11}, {"v4", 44}, {"v5", 55}}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}}},
 		1: { // append
-			[]testVal{{"v4", 44}, {"v5", 55}},
-			[]testVal{{"v6", 66}},
-			[]testVal{{"v6", 66}, {"v4", 44}, {"v5", 55}}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}},
+			[]testVal{{"v6", DefaultDashVotingPower}},
+			[]testVal{{"v6", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}}},
 		2: { // insert
-			[]testVal{{"v4", 44}, {"v6", 66}},
-			[]testVal{{"v5", 55}},
-			[]testVal{{"v6", 66}, {"v4", 44}, {"v5", 55}}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}},
+			[]testVal{{"v5", DefaultDashVotingPower}},
+			[]testVal{{"v6", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}}},
 		3: { // insert multi
-			[]testVal{{"v4", 44}, {"v6", 66}, {"v9", 99}},
-			[]testVal{{"v5", 55}, {"v7", 77}, {"v8", 88}},
-			[]testVal{{"v8", 88},  {"v7", 77}, {"v6", 66}, {"v9", 99}, {"v4", 44}, {"v5", 55}}},
+			[]testVal{{"v4", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}, {"v9", DefaultDashVotingPower}},
+			[]testVal{{"v5", DefaultDashVotingPower}, {"v7", DefaultDashVotingPower}, {"v8", DefaultDashVotingPower}},
+			[]testVal{{"v8", DefaultDashVotingPower},  {"v7", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}, {"v9", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}}},
 		// changes
 		4: { // head
-			[]testVal{{"v1", 111}, {"v2", 22}},
-			[]testVal{{"v1", 11}},
-			[]testVal{{"v1", 11}, {"v2", 22}}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}}},
 		5: { // tail
-			[]testVal{{"v1", 11}, {"v2", 222}},
-			[]testVal{{"v2", 22}},
-			[]testVal{{"v1", 11}, {"v2", 22}}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
+			[]testVal{{"v2", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}}},
 		6: { // middle
-			[]testVal{{"v1", 11}, {"v2", 222}, {"v3", 33}},
-			[]testVal{{"v2", 22}},
-			[]testVal{{"v1", 11}, {"v3", 33}, {"v2", 22}}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
+			[]testVal{{"v2", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}}},
 		7: { // multi
-			[]testVal{{"v1", 111}, {"v2", 222}, {"v3", 333}},
-			[]testVal{{"v1", 11}, {"v2", 22}, {"v3", 33}},
-			[]testVal{{"v1", 11}, {"v3", 33}, {"v2", 22}}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}}},
 		// additions and changes
 		8: {
-			[]testVal{{"v1", 111}, {"v2", 22}},
-			[]testVal{{"v1", 11}, {"v3", 33}, {"v4", 44}},
-			[]testVal{{"v1", 11}, {"v4", 44}, {"v3", 33}, {"v2", 22}}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}}},
 	}
 
 	for i, tt := range valSetUpdatesBasicTests {
@@ -1264,8 +1271,8 @@ func applyChangesToValSet(t *testing.T, expErr error, valSet *ValidatorSet, vals
 	for _, valsList := range valsLists {
 		changes = append(changes, valsList...)
 	}
-	valList := createNewValidatorList(changes)
-	err := valSet.UpdateWithChangeSet(valList)
+	valList := addValidatorsToValidatorSet(valSet, changes)
+	err := valSet.UpdateWithChangeSet(valList.Validators, valList.ThresholdPublicKey)
 	if expErr != nil {
 		assert.Equal(t, expErr, err)
 	} else {
@@ -1360,10 +1367,10 @@ func TestNewValidatorSetFromExistingValidators(t *testing.T) {
 	valSet, _ := GenerateValidatorSet(size)
 	valSet.IncrementProposerPriority(5)
 
-	newValSet := NewValidatorSet(valSet.Validators)
+	newValSet := NewValidatorSet(valSet.Validators, valSet.ThresholdPublicKey)
 	assert.NotEqual(t, valSet, newValSet)
 
-	existingValSet, err := ValidatorSetFromExistingValidators(valSet.Validators)
+	existingValSet, err := ValidatorSetFromExistingValidators(valSet.Validators, valSet.ThresholdPublicKey)
 	assert.NoError(t, err)
 	assert.Equal(t, valSet, existingValSet)
 	assert.Equal(t, valSet.CopyIncrementProposerPriority(3), existingValSet.CopyIncrementProposerPriority(3))
@@ -1448,6 +1455,8 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 		voteSet, originalValset, vals = randVoteSet(1, 1, tmproto.PrecommitType, 6, 1)
 		commit, err                   = MakeCommit(blockID, stateID, 1, 1, voteSet, vals)
 		newValSet, _                  = GenerateValidatorSet(2)
+		combinedProTxHashes           = append(originalValset.GetProTxHashes(), newValSet.GetProTxHashes()...)
+		combinedValSet, _             = GenerateValidatorSetUsingProTxHashes(combinedProTxHashes)
 	)
 	require.NoError(t, err)
 
@@ -1467,7 +1476,7 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 		},
 		// good - first two are different but the rest of the same -> >1/3
 		2: {
-			valSet: NewValidatorSet(append(newValSet.Validators, originalValset.Validators...)),
+			valSet: combinedValSet,
 			err:    false,
 		},
 	}
