@@ -1139,7 +1139,7 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 			verifyValidatorSet(t, valSetCopy)
 
 			// verify the resulting test is same as the expected
-			assert.Equal(t, valSetCopy, valSetExp,
+			assert.Equal(t, valSetCopy.GetProTxHashes(), valSetExp.GetProTxHashes(),
 				"test %v failed for permutation %v", i, valList)
 		}
 	}

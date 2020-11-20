@@ -1213,18 +1213,22 @@ func GenerateTestValidatorSetWithAddresses(addresses []crypto.Address) (*Validat
 	var (
 		numValidators  = len(addresses)
 		proTxHashes    = make([]ProTxHash, numValidators)
+		originalAddressMap = make(map[string][]byte)
 		valz           = make([]*Validator, numValidators)
 		privValidators = make([]PrivValidator, numValidators)
 	)
 	for i := 0; i < numValidators; i++ {
 		proTxHashes[i] = crypto.Sha256(addresses[i])
+		originalAddressMap[string(proTxHashes[i])] = addresses[i]
 	}
+	sort.Sort(crypto.SortProTxHash(proTxHashes))
+
 	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
 		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
-		valz[i].Address = addresses[i]
+		valz[i].Address = originalAddressMap[string(proTxHashes[i])]
 	}
 
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
