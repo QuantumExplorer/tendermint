@@ -238,12 +238,13 @@ func TestProposerSelection2(t *testing.T) {
 }
 
 func TestProposerSelection3(t *testing.T) {
-	vset := NewValidatorSet([]*Validator{
-		NewTestValidatorGeneratedFromAddress([]byte("avalidator_address12")),
-		NewTestValidatorGeneratedFromAddress([]byte("bvalidator_address12")),
-		NewTestValidatorGeneratedFromAddress([]byte("cvalidator_address12")),
-		NewTestValidatorGeneratedFromAddress([]byte("dvalidator_address12")),
-	}, pubKeyBLS{})
+	addresses := make([]crypto.Address, 4)
+	addresses[0] = []byte("avalidator_address12")
+	addresses[1] = []byte("bvalidator_address12")
+	addresses[2] = []byte("cvalidator_address12")
+	addresses[3] = []byte("dvalidator_address12")
+
+	vset, _ := GenerateTestValidatorSetWithAddresses(addresses)
 
 	proposerOrder := make([]*Validator, 4)
 	for i := 0; i < 4; i++ {
@@ -573,7 +574,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 		privKey = bls12381.GenPrivKey()
 		pubKey  = privKey.PubKey()
 		v1      = NewValidatorDefaultVotingPower(pubKey, proTxHash)
-		vset    = NewValidatorSet([]*Validator{v1}, nil)
+		vset    = NewValidatorSet([]*Validator{v1}, v1.PubKey)
 
 		chainID = "Lalande21185"
 	)
@@ -825,9 +826,10 @@ func createNewValidatorSet(testValList []testVal) *ValidatorSet {
 	return vals
 }
 
-func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) *ValidatorSet {
+func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) ([]*Validator, crypto.PubKey) {
 	addedAddresses := make([]Address, 0, len(testValList))
 	removedAddresses := make([]Address, 0, len(testValList))
+	removedVals := make([]*Validator, 0, len(testValList))
 	combinedAddresses := make([]Address, 0, len(testValList) + len(vals.Validators))
 	for _, val := range testValList {
 		if val.power != 0 {
@@ -840,6 +842,7 @@ func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) *Val
 			if value != nil {
 				removedAddresses = append(removedAddresses, []byte(val.name))
 			}
+			removedVals = append(removedVals, NewTestRemoveValidatorGeneratedFromAddress([]byte(val.name)))
 		}
 	}
 	originalAddresses := vals.GetAddresses()
@@ -855,8 +858,14 @@ func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) *Val
 		}
 	}
 	combinedAddresses = append(combinedAddresses, addedAddresses...)
-	rVals, _ := GenerateTestValidatorSetWithAddresses(combinedAddresses)
-	return rVals
+	if len(combinedAddresses) > 0 {
+		rVals, _ := GenerateTestValidatorSetWithAddresses(combinedAddresses)
+		rValidators := append(rVals.Validators, removedVals...)
+		return rValidators, rVals.ThresholdPublicKey
+	} else {
+		return removedVals, nil
+	}
+
 }
 
 func valSetTotalProposerPriority(valSet *ValidatorSet) int64 {
@@ -921,10 +930,9 @@ func executeValSetErrTestCase(t *testing.T, idx int, tt valSetErrTestCase) {
 	// create a new set and apply updates, keeping copies for the checks
 	valSet := createNewValidatorSet(tt.startVals)
 	valSetCopy := valSet.Copy()
-	newValSet := addValidatorsToValidatorSet(valSet, tt.updateVals)
-	valList := newValSet.Validators
+	valList, thresholdPublicKey := addValidatorsToValidatorSet(valSet, tt.updateVals)
 	valListCopy := validatorListCopy(valList)
-	err := valSet.UpdateWithChangeSet(valList, newValSet.ThresholdPublicKey)
+	err := valSet.UpdateWithChangeSet(valList, thresholdPublicKey)
 
 	// for errors check the validator set has not been changed
 	assert.Error(t, err, "test %d", idx)
@@ -939,19 +947,19 @@ func TestValSetUpdatesDuplicateEntries(t *testing.T) {
 		// Duplicate entries in changes
 		{ // first entry is duplicated change
 			testValSet(2),
-			[]testVal{{"v1", 11}, {"v1", 22}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 		{ // second entry is duplicated change
 			testValSet(2),
-			[]testVal{{"v2", 11}, {"v2", 22}},
+			[]testVal{{"v2", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		{ // change duplicates are separated by a valid change
 			testValSet(2),
-			[]testVal{{"v1", 11}, {"v2", 22}, {"v1", 12}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 		{ // change duplicates are separated by a valid change
 			testValSet(3),
-			[]testVal{{"v1", 11}, {"v3", 22}, {"v1", 12}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 
 		// Duplicate entries in remove
@@ -974,15 +982,15 @@ func TestValSetUpdatesDuplicateEntries(t *testing.T) {
 
 		{ // remove and update same val
 			testValSet(2),
-			[]testVal{{"v1", 0}, {"v2", 20}, {"v1", 30}},
+			[]testVal{{"v1", 0}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 		},
 		{ // duplicate entries in removes + changes
 			testValSet(2),
-			[]testVal{{"v1", 0}, {"v2", 20}, {"v2", 30}, {"v1", 0}},
+			[]testVal{{"v1", 0}, {"v2", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", 0}},
 		},
 		{ // duplicate entries in removes + changes
 			testValSet(3),
-			[]testVal{{"v1", 0}, {"v3", 5}, {"v2", 20}, {"v2", 30}, {"v1", 0}},
+			[]testVal{{"v1", 0}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", 0}},
 		},
 	}
 
@@ -1061,9 +1069,8 @@ func TestValSetUpdatesBasicTestsExecute(t *testing.T) {
 	for i, tt := range valSetUpdatesBasicTests {
 		// create a new set and apply updates, keeping copies for the checks
 		valSet := createNewValidatorSet(tt.startVals)
-		newValSet := addValidatorsToValidatorSet(valSet, tt.updateVals)
-		valList := newValSet.Validators
-		err := valSet.UpdateWithChangeSet(valList, newValSet.ThresholdPublicKey)
+		valList, thresholdPublicKey := addValidatorsToValidatorSet(valSet, tt.updateVals)
+		err := valSet.UpdateWithChangeSet(valList, thresholdPublicKey)
 		assert.NoError(t, err, "test %d", i)
 
 		valListCopy := validatorListCopy(valSet.Validators)
@@ -1112,8 +1119,8 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 		// create a new set and apply updates
 		valSet := createNewValidatorSet(tt.startVals)
 		valSetCopy := valSet.Copy()
-		valList := addValidatorsToValidatorSet(valSet, tt.updateVals)
-		assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList.Validators, valList.ThresholdPublicKey))
+		valList, thresholdPublicKey := addValidatorsToValidatorSet(valSet, tt.updateVals)
+		assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList, thresholdPublicKey))
 
 		// save the result as expected for next updates
 		valSetExp := valSetCopy.Copy()
@@ -1124,10 +1131,10 @@ func TestValSetUpdatesOrderIndependenceTestsExecute(t *testing.T) {
 		for j := 0; j < maxNumPerms; j++ {
 			// create a copy of original set and apply a random permutation of updates
 			valSetCopy := valSet.Copy()
-			valList := addValidatorsToValidatorSet(valSetCopy, permutation(tt.updateVals))
+			valList, thresholdPublicKey := addValidatorsToValidatorSet(valSetCopy, permutation(tt.updateVals))
 
 			// check there was no error and the set is properly scaled and centered.
-			assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList.Validators, valList.ThresholdPublicKey),
+			assert.NoError(t, valSetCopy.UpdateWithChangeSet(valList, thresholdPublicKey),
 				"test %v failed for permutation %v", i, valList)
 			verifyValidatorSet(t, valSetCopy)
 
@@ -1271,8 +1278,8 @@ func applyChangesToValSet(t *testing.T, expErr error, valSet *ValidatorSet, vals
 	for _, valsList := range valsLists {
 		changes = append(changes, valsList...)
 	}
-	valList := addValidatorsToValidatorSet(valSet, changes)
-	err := valSet.UpdateWithChangeSet(valList.Validators, valList.ThresholdPublicKey)
+	valList, thresholdPublicKey := addValidatorsToValidatorSet(valSet, changes)
+	err := valSet.UpdateWithChangeSet(valList, thresholdPublicKey)
 	if expErr != nil {
 		assert.Equal(t, expErr, err)
 	} else {
