@@ -55,7 +55,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	idx, _ = vset.GetByProTxHash(val.ProTxHash)
 	assert.EqualValues(t, 0, idx)
 	proTxHash, _ = vset.GetByIndex(0)
-	assert.Equal(t, []byte(val.ProTxHash), proTxHash)
+	assert.Equal(t, val.ProTxHash, proTxHash)
 	assert.Equal(t, 1, vset.Size())
 	assert.Equal(t, val.VotingPower, vset.TotalVotingPower())
 	assert.NotNil(t, vset.Hash())
@@ -67,7 +67,7 @@ func TestValidatorSetBasic(t *testing.T) {
 	val = randValidator(vset.TotalVotingPower())
 	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}, val.PubKey))
 	_, val = vset.GetByProTxHash(val.ProTxHash)
-	val.VotingPower += 100
+	val.PubKey = bls12381.GenPrivKey().PubKey()
 	proposerPriority := val.ProposerPriority
 
 	val.ProposerPriority = 0
@@ -302,9 +302,6 @@ func TestProposerSelection3(t *testing.T) {
 
 	proposerOrder := make([]*Validator, 4)
 	for i := 0; i < 4; i++ {
-		// need to give all validators to have keys
-		pk := bls12381.GenPrivKey().PubKey()
-		vset.Validators[i].PubKey = pk
 		proposerOrder[i] = vset.GetProposer()
 		vset.IncrementProposerPriority(1)
 	}
@@ -496,7 +493,7 @@ func TestSafeSubClip(t *testing.T) {
 // verification.
 func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	var (
-		proTxHash = crypto.CRandBytes(crypto.DefaultHashSize)
+		proTxHash = crypto.RandProTxHash()
 		privKey = bls12381.GenPrivKey()
 		pubKey  = privKey.PubKey()
 		v1      = NewValidatorDefaultVotingPower(pubKey, proTxHash)
@@ -536,7 +533,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	}{
 		{"good", chainID, vote.BlockID, vote.StateID, vote.Height, commit, false},
 
-		{"wrong block signature (#0)", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
+		{"wrong block signature", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
 		{"wrong block ID", chainID, makeBlockIDRandom(), vote.StateID, vote.Height, commit, true},
 		{"wrong height", chainID, vote.BlockID, vote.StateID, vote.Height - 1, commit, true},
 
@@ -547,10 +544,10 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID,
 				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"insufficient voting power: got 0, needed more than 666", chainID, vote.BlockID, vote.StateID, vote.Height,
+		{"insufficient voting power: got 0, needed more than 66", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
 
-		{"wrong block signature (#0)", chainID, vote.BlockID, vote.StateID, vote.Height,
+		{"wrong block signature", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}), true},
 	}
 
@@ -601,7 +598,7 @@ func TestValidatorSet_VerifyCommit_CheckAllSignatures(t *testing.T) {
 
 	err = valSet.VerifyCommit(chainID, blockID, stateID, h, commit)
 	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "wrong block signature (#3)")
+		assert.Contains(t, err.Error(), "wrong block signature (#3")
 	}
 }
 
@@ -854,6 +851,30 @@ type valSetErrTestCase struct {
 	updateVals []testVal
 }
 
+type valSetErrTestCaseWithErr struct {
+	startVals  []testVal
+	updateVals []testVal
+	errString string
+}
+
+func executeValSetErrTestCaseIgnoreThresholdPublicKey(t *testing.T, idx int, tt valSetErrTestCaseWithErr) {
+	// create a new set and apply updates, keeping copies for the checks
+	valSet := createNewValidatorSet(tt.startVals)
+	valSetCopy := valSet.Copy()
+	valList := createNewValidatorList(tt.updateVals)
+	valListCopy := validatorListCopy(valList)
+	err := valSet.UpdateWithChangeSet(valList, bls12381.GenPrivKey().PubKey())
+
+	// for errors check the validator set has not been changed
+	if assert.Error(t, err, "test %d", idx) {
+		assert.Contains(t, err.Error(), tt.errString)
+	}
+	assert.Equal(t, valSet, valSetCopy, "test %v", idx)
+
+	// check the parameter list has not changed
+	assert.Equal(t, valList, valListCopy, "test %v", idx)
+}
+
 func executeValSetErrTestCase(t *testing.T, idx int, tt valSetErrTestCase) {
 	// create a new set and apply updates, keeping copies for the checks
 	valSet := createNewValidatorSet(tt.startVals)
@@ -871,59 +892,70 @@ func executeValSetErrTestCase(t *testing.T, idx int, tt valSetErrTestCase) {
 }
 
 func TestValSetUpdatesDuplicateEntries(t *testing.T) {
-	testCases := []valSetErrTestCase{
+	testCases := []valSetErrTestCaseWithErr{
 		// Duplicate entries in changes
 		{ // first entry is duplicated change
 			testValSet(2),
 			[]testVal{{"v1", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			"duplicate entry Validator",
 		},
 		{ // second entry is duplicated change
 			testValSet(2),
 			[]testVal{{"v2", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
+			"duplicate entry Validator",
 		},
 		{ // change duplicates are separated by a valid change
 			testValSet(2),
 			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			"duplicate entry Validator",
 		},
 		{ // change duplicates are separated by a valid change
 			testValSet(3),
 			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			"duplicate entry Validator",
 		},
 
 		// Duplicate entries in remove
 		{ // first entry is duplicated remove
 			testValSet(2),
 			[]testVal{{"v1", 0}, {"v1", 0}},
+			"duplicate entry Validator",
 		},
 		{ // second entry is duplicated remove
 			testValSet(2),
 			[]testVal{{"v2", 0}, {"v2", 0}},
+			"duplicate entry Validator",
 		},
 		{ // remove duplicates are separated by a valid remove
 			testValSet(2),
 			[]testVal{{"v1", 0}, {"v2", 0}, {"v1", 0}},
+			"duplicate entry Validator",
 		},
 		{ // remove duplicates are separated by a valid remove
 			testValSet(3),
 			[]testVal{{"v1", 0}, {"v3", 0}, {"v1", 0}},
+			"duplicate entry Validator",
 		},
 
 		{ // remove and update same val
 			testValSet(2),
 			[]testVal{{"v1", 0}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			"duplicate entry Validator",
 		},
 		{ // duplicate entries in removes + changes
 			testValSet(2),
 			[]testVal{{"v1", 0}, {"v2", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", 0}},
+			"duplicate entry Validator",
 		},
 		{ // duplicate entries in removes + changes
 			testValSet(3),
 			[]testVal{{"v1", 0}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", 0}},
+			"duplicate entry Validator",
 		},
 	}
 
 	for i, tt := range testCases {
-		executeValSetErrTestCase(t, i, tt)
+		executeValSetErrTestCaseIgnoreThresholdPublicKey(t, i, tt)
 	}
 }
 
@@ -958,17 +990,17 @@ func TestValSetUpdatesBasicTestsExecute(t *testing.T) {
 		{ // voting power changes
 			testValSet(2),
 			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
-			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		{ // add new validators
 			[]testVal{{"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
-			[]testVal{{"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		{ // add new validator to middle
 			[]testVal{{"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			[]testVal{{"v2", DefaultDashVotingPower}},
-			[]testVal{{"v2", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		{ // add new validator to beginning
 			[]testVal{{"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
@@ -978,7 +1010,7 @@ func TestValSetUpdatesBasicTestsExecute(t *testing.T) {
 		{ // delete validators
 			[]testVal{{"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			[]testVal{{"v2", 0}},
-			[]testVal{{"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
+			[]testVal{{"v1", DefaultDashVotingPower}, {"v3", DefaultDashVotingPower}},
 		},
 	}
 
@@ -1344,22 +1376,6 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 		} else {
 			assert.NoError(t, err,"#%d", i)
 		}
-	}
-}
-
-func TestValidatorSet_VerifyCommitLightTrustingErrorsOnOverflow(t *testing.T) {
-	var (
-		blockID               = makeBlockIDRandom()
-		stateID               = makeStateIDRandom()
-		voteSet, valSet, vals = randVoteSet(1, 1, tmproto.PrecommitType, 1, MaxTotalVotingPower)
-		commit, err           = MakeCommit(blockID, stateID, 1, 1, voteSet, vals)
-	)
-	require.NoError(t, err)
-
-	err = valSet.VerifyCommitLightTrusting("test_chain_id", commit,
-		tmmath.Fraction{Numerator: 25, Denominator: 55})
-	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "int64 overflow")
 	}
 }
 

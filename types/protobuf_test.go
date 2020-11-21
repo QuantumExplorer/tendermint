@@ -113,7 +113,7 @@ func TestABCIValidatorWithoutPubKey(t *testing.T) {
 	// pubkey must be nil
 	tmValExpected := abci.Validator{
 		Address: pkBLS.Address(),
-		Power:   10,
+		Power:   DefaultDashVotingPower,
 		ProTxHash: proTxHash,
 	}
 
