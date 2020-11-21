@@ -73,12 +73,12 @@ func TestBeginBlockValidators(t *testing.T) {
 
 	var (
 		commitSig0 = types.NewCommitSigForBlock(
-			[]byte("Signature1"),
+			[]byte("BlockSignature1"),
 			[]byte("StateSignature1"),
 			state.Validators.Validators[0].Address)
 		commitSig1 = types.NewCommitSigForBlock(
-			[]byte("Signature2"),
-			[]byte("StateSignature1"),
+			[]byte("BlockSignature2"),
+			[]byte("StateSignature2"),
 			state.Validators.Validators[1].Address)
 		absentSig = types.NewCommitSigAbsent()
 	)
@@ -94,7 +94,7 @@ func TestBeginBlockValidators(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		lastCommit := types.NewCommit(1, 0, prevBlockID, prevStateID, tc.lastCommitSigs)
+		lastCommit := types.NewCommit(1, 0, prevBlockID, prevStateID, tc.lastCommitSigs, nil, nil)
 
 		// block for height 2
 		block, _ := state.MakeBlock(2, makeTxs(2), lastCommit, nil, state.Validators.GetProposer().ProTxHash)

@@ -36,7 +36,7 @@ func TestValidateBlockHeader(t *testing.T) {
 		memmock.Mempool{},
 		sm.EmptyEvidencePool{},
 	)
-	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
 
 	// some bad values
 	wrongHash := tmhash.Sum([]byte("this hash is wrong"))
@@ -108,8 +108,8 @@ func TestValidateBlockCommit(t *testing.T) {
 		memmock.Mempool{},
 		sm.EmptyEvidencePool{},
 	)
-	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
-	wrongSigsCommit := types.NewCommit(1, 0, types.BlockID{}, types.StateID{}, nil)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
+	wrongSigsCommit := types.NewCommit(1, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
 	badPrivVal := types.NewMockPV()
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
@@ -134,6 +134,8 @@ func TestValidateBlockCommit(t *testing.T) {
 				state.LastBlockID,
 				types.StateID{LastAppHash: state.AppHash},
 				[]types.CommitSig{wrongHeightVote.CommitSig()},
+				wrongHeightVote.BlockSignature,
+				wrongHeightVote.StateSignature,
 			)
 			block, _ := state.MakeBlock(height, makeTxs(height), wrongHeightCommit, nil, proTxHash)
 			err = blockExec.ValidateBlock(state, block)
@@ -208,7 +210,7 @@ func TestValidateBlockCommit(t *testing.T) {
 		goodVote.StateSignature, badVote.StateSignature = g.StateSignature, b.StateSignature
 
 		wrongSigsCommit = types.NewCommit(goodVote.Height, goodVote.Round,
-			blockID, stateID, []types.CommitSig{goodVote.CommitSig(), badVote.CommitSig()})
+			blockID, stateID, []types.CommitSig{goodVote.CommitSig(), badVote.CommitSig()}, goodVote.BlockSignature, goodVote.StateSignature)
 	}
 }
 
@@ -236,7 +238,7 @@ func TestValidateBlockEvidence(t *testing.T) {
 		memmock.Mempool{},
 		evpool,
 	)
-	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil)
+	lastCommit := types.NewCommit(0, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
 
 	for height := int64(1); height < validationTestsStopHeight; height++ {
 		proposerProTxHash := state.Validators.GetProposer().ProTxHash

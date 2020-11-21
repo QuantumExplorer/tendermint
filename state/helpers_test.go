@@ -74,6 +74,9 @@ func makeValidCommit(
 	privVals map[string]types.PrivValidator,
 ) (*types.Commit, error) {
 	sigs := make([]types.CommitSig, 0)
+	var blockSigs [][]byte
+	var stateSigs [][]byte
+	var blsIDs [][]byte
 	for i := 0; i < vals.Size(); i++ {
 		_, val := vals.GetByIndex(int32(i))
 		vote, err := types.MakeVote(height, blockID, stateID, vals, privVals[val.ProTxHash.String()], chainID)
@@ -81,8 +84,15 @@ func makeValidCommit(
 			return nil, err
 		}
 		sigs = append(sigs, vote.CommitSig())
+		blockSigs = append(blockSigs, vote.BlockSignature)
+		stateSigs = append(stateSigs, vote.StateSignature)
+		blsIDs = append(blsIDs, vote.ValidatorProTxHash)
 	}
-	return types.NewCommit(height, 0, blockID, stateID, sigs), nil
+
+	thresholdBlockSig, _ := bls12381.RecoverThresholdSignatureFromShares(blockSigs, blsIDs)
+	thresholdStateSig, _ := bls12381.RecoverThresholdSignatureFromShares(stateSigs, blsIDs)
+
+	return types.NewCommit(height, 0, blockID, stateID, sigs, thresholdBlockSig, thresholdStateSig), nil
 }
 
 // make some bogus txs

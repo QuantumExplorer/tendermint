@@ -806,12 +806,13 @@ type Commit struct {
 	// ValidatorSet order.
 	// Any peer with a block can gossip signatures by index with a peer without
 	// recalculating the active ValidatorSet.
-	Height     int64       `json:"height"`
-	Round      int32       `json:"round"`
-	BlockID    BlockID     `json:"block_id"`
-	StateID	   StateID     `json:"state_id"`
-	Signatures []CommitSig `json:"signatures"`
-	AggregateSignature CommitSig
+	Height                  int64       `json:"height"`
+	Round                   int32       `json:"round"`
+	BlockID                 BlockID     `json:"block_id"`
+	StateID	                StateID     `json:"state_id"`
+	Signatures              []CommitSig `json:"signatures"`
+	ThresholdBlockSignature []byte      `json:"threshold_block_signature"`
+	ThresholdStateSignature []byte      `json:"threshold_state_signature"`
 
 	// Memoized in first call to corresponding method.
 	// NOTE: can't memoize in constructor because constructor isn't used for
@@ -821,13 +822,15 @@ type Commit struct {
 }
 
 // NewCommit returns a new Commit.
-func NewCommit(height int64, round int32, blockID BlockID, stateID StateID, commitSigs []CommitSig) *Commit {
+func NewCommit(height int64, round int32, blockID BlockID, stateID StateID, commitSigs []CommitSig, thresholdBlockSignature []byte, thresholdStateSignature []byte) *Commit {
 	return &Commit{
 		Height:     height,
 		Round:      round,
 		BlockID:    blockID,
 		StateID:    stateID,
 		Signatures: commitSigs,
+		ThresholdBlockSignature: thresholdBlockSignature,
+		ThresholdStateSignature: thresholdStateSignature,
 	}
 }
 
@@ -1033,6 +1036,9 @@ func (commit *Commit) ToProto() *tmproto.Commit {
 	c.BlockID = commit.BlockID.ToProto()
 	c.StateID = commit.StateID.ToProto()
 
+	c.ThresholdStateSignature = commit.ThresholdStateSignature
+	c.ThresholdBlockSignature = commit.ThresholdBlockSignature
+
 	return c
 }
 
@@ -1064,6 +1070,9 @@ func CommitFromProto(cp *tmproto.Commit) (*Commit, error) {
 		}
 	}
 	commit.Signatures = sigs
+
+	commit.ThresholdBlockSignature = cp.ThresholdBlockSignature
+	commit.ThresholdStateSignature = cp.ThresholdStateSignature
 
 	commit.Height = cp.Height
 	commit.Round = cp.Round

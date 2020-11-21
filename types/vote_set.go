@@ -298,6 +298,10 @@ func (voteSet *VoteSet) addVerifiedVote(
 			voteSet.stateMaj23 = &stateMaj23StateID
 			if len(votesByBlock.votes) > 1 {
 				voteSet.recoverThresholdSigs(votesByBlock)
+			} else {
+				// there is only 1 validator
+				voteSet.thresholdBlockSig = vote.BlockSignature
+				voteSet.thresholdStateSig = vote.StateSignature
 			}
 			// And also copy votes over to voteSet.votes
 			for i, vote := range votesByBlock.votes {
@@ -624,6 +628,18 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 		panic("Cannot MakeCommit() unless a blockhash has +2/3")
 	}
 
+	if voteSet.stateMaj23 == nil {
+		panic("Cannot MakeCommit() unless a stateMaj23 has been set")
+	}
+
+	if voteSet.thresholdBlockSig == nil {
+		panic("Cannot MakeCommit() unless a thresholdBlockSig has been created")
+	}
+
+	if voteSet.thresholdStateSig == nil {
+		panic("Cannot MakeCommit() unless a thresholdStateSig has been created")
+	}
+
 	// For every validator, get the precommit
 	commitSigs := make([]CommitSig, len(voteSet.votes))
 	for i, v := range voteSet.votes {
@@ -635,7 +651,7 @@ func (voteSet *VoteSet) MakeCommit() *Commit {
 		commitSigs[i] = commitSig
 	}
 
-	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, *voteSet.stateMaj23, commitSigs)
+	return NewCommit(voteSet.GetHeight(), voteSet.GetRound(), *voteSet.maj23, *voteSet.stateMaj23, commitSigs, voteSet.thresholdBlockSig, voteSet.thresholdStateSig)
 }
 
 //--------------------------------------------------------------------------------

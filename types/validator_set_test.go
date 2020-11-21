@@ -512,7 +512,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	vote.BlockSignature = blockSig
 	vote.StateSignature = stateSig
 
-	commit := NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote.CommitSig()})
+	commit := NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote.CommitSig()}, vote.BlockSignature, vote.StateSignature)
 
 	vote2 := *vote
 	blockSig2, err := privKey.Sign(VoteBlockSignBytes("EpsilonEridani", v))
@@ -538,17 +538,17 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 		{"wrong height", chainID, vote.BlockID, vote.StateID, vote.Height - 1, commit, true},
 
 		{"wrong set size: 1 vs 0", chainID, vote.BlockID, vote.StateID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{}), true},
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{}, nil, nil), true},
 
 		{"wrong set size: 1 vs 2", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID,
-				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}), true},
+				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}, nil, nil), true},
 
 		{"insufficient voting power: got 0, needed more than 66", chainID, vote.BlockID, vote.StateID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}), true},
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}, nil, nil), true},
 
 		{"wrong block signature", chainID, vote.BlockID, vote.StateID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}), true},
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}, vote2.BlockSignature, vote2.StateSignature), true},
 	}
 
 	for _, tc := range testCases {
