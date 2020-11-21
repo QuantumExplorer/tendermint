@@ -833,7 +833,7 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID, stateID 
 	}
 
 	talliedVotingPower := int64(0)
-	votingPowerNeeded := vals.TotalVotingPower() * 2 / 3
+	votingPowerNeedMoreThan := vals.TotalVotingPower() * 2 / 3
 	for idx, commitSig := range commit.Signatures {
 		if commitSig.Absent() {
 			continue // OK, some signatures can be absent.
@@ -864,7 +864,7 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID, stateID 
 		// }
 	}
 
-	if got, needed := talliedVotingPower, votingPowerNeeded; got <= needed {
+	if got, needed := talliedVotingPower, votingPowerNeedMoreThan; got <= needed {
 		return ErrNotEnoughVotingPowerSigned{Got: got, Needed: needed}
 	}
 
