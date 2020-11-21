@@ -110,21 +110,21 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 			nil,
 			"",
 		},
-		// 1/3 signed -> error
+		// < 1/3 signed -> error
 		7: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), len(keys)-1, len(keys)),
 			vals,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
-			light.ErrInvalidHeader{Reason: types.ErrNotEnoughVotingPowerSigned{Got: 50, Needed: 93}},
+			light.ErrInvalidHeader{Reason: types.ErrNotEnoughVotingPowerSigned{Got: 100, Needed: 266}},
 			"",
 		},
 		// vals does not match with what we have -> error
 		8: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(nil), vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(vals.ThresholdPublicKey), vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(nil),
+			keys.ToValidators(vals.ThresholdPublicKey),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -134,7 +134,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		9: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(nil),
+			keys.ToValidators(vals.ThresholdPublicKey),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -144,7 +144,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		10: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(nil),
+			keys.ToValidators(vals.ThresholdPublicKey),
 			1 * time.Hour,
 			bTime.Add(1 * time.Hour),
 			nil,
