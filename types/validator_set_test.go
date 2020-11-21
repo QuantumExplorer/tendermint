@@ -196,11 +196,10 @@ func TestProposerSelection1(t *testing.T) {
 		proposers = append(proposers, string(val.Address))
 		vset.IncrementProposerPriority(1)
 	}
-	expected := `foo baz foo bar foo foo baz foo bar foo foo baz foo foo bar foo baz foo foo bar` +
-		` foo foo baz foo bar foo foo baz foo bar foo foo baz foo foo bar foo baz foo foo bar` +
-		` foo baz foo foo bar foo baz foo foo bar foo baz foo foo foo baz bar foo foo foo baz` +
-		` foo bar foo foo baz foo bar foo foo baz foo bar foo foo baz foo bar foo foo baz foo` +
-		` foo bar foo baz foo foo bar foo baz foo foo bar foo baz foo foo`
+	expected := `bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar ` +
+		`baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar ` +
+		`baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar ` +
+		`baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo`
 	if expected != strings.Join(proposers, " ") {
 		t.Errorf("expected sequence of proposers was\n%v\nbut got \n%v", expected, strings.Join(proposers, " "))
 	}
@@ -244,7 +243,7 @@ func TestProposerSelection3(t *testing.T) {
 	addresses[2] = []byte("cvalidator_address12")
 	addresses[3] = []byte("dvalidator_address12")
 
-	vset, _ := GenerateTestValidatorSetWithAddresses(addresses)
+	vset, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses)
 
 	proposerOrder := make([]*Validator, 4)
 	for i := 0; i < 4; i++ {
@@ -741,7 +740,7 @@ func TestEmptySet(t *testing.T) {
 
 	// Add to empty set
 	addresses := []crypto.Address{[]byte("v1"),[]byte("v2")}
-	valSetAdd, _ := GenerateTestValidatorSetWithAddresses(addresses)
+	valSetAdd, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses)
 	assert.NoError(t, valSet.UpdateWithChangeSet(valSetAdd.Validators, valSetAdd.ThresholdPublicKey))
 	verifyValidatorSet(t, valSet)
 
@@ -760,7 +759,7 @@ func TestUpdatesForNewValidatorSet(t *testing.T) {
 
 	addresses12 := []crypto.Address{[]byte("v1"), []byte("v2")}
 
-	valSet, _ := GenerateTestValidatorSetWithAddresses(addresses12)
+	valSet, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses12)
 	verifyValidatorSet(t, valSet)
 
 	// Verify duplicates are caught in NewValidatorSet() and it panics
@@ -819,10 +818,12 @@ func createNewValidatorList(testValList []testVal) []*Validator {
 
 func createNewValidatorSet(testValList []testVal) *ValidatorSet {
 	addressList := make([]Address, 0, len(testValList))
+	powers := make([]int64, 0, len(testValList))
 	for _, val := range testValList {
 		addressList = append(addressList, []byte(val.name))
+		powers = append(powers, val.power)
 	}
-	vals, _ := GenerateTestValidatorSetWithAddresses(addressList)
+	vals, _ := GenerateTestValidatorSetWithAddresses(addressList, powers)
 	return vals
 }
 
@@ -859,7 +860,7 @@ func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) ([]*
 	}
 	combinedAddresses = append(combinedAddresses, addedAddresses...)
 	if len(combinedAddresses) > 0 {
-		rVals, _ := GenerateTestValidatorSetWithAddresses(combinedAddresses)
+		rVals, _ := GenerateTestValidatorSetWithAddressesDefaultPower(combinedAddresses)
 		rValidators := append(rVals.Validators, removedVals...)
 		return rValidators, rVals.ThresholdPublicKey
 	} else {
@@ -1001,18 +1002,6 @@ func TestValSetUpdatesDuplicateEntries(t *testing.T) {
 
 func TestValSetUpdatesOtherErrors(t *testing.T) {
 	testCases := []valSetErrTestCase{
-		{ // update with negative voting power
-			testValSet(2),
-			[]testVal{{"v1", -123}},
-		},
-		{ // update with negative voting power
-			testValSet(2),
-			[]testVal{{"v2", -123}},
-		},
-		{ // update with non default voting power
-			testValSet(2),
-			[]testVal{{"v2", DefaultDashVotingPower + 1}},
-		},
 		{ // remove non-existing validator
 			testValSet(2),
 			[]testVal{{"v3", 0}},
@@ -1292,53 +1281,53 @@ func TestValSetUpdatePriorityOrderTests(t *testing.T) {
 
 	testCases := []testVSetCfg{
 		0: { // remove high power validator, keep old equal lower power validators
-			startVals:    []testVal{{"v3", 1000}, {"v1", 1}, {"v2", 1}},
+			startVals:    []testVal{{"v3", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 			deletedVals:  []testVal{{"v3", 0}},
 			updatedVals:  []testVal{},
 			addedVals:    []testVal{},
-			expectedVals: []testVal{{"v1", 1}, {"v2", 1}},
+			expectedVals: []testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		1: { // remove high power validator, keep old different power validators
-			startVals:    []testVal{{"v3", 1000}, {"v2", 10}, {"v1", 1}},
+			startVals:    []testVal{{"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			deletedVals:  []testVal{{"v3", 0}},
 			updatedVals:  []testVal{},
 			addedVals:    []testVal{},
-			expectedVals: []testVal{{"v2", 10}, {"v1", 1}},
+			expectedVals: []testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 		2: { // remove high power validator, add new low power validators, keep old lower power
-			startVals:    []testVal{{"v3", 1000}, {"v2", 2}, {"v1", 1}},
+			startVals:    []testVal{{"v3", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}, {"v1", DefaultDashVotingPower}},
 			deletedVals:  []testVal{{"v3", 0}},
-			updatedVals:  []testVal{{"v2", 1}},
-			addedVals:    []testVal{{"v5", 50}, {"v4", 40}},
-			expectedVals: []testVal{{"v5", 50}, {"v4", 40}, {"v1", 1}, {"v2", 1}},
+			updatedVals:  []testVal{{"v2", DefaultDashVotingPower}},
+			addedVals:    []testVal{{"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}},
+			expectedVals: []testVal{{"v1", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
 		},
 
 		// generate a configuration with 100 validators,
 		// randomly select validators for updates and deletes, and
 		// generate 10 new validators to be added
-		3: randTestVSetCfg(t, 100, 10),
-
-		4: randTestVSetCfg(t, 1000, 100),
-
-		5: randTestVSetCfg(t, 10, 100),
-
-		6: randTestVSetCfg(t, 100, 1000),
-
-		7: randTestVSetCfg(t, 1000, 1000),
+		//3: randTestVSetCfg(t, 100, 10),
+		//
+		//4: randTestVSetCfg(t, 1000, 100),
+		//
+		//5: randTestVSetCfg(t, 10, 100),
+		//
+		//6: randTestVSetCfg(t, 100, 1000),
+		//
+		//7: randTestVSetCfg(t, 1000, 1000),
 	}
 
-	for _, cfg := range testCases {
+	for i, cfg := range testCases {
 
 		// create a new validator set
 		valSet := createNewValidatorSet(cfg.startVals)
 		verifyValidatorSet(t, valSet)
 
 		// run election up to nMaxElections times, apply changes and verify that the priority order is correct
-		verifyValSetUpdatePriorityOrder(t, valSet, cfg, nMaxElections)
+		verifyValSetUpdatePriorityOrder(t, valSet, cfg, nMaxElections, i)
 	}
 }
 
-func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg testVSetCfg, nMaxElections int32) {
+func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg testVSetCfg, nMaxElections int32, testNumber int) {
 	// Run election up to nMaxElections times, sort validators by priorities
 	valSet.IncrementProposerPriority(tmrand.Int31()%nMaxElections + 1)
 
@@ -1347,7 +1336,7 @@ func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg tes
 
 	// basic checks
 	testValSet := toTestValList(valSet.Validators)
-	assert.Equal(t, cfg.expectedVals, testValSet)
+	assert.Equal(t, cfg.expectedVals, testValSet, "(0) test number %d", testNumber)
 	verifyValidatorSet(t, valSet)
 
 	// verify that the added validators have the smallest priority:
@@ -1359,12 +1348,12 @@ func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg tes
 
 		addedValsPriSlice := updatedValsPriSorted[:len(cfg.addedVals)]
 		sort.Sort(ValidatorsByVotingPower(addedValsPriSlice))
-		assert.Equal(t, cfg.addedVals, toTestValList(addedValsPriSlice))
+		assert.Equal(t, cfg.addedVals, toTestValList(addedValsPriSlice), "(1) test number %d", testNumber)
 
 		//  - and should all have the same priority
 		expectedPri := addedValsPriSlice[0].ProposerPriority
 		for _, val := range addedValsPriSlice[1:] {
-			assert.Equal(t, expectedPri, val.ProposerPriority)
+			assert.Equal(t, expectedPri, val.ProposerPriority, "(2) test number %d", testNumber)
 		}
 	}
 }
@@ -1372,87 +1361,19 @@ func verifyValSetUpdatePriorityOrder(t *testing.T, valSet *ValidatorSet, cfg tes
 func TestNewValidatorSetFromExistingValidators(t *testing.T) {
 	size := 5
 	valSet, _ := GenerateValidatorSet(size)
-	valSet.IncrementProposerPriority(5)
+	valSet.IncrementProposerPriority(3)
 
-	newValSet := NewValidatorSet(valSet.Validators, valSet.ThresholdPublicKey)
-	assert.NotEqual(t, valSet, newValSet)
+	newValSet0 := NewValidatorSet(valSet.Validators, valSet.ThresholdPublicKey)
+	assert.NotEqual(t, valSet, newValSet0)
+
+	valSet.IncrementProposerPriority(2)
+	newValSet1 := NewValidatorSet(valSet.Validators, valSet.ThresholdPublicKey)
+	assert.Equal(t, valSet, newValSet1)
 
 	existingValSet, err := ValidatorSetFromExistingValidators(valSet.Validators, valSet.ThresholdPublicKey)
 	assert.NoError(t, err)
 	assert.Equal(t, valSet, existingValSet)
 	assert.Equal(t, valSet.CopyIncrementProposerPriority(3), existingValSet.CopyIncrementProposerPriority(3))
-}
-
-func TestValSetUpdateOverflowRelated(t *testing.T) {
-	testCases := []testVSetCfg{
-		{
-			name:         "1 no false overflow error messages for updates",
-			startVals:    []testVal{{"v2", MaxTotalVotingPower - 1}, {"v1", 1}},
-			updatedVals:  []testVal{{"v1", MaxTotalVotingPower - 1}, {"v2", 1}},
-			expectedVals: []testVal{{"v1", MaxTotalVotingPower - 1}, {"v2", 1}},
-			expErr:       nil,
-		},
-		{
-			// this test shows that it is important to apply the updates in the order of the change in power
-			// i.e. apply first updates with decreases in power, v2 change in this case.
-			name:         "2 no false overflow error messages for updates",
-			startVals:    []testVal{{"v2", MaxTotalVotingPower - 1}, {"v1", 1}},
-			updatedVals:  []testVal{{"v1", MaxTotalVotingPower/2 - 1}, {"v2", MaxTotalVotingPower / 2}},
-			expectedVals: []testVal{{"v2", MaxTotalVotingPower / 2}, {"v1", MaxTotalVotingPower/2 - 1}},
-			expErr:       nil,
-		},
-		{
-			name:         "3 no false overflow error messages for deletes",
-			startVals:    []testVal{{"v1", MaxTotalVotingPower - 2}, {"v2", 1}, {"v3", 1}},
-			deletedVals:  []testVal{{"v1", 0}},
-			addedVals:    []testVal{{"v4", MaxTotalVotingPower - 2}},
-			expectedVals: []testVal{{"v4", MaxTotalVotingPower - 2}, {"v3", 1}, {"v2", 1}},
-			expErr:       nil,
-		},
-		{
-			name: "4 no false overflow error messages for adds, updates and deletes",
-			startVals: []testVal{
-				{"v1", MaxTotalVotingPower / 4}, {"v2", MaxTotalVotingPower / 4},
-				{"v3", MaxTotalVotingPower / 4}, {"v4", MaxTotalVotingPower / 4}},
-			deletedVals: []testVal{{"v2", 0}},
-			updatedVals: []testVal{
-				{"v1", MaxTotalVotingPower/2 - 2}, {"v3", MaxTotalVotingPower/2 - 3}, {"v4", 2}},
-			addedVals: []testVal{{"v5", 3}},
-			expectedVals: []testVal{
-				{"v1", MaxTotalVotingPower/2 - 2}, {"v3", MaxTotalVotingPower/2 - 3}, {"v5", 3}, {"v4", 2}},
-			expErr: nil,
-		},
-		{
-			name: "5 check panic on overflow is prevented: update 8 validators with power int64(math.MaxInt64)/8",
-			startVals: []testVal{
-				{"v1", 1}, {"v2", 1}, {"v3", 1}, {"v4", 1}, {"v5", 1},
-				{"v6", 1}, {"v7", 1}, {"v8", 1}, {"v9", 1}},
-			updatedVals: []testVal{
-				{"v1", MaxTotalVotingPower}, {"v2", MaxTotalVotingPower}, {"v3", MaxTotalVotingPower},
-				{"v4", MaxTotalVotingPower}, {"v5", MaxTotalVotingPower}, {"v6", MaxTotalVotingPower},
-				{"v7", MaxTotalVotingPower}, {"v8", MaxTotalVotingPower}, {"v9", 8}},
-			expectedVals: []testVal{
-				{"v8", 1}, {"v7", 1}, {"v1", 1}, {"v6", 1}, {"v9", 1},
-				{"v4", 1}, {"v3", 1}, {"v5", 1}, {"v2", 1},
-			},
-			expErr: ErrTotalVotingPowerOverflow,
-		},
-	}
-
-	for _, tt := range testCases {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			valSet := createNewValidatorSet(tt.startVals)
-			verifyValidatorSet(t, valSet)
-
-			// execute update and verify returned error is as expected
-			applyChangesToValSet(t, tt.expErr, valSet, tt.addedVals, tt.updatedVals, tt.deletedVals)
-
-			// verify updated validator set is as expected
-			assert.Equal(t, tt.expectedVals, toTestValList(valSet.Validators))
-			verifyValidatorSet(t, valSet)
-		})
-	}
 }
 
 func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
@@ -1481,20 +1402,20 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 			valSet: newValSet,
 			err:    true,
 		},
-		// good - first two are different but the rest of the same -> >1/3
+		// bad - the combined val set now has different keys
 		2: {
 			valSet: combinedValSet,
-			err:    false,
+			err:    true,
 		},
 	}
 
-	for _, tc := range testCases {
+	for i, tc := range testCases {
 		err = tc.valSet.VerifyCommitLightTrusting("test_chain_id", commit,
 			tmmath.Fraction{Numerator: 1, Denominator: 3})
 		if tc.err {
-			assert.Error(t, err)
+			assert.Error(t, err, "#%d", i)
 		} else {
-			assert.NoError(t, err)
+			assert.NoError(t, err,"#%d", i)
 		}
 	}
 }
@@ -1639,7 +1560,7 @@ func BenchmarkUpdates(b *testing.B) {
 	for j := 0; j < n; j++ {
 		addresses0[j] = []byte(fmt.Sprintf("v%d", j))
 	}
-	valSet, _ := GenerateTestValidatorSetWithAddresses(addresses0)
+	valSet, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses0)
 
 	addresses1 := make([]crypto.Address, n + m)
 	newValList := make([]*Validator, m)
@@ -1649,7 +1570,7 @@ func BenchmarkUpdates(b *testing.B) {
 			newValList[j - n] = NewTestValidatorGeneratedFromAddress([]byte(fmt.Sprintf("v%d", j)))
 		}
 	}
-	valSet2, _ := GenerateTestValidatorSetWithAddresses(addresses1)
+	valSet2, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses1)
 
 	b.ResetTimer()
 

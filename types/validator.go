@@ -99,7 +99,7 @@ func (v *Validator) CompareProposerPriority(other *Validator) *Validator {
 	case v.ProposerPriority < other.ProposerPriority:
 		return other
 	default:
-		result := bytes.Compare(v.Address, other.Address)
+		result := bytes.Compare(v.ProTxHash, other.ProTxHash)
 		switch {
 		case result < 0:
 			return v
