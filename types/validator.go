@@ -67,7 +67,7 @@ func (v *Validator) ValidateBasic() error {
 	}
 
 	if v.ProTxHash == nil {
-		return errors.New("validator is missing pro_tx_hash")
+		return errors.New("validator does not have a provider transaction hash")
 	}
 
 	if v.VotingPower < 0 {

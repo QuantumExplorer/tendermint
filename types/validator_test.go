@@ -93,7 +93,7 @@ func TestValidatorValidateBasic(t *testing.T) {
 				ProTxHash: nil,
 			},
 			err: true,
-			msg: "validator is missing pro_tx_hash",
+			msg: "validator does not have a provider transaction hash",
 		},
 	}
 

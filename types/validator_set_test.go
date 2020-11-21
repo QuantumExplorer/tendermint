@@ -79,7 +79,12 @@ func TestValidatorSetBasic(t *testing.T) {
 
 func TestValidatorSetValidateBasic(t *testing.T) {
 	val, _ := RandValidator()
-	badVal := &Validator{}
+	badValNoPublicKey := &Validator{ProTxHash: val.ProTxHash}
+	badValNoProTxHash := &Validator{PubKey: val.PubKey}
+
+	goodValSet, _ := GenerateValidatorSet(4)
+	badValSet, _ := GenerateValidatorSet(4)
+	badValSet.ThresholdPublicKey = val.PubKey
 
 	testCases := []struct {
 		vals ValidatorSet
@@ -87,9 +92,22 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		msg  string
 	}{
 		{
+			vals: ValidatorSet{ThresholdPublicKey: bls12381.GenPrivKey().PubKey()},
+			err:  true,
+			msg:  "validator set is nil or empty",
+		},
+		{
 			vals: ValidatorSet{},
 			err:  true,
 			msg:  "validator set is nil or empty",
+		},
+		{
+			vals: ValidatorSet{
+				Validators: []*Validator{},
+				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
+			},
+			err: true,
+			msg: "validator set is nil or empty",
 		},
 		{
 			vals: ValidatorSet{
@@ -101,22 +119,59 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		{
 			vals: ValidatorSet{
 				Validators: []*Validator{val},
+				ThresholdPublicKey: val.PubKey,
 			},
 			err: true,
 			msg: "proposer failed validate basic, error: nil validator",
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{badVal},
+				Validators: []*Validator{val},
+				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
+			},
+			err: true,
+			msg: "incorrect threshold public key",
+		},
+		{
+			vals: ValidatorSet{
+				Validators: []*Validator{badValNoPublicKey},
+				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
 			},
 			err: true,
 			msg: "invalid validator #0: validator does not have a public key",
 		},
 		{
 			vals: ValidatorSet{
+				Validators: []*Validator{badValNoProTxHash},
+				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
+			},
+			err: true,
+			msg: "invalid validator #0: validator does not have a provider transaction hash",
+		},
+		{
+			vals: ValidatorSet{
+				Validators: []*Validator{val},
+				Proposer:   val,
+				ThresholdPublicKey: val.PubKey,
+			},
+			err: false,
+			msg: "",
+		},
+		{
+			vals: ValidatorSet{
 				Validators: []*Validator{val},
 				Proposer:   val,
 			},
+			err: true,
+			msg: "threshold public key is not set",
+		},
+		{
+			vals: *badValSet,
+			err: true,
+			msg: "incorrect recovered threshold public key",
+		},
+		{
+			vals: *goodValSet,
 			err: false,
 			msg: "",
 		},
@@ -196,10 +251,10 @@ func TestProposerSelection1(t *testing.T) {
 		proposers = append(proposers, string(val.Address))
 		vset.IncrementProposerPriority(1)
 	}
-	expected := `bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar ` +
-		`baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar ` +
-		`baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar ` +
-		`baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo`
+	expected := `foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo ` +
+		`baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo ` +
+		`baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo ` +
+		`baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar foo baz bar`
 	if expected != strings.Join(proposers, " ") {
 		t.Errorf("expected sequence of proposers was\n%v\nbut got \n%v", expected, strings.Join(proposers, " "))
 	}
@@ -408,134 +463,6 @@ func TestAveragingInIncrementProposerPriority(t *testing.T) {
 		for _, val := range tc.vs.Validators {
 			_, updatedVal := newVset.GetByProTxHash(val.ProTxHash)
 			assert.Equal(t, updatedVal.ProposerPriority, val.ProposerPriority-tc.avg, "test case: %v", i)
-		}
-	}
-}
-
-func TestAveragingInIncrementProposerPriorityWithVotingPower(t *testing.T) {
-	// Other than TestAveragingInIncrementProposerPriority this is a more complete test showing
-	// how each ProposerPriority changes in relation to the validator's voting power respectively.
-	// average is zero in each round:
-	vp0 := int64(10)
-	vp1 := int64(1)
-	vp2 := int64(1)
-	total := vp0 + vp1 + vp2
-	avg := (vp0 + vp1 + vp2 - total) / 3
-	vals := ValidatorSet{Validators: []*Validator{
-		{Address: []byte{0}, ProposerPriority: 0, VotingPower: vp0},
-		{Address: []byte{1}, ProposerPriority: 0, VotingPower: vp1},
-		{Address: []byte{2}, ProposerPriority: 0, VotingPower: vp2}}}
-	tcs := []struct {
-		vals                  *ValidatorSet
-		wantProposerPrioritys []int64
-		times                 int32
-		wantProposer          *Validator
-	}{
-
-		0: {
-			vals.Copy(),
-			[]int64{
-				// Acumm+VotingPower-Avg:
-				0 + vp0 - total - avg, // mostest will be subtracted by total voting power (12)
-				0 + vp1,
-				0 + vp2},
-			1,
-			vals.Validators[0]},
-		1: {
-			vals.Copy(),
-			[]int64{
-				(0 + vp0 - total) + vp0 - total - avg, // this will be mostest on 2nd iter, too
-				(0 + vp1) + vp1,
-				(0 + vp2) + vp2},
-			2,
-			vals.Validators[0]}, // increment twice -> expect average to be subtracted twice
-		2: {
-			vals.Copy(),
-			[]int64{
-				0 + 3*(vp0-total) - avg, // still mostest
-				0 + 3*vp1,
-				0 + 3*vp2},
-			3,
-			vals.Validators[0]},
-		3: {
-			vals.Copy(),
-			[]int64{
-				0 + 4*(vp0-total), // still mostest
-				0 + 4*vp1,
-				0 + 4*vp2},
-			4,
-			vals.Validators[0]},
-		4: {
-			vals.Copy(),
-			[]int64{
-				0 + 4*(vp0-total) + vp0, // 4 iters was mostest
-				0 + 5*vp1 - total,       // now this val is mostest for the 1st time (hence -12==totalVotingPower)
-				0 + 5*vp2},
-			5,
-			vals.Validators[1]},
-		5: {
-			vals.Copy(),
-			[]int64{
-				0 + 6*vp0 - 5*total, // mostest again
-				0 + 6*vp1 - total,   // mostest once up to here
-				0 + 6*vp2},
-			6,
-			vals.Validators[0]},
-		6: {
-			vals.Copy(),
-			[]int64{
-				0 + 7*vp0 - 6*total, // in 7 iters this val is mostest 6 times
-				0 + 7*vp1 - total,   // in 7 iters this val is mostest 1 time
-				0 + 7*vp2},
-			7,
-			vals.Validators[0]},
-		7: {
-			vals.Copy(),
-			[]int64{
-				0 + 8*vp0 - 7*total, // mostest again
-				0 + 8*vp1 - total,
-				0 + 8*vp2},
-			8,
-			vals.Validators[0]},
-		8: {
-			vals.Copy(),
-			[]int64{
-				0 + 9*vp0 - 7*total,
-				0 + 9*vp1 - total,
-				0 + 9*vp2 - total}, // mostest
-			9,
-			vals.Validators[2]},
-		9: {
-			vals.Copy(),
-			[]int64{
-				0 + 10*vp0 - 8*total, // after 10 iters this is mostest again
-				0 + 10*vp1 - total,   // after 6 iters this val is "mostest" once and not in between
-				0 + 10*vp2 - total},  // in between 10 iters this val is "mostest" once
-			10,
-			vals.Validators[0]},
-		10: {
-			vals.Copy(),
-			[]int64{
-				0 + 11*vp0 - 9*total,
-				0 + 11*vp1 - total,  // after 6 iters this val is "mostest" once and not in between
-				0 + 11*vp2 - total}, // after 10 iters this val is "mostest" once
-			11,
-			vals.Validators[0]},
-	}
-	for i, tc := range tcs {
-		tc.vals.IncrementProposerPriority(tc.times)
-
-		assert.Equal(t, tc.wantProposer.ProTxHash, tc.vals.GetProposer().ProTxHash,
-			"test case: %v",
-			i)
-
-		for valIdx, val := range tc.vals.Validators {
-			assert.Equal(t,
-				tc.wantProposerPrioritys[valIdx],
-				val.ProposerPriority,
-				"test case: %v, validator: %v",
-				i,
-				valIdx)
 		}
 	}
 }

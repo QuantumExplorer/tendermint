@@ -91,14 +91,14 @@ func (vals *ValidatorSet) ValidateBasic() error {
 		return errors.New("validator set is nil or empty")
 	}
 
-	if err := vals.ThresholdPublicKeyValid(); err != nil {
-		return err
-	}
-
 	for idx, val := range vals.Validators {
 		if err := val.ValidateBasic(); err != nil {
 			return fmt.Errorf("invalid validator #%d: %w", idx, err)
 		}
+	}
+
+	if err := vals.ThresholdPublicKeyValid(); err != nil {
+		return err
 	}
 
 	if err := vals.Proposer.ValidateBasic(); err != nil {
@@ -120,6 +120,18 @@ func (vals *ValidatorSet) ThresholdPublicKeyValid() error {
 	}
 	if len(vals.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
 		return errors.New("threshold public key is wrong size")
+	}
+	if len(vals.Validators) == 1 {
+		if !vals.Validators[0].PubKey.Equals(vals.ThresholdPublicKey) {
+			return errors.New("incorrect threshold public key")
+		}
+	} else if len(vals.Validators) > 1 {
+		recoveredThresholdPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(vals.GetPublicKeys(), vals.GetProTxHashesAsByteArrays())
+		if err != nil {
+			return err
+		} else if !recoveredThresholdPublicKey.Equals(vals.ThresholdPublicKey) {
+			return errors.New("incorrect recovered threshold public key")
+		}
 	}
 	return nil
 }
