@@ -444,7 +444,7 @@ func makeCommit(height int64, valProTxHash []byte) *types.Commit {
 		BlockSignature:   []byte("BlockSignature"),
 		StateSignature:   []byte("StateSignature"),
 	}}
-	return types.NewCommit(height, 0, types.BlockID{}, types.StateID{}, commitSigs)
+	return types.NewCommit(height, 0, types.BlockID{}, types.StateID{}, commitSigs, commitSigs[0].BlockSignature, commitSigs[0].StateSignature)
 }
 
 func defaultTestPool(height int64) (*evidence.Pool, types.MockPV) {
