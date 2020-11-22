@@ -29,7 +29,7 @@ func testABCIPubKey(t *testing.T, pk crypto.PubKey, typeStr string) error {
 
 func TestABCIValidators(t *testing.T) {
 	pkEd := bls12381.GenPrivKey().PubKey()
-	proTxHash := crypto.CRandBytes(32)
+	proTxHash := crypto.RandProTxHash()
 
 	// correct validator
 	tmValExpected := NewValidatorDefaultVotingPower(pkEd, proTxHash)
@@ -41,7 +41,7 @@ func TestABCIValidators(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, tmValExpected, tmVals[0])
 
-	abciVals := TM2PB.ValidatorUpdates(NewValidatorSet(tmVals))
+	abciVals := TM2PB.ValidatorUpdates(NewValidatorSet(tmVals, tmVal.PubKey))
 	assert.Equal(t, []abci.ValidatorUpdate{abciVal}, abciVals)
 
 	// val with address
@@ -75,7 +75,7 @@ func TestABCIEvidence(t *testing.T) {
 	}
 	abciEv := TM2PB.Evidence(
 		ev,
-		NewValidatorSet([]*Validator{NewValidatorDefaultVotingPower(pubKey, val.ProTxHash)}),
+		NewValidatorSet([]*Validator{NewValidatorDefaultVotingPower(pubKey, val.ProTxHash)}, pubKey),
 	)
 
 	assert.Equal(t, abci.EvidenceType_DUPLICATE_VOTE, abciEv.Type)
@@ -97,16 +97,16 @@ func (pubKeyBLS) Type() crypto.KeyType                    { return crypto.BLS123
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := bls12381.GenPrivKey().PubKey()
 
-	abciVal := TM2PB.NewValidatorUpdate(pubkey, 10, crypto.CRandBytes(32))
-	assert.Equal(t, int64(10), abciVal.Power)
+	abciVal := TM2PB.NewValidatorUpdate(pubkey, DefaultDashVotingPower, crypto.RandProTxHash())
+	assert.Equal(t, DefaultDashVotingPower, abciVal.Power)
 
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(nil, 10, crypto.CRandBytes(32)) })
-	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyBLS{}, 10, crypto.CRandBytes(32)) })
+	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(nil, DefaultDashVotingPower, crypto.RandProTxHash()) })
+	assert.Panics(t, func() { TM2PB.NewValidatorUpdate(pubKeyBLS{}, DefaultDashVotingPower, crypto.RandProTxHash()) })
 }
 
 func TestABCIValidatorWithoutPubKey(t *testing.T) {
 	pkBLS := bls12381.GenPrivKey().PubKey()
-	proTxHash := crypto.CRandBytes(32)
+	proTxHash := crypto.RandProTxHash()
 
 	abciVal := TM2PB.Validator(NewValidatorDefaultVotingPower(pkBLS, proTxHash))
 

@@ -21,10 +21,10 @@ import (
 func TestValidatorSetBasic(t *testing.T) {
 	// empty or nil validator lists are allowed,
 	// but attempting to IncrementProposerPriority on them will panic.
-	vset := NewValidatorSet([]*Validator{})
+	vset := NewValidatorSet([]*Validator{}, nil)
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
 
-	vset = NewValidatorSet(nil)
+	vset = NewValidatorSet(nil, nil)
 	assert.Panics(t, func() { vset.IncrementProposerPriority(1) })
 
 	assert.EqualValues(t, vset, vset.Copy())
@@ -49,7 +49,7 @@ func TestValidatorSetBasic(t *testing.T) {
 		0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55}, vset.Hash())
 	// add
 	val = randValidator(vset.TotalVotingPower())
-	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
+	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}, val.PubKey))
 
 	assert.True(t, vset.HasProTxHash(val.ProTxHash))
 	idx, _ = vset.GetByProTxHash(val.ProTxHash)
@@ -65,20 +65,20 @@ func TestValidatorSetBasic(t *testing.T) {
 
 	// update
 	val = randValidator(vset.TotalVotingPower())
-	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
+	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}, val.PubKey))
 	_, val = vset.GetByProTxHash(val.ProTxHash)
 	val.VotingPower += 100
 	proposerPriority := val.ProposerPriority
 
 	val.ProposerPriority = 0
-	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}))
+	assert.NoError(t, vset.UpdateWithChangeSet([]*Validator{val}, val.PubKey))
 	_, val = vset.GetByProTxHash(val.ProTxHash)
 	assert.Equal(t, proposerPriority, val.ProposerPriority)
 
 }
 
 func TestValidatorSetValidateBasic(t *testing.T) {
-	val, _ := RandValidator(false, 1)
+	val, _ := RandValidator()
 	badVal := &Validator{}
 
 	testCases := []struct {
@@ -428,22 +428,6 @@ func (vals *ValidatorSet) fromBytes(b []byte) *ValidatorSet {
 	}
 
 	return vs
-}
-
-//-------------------------------------------------------------------
-
-func TestValidatorSetTotalVotingPowerPanicsOnOverflow(t *testing.T) {
-	// NewValidatorSet calls IncrementProposerPriority which calls TotalVotingPower()
-	// which should panic on overflows:
-	shouldPanic := func() {
-		NewValidatorSet([]*Validator{
-			{ProTxHash: []byte("a"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-			{ProTxHash: []byte("b"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-			{ProTxHash: []byte("c"), VotingPower: math.MaxInt64, ProposerPriority: 0},
-		})
-	}
-
-	assert.Panics(t, shouldPanic)
 }
 
 func TestAvgProposerPriority(t *testing.T) {

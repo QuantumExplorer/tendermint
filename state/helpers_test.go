@@ -206,7 +206,7 @@ func randomGenesisDoc() *types.GenesisDoc {
 				Address: pubkey.Address(),
 				PubKey:  pubkey,
 				ProTxHash: crypto.RandProTxHash(),
-				Power:   10,
+				Power:   types.DefaultDashVotingPower,
 				Name:    "myval",
 			},
 		},
