@@ -76,9 +76,10 @@ type SyncInfo struct {
 
 // Info about the node's validator
 type ValidatorInfo struct {
-	Address     bytes.HexBytes `json:"address"`
-	PubKey      crypto.PubKey  `json:"pub_key"`
-	VotingPower int64          `json:"voting_power"`
+	Address     bytes.HexBytes   `json:"address"`
+	PubKey      crypto.PubKey    `json:"pub_key"`
+	ProTxHash   crypto.ProTxHash `json:"pro_tx_hash"`
+	VotingPower int64            `json:"voting_power"`
 }
 
 // Node Status
@@ -126,6 +127,7 @@ type Peer struct {
 type ResultValidators struct {
 	BlockHeight int64              `json:"block_height"`
 	Validators  []*types.Validator `json:"validators"`
+	ThresholdPublicKey *crypto.PubKey `json:"threshold_public_key"`
 	// Count of actual validators in this result
 	Count int `json:"count"`
 	// Total number of validators

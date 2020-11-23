@@ -10,7 +10,7 @@ const (
 	PubKeyBLS12381 = "bls12381"
 )
 
-func UpdateValidator(pk []byte, power int64) ValidatorUpdate {
+func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 	pke := bls12381.PubKey(pk)
 	pkp, err := cryptoenc.PubKeyToProto(pke)
 	if err != nil {
@@ -21,5 +21,6 @@ func UpdateValidator(pk []byte, power int64) ValidatorUpdate {
 		// Address:
 		PubKey: pkp,
 		Power:  power,
+		ProTxHash: proTxHash,
 	}
 }

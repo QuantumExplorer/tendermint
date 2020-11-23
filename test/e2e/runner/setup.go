@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,7 +21,6 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	e2e "github.com/tendermint/tendermint/test/e2e/pkg"
@@ -101,14 +101,14 @@ func Setup(testnet *e2e.Testnet) error {
 			return err
 		}
 
-		(privval.NewFilePV(node.PrivvalKey,
+		(privval.NewFilePV(node.PrivvalKey, node.ProTxHash,
 			filepath.Join(nodeDir, PrivvalKeyFile),
 			filepath.Join(nodeDir, PrivvalStateFile),
 		)).Save()
 
 		// Set up a dummy validator. Tendermint requires a file PV even when not used, so we
 		// give it a dummy such that it will fail if it actually tries to use it.
-		(privval.NewFilePV(ed25519.GenPrivKey(),
+		(privval.NewFilePV(bls12381.GenPrivKey(), node.ProTxHash,
 			filepath.Join(nodeDir, PrivvalDummyKeyFile),
 			filepath.Join(nodeDir, PrivvalDummyStateFile),
 		)).Save()
@@ -190,12 +190,14 @@ func MakeGenesis(testnet *e2e.Testnet) (types.GenesisDoc, error) {
 		ChainID:         testnet.Name,
 		ConsensusParams: types.DefaultConsensusParams(),
 		InitialHeight:   testnet.InitialHeight,
+		ThresholdPublicKey: testnet.ThresholdPublicKey,
 	}
 	for validator, power := range testnet.Validators {
 		genesis.Validators = append(genesis.Validators, types.GenesisValidator{
 			Name:    validator.Name,
 			Address: validator.PrivvalKey.PubKey().Address(),
 			PubKey:  validator.PrivvalKey.PubKey(),
+			ProTxHash: validator.ProTxHash,
 			Power:   power,
 		})
 	}

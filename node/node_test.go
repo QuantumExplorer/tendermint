@@ -239,7 +239,7 @@ func TestCreateProposalBlock(t *testing.T) {
 	maxEvidenceBytes := int64(maxBytes / 2)
 	state.ConsensusParams.Block.MaxBytes = int64(maxBytes)
 	state.ConsensusParams.Evidence.MaxBytes = maxEvidenceBytes
-	proposerAddr, _ := state.Validators.GetByIndex(0)
+	proposerProTxHash, _ := state.Validators.GetByIndex(0)
 
 	// Make Mempool
 	memplMetrics := mempl.PrometheusMetrics("node_test_1")
@@ -293,11 +293,11 @@ func TestCreateProposalBlock(t *testing.T) {
 		evidencePool,
 	)
 
-	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	commit := types.NewCommit(height-1, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
-		proposerAddr,
+		proposerProTxHash,
 	)
 
 	// check that the part set does not exceed the maximum block size
@@ -333,7 +333,7 @@ func TestMaxProposalBlockSize(t *testing.T) {
 	var maxBytes int64 = 16384
 	var partSize uint32 = 256
 	state.ConsensusParams.Block.MaxBytes = maxBytes
-	proposerAddr, _ := state.Validators.GetByIndex(0)
+	proposerProTxHash, _ := state.Validators.GetByIndex(0)
 
 	// Make Mempool
 	memplMetrics := mempl.PrometheusMetrics("node_test_2")
@@ -362,11 +362,11 @@ func TestMaxProposalBlockSize(t *testing.T) {
 		sm.EmptyEvidencePool{},
 	)
 
-	commit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	commit := types.NewCommit(height-1, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
 	block, _ := blockExec.CreateProposalBlock(
 		height,
 		state, commit,
-		proposerAddr,
+		proposerProTxHash,
 	)
 
 	pb, err := block.ToProto()
@@ -412,21 +412,14 @@ func TestNodeNewNodeCustomReactors(t *testing.T) {
 }
 
 func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
-	privVals := make([]types.PrivValidator, nVals)
-	vals := make([]types.GenesisValidator, nVals)
+	vals, privVals, thresholdPublicKey := types.GenerateGenesisValidators(nVals)
 	for i := 0; i < nVals; i++ {
-		privVal := types.NewMockPV()
-		privVals[i] = privVal
-		vals[i] = types.GenesisValidator{
-			Address: privVal.PrivKey.PubKey().Address(),
-			PubKey:  privVal.PrivKey.PubKey(),
-			Power:   1000,
-			Name:    fmt.Sprintf("test%d", i),
-		}
+		vals[i].Name = fmt.Sprintf("test%d", i)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
 		ChainID:    "test-chain",
 		Validators: vals,
+		ThresholdPublicKey: thresholdPublicKey,
 		AppHash:    nil,
 	})
 

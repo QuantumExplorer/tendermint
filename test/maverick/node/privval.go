@@ -47,6 +47,7 @@ type FilePVKey struct {
 	Address types.Address  `json:"address"`
 	PubKey  crypto.PubKey  `json:"pub_key"`
 	PrivKey crypto.PrivKey `json:"priv_key"`
+	ProTxHash []byte       `json:"pro_tx_hash"`
 
 	filePath string
 }
@@ -76,8 +77,10 @@ type FilePVLastSignState struct {
 	Height    int64            `json:"height"`
 	Round     int32            `json:"round"`
 	Step      int8             `json:"step"`
-	Signature []byte           `json:"signature,omitempty"`
-	SignBytes tmbytes.HexBytes `json:"signbytes,omitempty"`
+	BlockSignature []byte           `json:"block_signature,omitempty"`
+	BlockSignBytes tmbytes.HexBytes `json:"block_sign_bytes,omitempty"`
+	StateSignature []byte           `json:"block_signature,omitempty"`
+	StateSignBytes tmbytes.HexBytes `json:"block_sign_bytes,omitempty"`
 
 	filePath string
 }
@@ -110,9 +113,15 @@ func (lss *FilePVLastSignState) CheckHRS(height int64, round int32, step int8) (
 					lss.Step,
 				)
 			} else if lss.Step == step {
-				if lss.SignBytes != nil {
-					if lss.Signature == nil {
+				if lss.BlockSignBytes != nil {
+					if lss.BlockSignature == nil {
 						panic("pv: Signature is nil but SignBytes is not!")
+					}
+					return true, nil
+				}
+				if lss.StateSignBytes != nil {
+					if lss.StateSignature == nil {
+						panic("pv: StateID Signature is nil but StateSignBytes is not!")
 					}
 					return true, nil
 				}
@@ -246,6 +255,12 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 	return pv.Key.PubKey, nil
 }
 
+// GetPubKey returns the public key of the validator.
+// Implements PrivValidator.
+func (pv *FilePV) GetProTxHash() (crypto.ProTxHash, error) {
+	return pv.Key.ProTxHash, nil
+}
+
 // SignVote signs a canonical representation of the vote, along with the
 // chainID. Implements PrivValidator.
 func (pv *FilePV) SignVote(chainID string, vote *tmproto.Vote) error {
@@ -273,12 +288,15 @@ func (pv *FilePV) Save() {
 // Reset resets all fields in the FilePV.
 // NOTE: Unsafe!
 func (pv *FilePV) Reset() {
-	var sig []byte
+	var blockSig []byte
+	var stateSig []byte
 	pv.LastSignState.Height = 0
 	pv.LastSignState.Round = 0
 	pv.LastSignState.Step = 0
-	pv.LastSignState.Signature = sig
-	pv.LastSignState.SignBytes = nil
+	pv.LastSignState.BlockSignature = blockSig
+	pv.LastSignState.BlockSignBytes = nil
+	pv.LastSignState.StateSignature = stateSig
+	pv.LastSignState.StateSignBytes = nil
 	pv.Save()
 }
 
@@ -308,15 +326,25 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 		return err
 	}
 
-	signBytes := types.VoteSignBytes(chainID, vote)
+	blockSignBytes := types.VoteBlockSignBytes(chainID, vote)
+
+	stateSignBytes := types.VoteStateSignBytes(chainID, vote)
 
 	// It passed the checks. Sign the vote
-	sig, err := pv.Key.PrivKey.Sign(signBytes)
+	blockSig, err := pv.Key.PrivKey.Sign(blockSignBytes)
 	if err != nil {
 		return err
 	}
-	pv.saveSigned(height, round, step, signBytes, sig)
-	vote.Signature = sig
+
+	// It passed the checks. Sign the vote
+	stateSig, err := pv.Key.PrivKey.Sign(stateSignBytes)
+	if err != nil {
+		return err
+	}
+
+	pv.saveSigned(height, round, step, blockSignBytes, blockSig, stateSignBytes, stateSig)
+	vote.BlockSignature = blockSig
+	vote.StateSignature = stateSig
 	return nil
 }
 
@@ -333,26 +361,35 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 		return err
 	}
 
-	signBytes := types.ProposalSignBytes(chainID, proposal)
+	blockSignBytes := types.ProposalBlockSignBytes(chainID, proposal)
+	stateSignBytes := types.ProposalStateSignBytes(chainID, proposal)
+
 
 	// It passed the checks. Sign the proposal
-	sig, err := pv.Key.PrivKey.Sign(signBytes)
+	blockSig, err := pv.Key.PrivKey.Sign(blockSignBytes)
 	if err != nil {
 		return err
 	}
-	pv.saveSigned(height, round, step, signBytes, sig)
-	proposal.Signature = sig
+	stateSig, err := pv.Key.PrivKey.Sign(stateSignBytes)
+	if err != nil {
+		return err
+	}
+	pv.saveSigned(height, round, step, blockSignBytes, blockSig, stateSignBytes, stateSig)
+	proposal.Signature = blockSig
 	return nil
 }
 
 // Persist height/round/step and signature
 func (pv *FilePV) saveSigned(height int64, round int32, step int8,
-	signBytes []byte, sig []byte) {
+	blockSignBytes []byte, blockSig []byte,
+	stateSignBytes []byte, stateSig []byte) {
 
 	pv.LastSignState.Height = height
 	pv.LastSignState.Round = round
 	pv.LastSignState.Step = step
-	pv.LastSignState.Signature = sig
-	pv.LastSignState.SignBytes = signBytes
+	pv.LastSignState.BlockSignature = blockSig
+	pv.LastSignState.BlockSignBytes = blockSignBytes
+	pv.LastSignState.StateSignature = stateSig
+	pv.LastSignState.StateSignBytes = stateSignBytes
 	pv.LastSignState.Save()
 }

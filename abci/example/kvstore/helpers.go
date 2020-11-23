@@ -2,8 +2,10 @@ package kvstore
 
 import (
 	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"strconv"
 )
 
 // RandVal creates one random validator, with a key derived
@@ -11,8 +13,8 @@ import (
 func RandVal(i int) types.ValidatorUpdate {
 	pubkey := bls12381.GenPrivKey().PubKey().Bytes()
 	power := tmrand.Uint16() + 1
-
-	v := types.UpdateValidator(pubkey, int64(power))
+	proTxHash := crypto.Sha256([]byte(strconv.Itoa(i)))
+	v := types.UpdateValidator(proTxHash, pubkey, int64(power))
 	return v
 }
 

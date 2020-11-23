@@ -98,7 +98,7 @@ func (blockExec *BlockExecutor) SetEventBus(eventBus types.BlockEventPublisher) 
 func (blockExec *BlockExecutor) CreateProposalBlock(
 	height int64,
 	state State, commit *types.Commit,
-	proposerAddr []byte,
+	proposerProTxHash []byte,
 ) (*types.Block, *types.PartSet) {
 
 	maxBytes := state.ConsensusParams.Block.MaxBytes
@@ -111,7 +111,7 @@ func (blockExec *BlockExecutor) CreateProposalBlock(
 
 	txs := blockExec.mempool.ReapMaxBytesMaxGas(maxDataBytes, maxGas)
 
-	return state.MakeBlock(height, txs, commit, evidence, proposerAddr)
+	return state.MakeBlock(height, txs, commit, evidence, proposerProTxHash)
 }
 
 // ValidateBlock validates the given block against the given state.
@@ -160,7 +160,10 @@ func (blockExec *BlockExecutor) ApplyBlock(
 
 	// validate the validator updates and convert to tendermint types
 	abciValUpdates := abciResponses.EndBlock.ValidatorUpdates
-
+	abciThresholdPublicKeyUpdate := abciResponses.EndBlock.ThresholdPublicKey
+	if len(abciValUpdates) != 0 && abciThresholdPublicKeyUpdate == nil {
+		return state, 0, fmt.Errorf("received validator updates without a threshold public key")
+	}
 	nextCoreChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	if err != nil {
 		return state, 0, fmt.Errorf("error in chain lock from proto: %v", err)
@@ -174,12 +177,16 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	if err != nil {
 		return state, 0, err
 	}
+	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciThresholdPublicKeyUpdate)
+	if err != nil {
+		return state, 0, err
+	}
 	if len(validatorUpdates) > 0 {
 		blockExec.logger.Info("Updates to validators", "updates", types.ValidatorListString(validatorUpdates))
 	}
 
 	// Update the state with the block and responses.
-	state, err = updateState(state, blockID, &block.Header, block.CoreChainLock, nextCoreChainLock, abciResponses, validatorUpdates)
+	state, err = updateState(state, blockID, &block.Header, block.CoreChainLock, nextCoreChainLock, abciResponses, validatorUpdates, thresholdPublicKeyUpdate)
 	if err != nil {
 		return state, 0, fmt.Errorf("commit failed for application: %v", err)
 	}
@@ -403,6 +410,16 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 			return fmt.Errorf("validator %v is using pubkey %s, which is unsupported for consensus",
 				valUpdate, pk.TypeIdentifier())
 		}
+
+		if valUpdate.ProTxHash == nil {
+			return fmt.Errorf("validator %v does not have a protxhash, which is needed for consensus",
+				valUpdate)
+		}
+
+		if len(valUpdate.ProTxHash) != 32 {
+			return fmt.Errorf("validator %v is using protxhash %s, which is not the required length",
+				valUpdate, valUpdate.ProTxHash)
+		}
 	}
 	return nil
 }
@@ -416,6 +433,7 @@ func updateState(
 	nextCoreChainLock *types.CoreChainLock,
 	abciResponses *tmstate.ABCIResponses,
 	validatorUpdates []*types.Validator,
+	newThresholdPublicKey crypto.PubKey,
 ) (State, error) {
 
 	// Copy the valset so we can apply changes from EndBlock
@@ -425,7 +443,7 @@ func updateState(
 	// Update the validator set with the latest abciResponses.
 	lastHeightValsChanged := state.LastHeightValidatorsChanged
 	if len(validatorUpdates) > 0 {
-		err := nValSet.UpdateWithChangeSet(validatorUpdates)
+		err := nValSet.UpdateWithChangeSet(validatorUpdates, newThresholdPublicKey)
 		if err != nil {
 			return state, fmt.Errorf("error changing validator set: %v", err)
 		}
@@ -475,6 +493,7 @@ func updateState(
 		InitialHeight:                    state.InitialHeight,
 		LastBlockHeight:                  header.Height,
 		LastBlockID:                      blockID,
+		LastStateID:                      types.StateID{state.AppHash},
 		LastBlockTime:                    header.Time,
 		LastCoreChainLock:                *lastCoreChainLock,
 		NextCoreChainLock:                *nextCoreChainLock,

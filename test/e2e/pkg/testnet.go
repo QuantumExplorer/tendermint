@@ -4,6 +4,7 @@ package e2e
 import (
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io"
 	"math/rand"
 	"net"
@@ -49,16 +50,17 @@ const (
 
 // Testnet represents a single testnet.
 type Testnet struct {
-	Name             string
-	File             string
-	Dir              string
-	IP               *net.IPNet
-	InitialHeight    int64
-	InitialState     map[string]string
-	Validators       map[*Node]int64
-	ValidatorUpdates map[int64]map[*Node]int64
-	Nodes            []*Node
-	KeyType          string
+	Name               string
+	File               string
+	Dir                string
+	IP                 *net.IPNet
+	InitialHeight      int64
+	InitialState       map[string]string
+	Validators         map[*Node]int64
+	ValidatorUpdates   map[int64]map[*Node]int64
+	Nodes              []*Node
+	KeyType            string
+	ThresholdPublicKey crypto.PubKey
 }
 
 // Node represents a Tendermint node in a testnet.
@@ -68,6 +70,7 @@ type Node struct {
 	Mode             Mode
 	PrivvalKey       crypto.PrivKey
 	NodeKey          crypto.PrivKey
+	ProTxHash        crypto.ProTxHash
 	IP               net.IP
 	ProxyPort        uint32
 	StartAt          int64
@@ -111,27 +114,48 @@ func LoadTestnet(file string) (*Testnet, error) {
 	keyGen := newKeyGenerator(randomSeed)
 	proxyPortGen := newPortGenerator(proxyPortFirst)
 
-	testnet := &Testnet{
-		Name:             filepath.Base(dir),
-		File:             file,
-		Dir:              dir,
-		IP:               ipGen.Network(),
-		InitialHeight:    1,
-		InitialState:     manifest.InitialState,
-		Validators:       map[*Node]int64{},
-		ValidatorUpdates: map[int64]map[*Node]int64{},
-		Nodes:            []*Node{},
-	}
-	if manifest.InitialHeight > 0 {
-		testnet.InitialHeight = manifest.InitialHeight
-	}
-
 	// Set up nodes, in alphabetical order (IPs and ports get same order).
 	nodeNames := []string{}
 	for name := range manifest.Nodes {
 		nodeNames = append(nodeNames, name)
 	}
 	sort.Strings(nodeNames)
+
+	var validatorCount int
+
+	if manifest.Validators != nil {
+		validatorCount = len(*manifest.Validators)
+	} else {
+		validatorCount = 0
+		for _, name := range nodeNames {
+			nodeManifest := manifest.Nodes[name]
+			if nodeManifest.Mode != "" {
+				if Mode(nodeManifest.Mode) == ModeValidator {
+					validatorCount++
+				}
+			} else {
+				validatorCount++
+			}
+		}
+	}
+
+	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(validatorCount)
+
+	testnet := &Testnet{
+		Name:               filepath.Base(dir),
+		File:               file,
+		Dir:                dir,
+		IP:                 ipGen.Network(),
+		InitialHeight:      1,
+		InitialState:       manifest.InitialState,
+		Validators:         map[*Node]int64{},
+		ValidatorUpdates:   map[int64]map[*Node]int64{},
+		Nodes:              []*Node{},
+		ThresholdPublicKey: thresholdPublicKey,
+	}
+	if manifest.InitialHeight > 0 {
+		testnet.InitialHeight = manifest.InitialHeight
+	}
 
 	for _, name := range nodeNames {
 		nodeManifest := manifest.Nodes[name]
@@ -140,6 +164,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 			Testnet:          testnet,
 			PrivvalKey:       keyGen.Generate(manifest.KeyType),
 			NodeKey:          keyGen.Generate("ed25519"),
+			ProTxHash:        nil,
 			IP:               ipGen.Next(),
 			ProxyPort:        proxyPortGen.Next(),
 			Mode:             ModeValidator,
@@ -221,17 +246,25 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 	// Set up genesis validators. If not specified explicitly, use all validator nodes.
 	if manifest.Validators != nil {
+		var i = 0
 		for validatorName, power := range *manifest.Validators {
 			validator := testnet.LookupNode(validatorName)
 			if validator == nil {
 				return nil, fmt.Errorf("unknown validator %q", validatorName)
 			}
 			testnet.Validators[validator] = power
+			validator.ProTxHash = proTxHashes[i]
+			validator.PrivvalKey = privateKeys[i]
+			i++
 		}
 	} else {
+		var i = 0
 		for _, node := range testnet.Nodes {
 			if node.Mode == ModeValidator {
 				testnet.Validators[node] = 100
+				node.ProTxHash = proTxHashes[i]
+				node.PrivvalKey = privateKeys[i]
+				i++
 			}
 		}
 	}
@@ -480,6 +513,8 @@ func (g *keyGenerator) Generate(keyType string) crypto.PrivKey {
 	switch keyType {
 	case "secp256k1":
 		return secp256k1.GenPrivKeySecp256k1(seed)
+	case "bls12381":
+		return bls12381.GenPrivKeyFromSecret(seed)
 	case "", "ed25519":
 		return ed25519.GenPrivKeyFromSecret(seed)
 	default:

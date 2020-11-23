@@ -2,7 +2,6 @@ package light_test
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"testing"
 	"time"
 
@@ -24,10 +23,10 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		nextHeight = 2
 	)
 
+
 	var (
-		keys = genPrivKeys(4, crypto.BLS12381)
-		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		vals     = keys.ToValidators(20, 10)
+		vals, privVals = types.GenerateMockValidatorSet(4)
+		keys = exposeMockPVKeys(privVals)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
@@ -111,21 +110,21 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 			nil,
 			"",
 		},
-		// 1/3 signed -> error
+		// < 1/3 signed -> error
 		7: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), len(keys)-1, len(keys)),
 			vals,
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
-			light.ErrInvalidHeader{Reason: types.ErrNotEnoughVotingPowerSigned{Got: 50, Needed: 93}},
+			light.ErrInvalidHeader{Reason: types.ErrNotEnoughVotingPowerSigned{Got: 100, Needed: 266}},
 			"",
 		},
 		// vals does not match with what we have -> error
 		8: {
-			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(10, 1), vals,
+			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, keys.ToValidators(vals.ThresholdPublicKey), vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(10, 1),
+			keys.ToValidators(vals.ThresholdPublicKey),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -135,7 +134,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		9: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(10, 1),
+			keys.ToValidators(vals.ThresholdPublicKey),
 			3 * time.Hour,
 			bTime.Add(2 * time.Hour),
 			nil,
@@ -145,7 +144,7 @@ func TestVerifyAdjacentHeaders(t *testing.T) {
 		10: {
 			keys.GenSignedHeader(chainID, nextHeight, bTime.Add(1*time.Hour), nil, vals, vals,
 				hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys)),
-			keys.ToValidators(10, 1),
+			keys.ToValidators(vals.ThresholdPublicKey),
 			1 * time.Hour,
 			bTime.Add(1 * time.Hour),
 			nil,
@@ -177,24 +176,23 @@ func TestVerifyNonAdjacentHeaders(t *testing.T) {
 	)
 
 	var (
-		keys = genPrivKeys(4, crypto.BLS12381)
-		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		vals     = keys.ToValidators(20, 10)
+		vals, privVals = types.GenerateMockValidatorSet(4)
+		keys     = exposeMockPVKeys(privVals)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))
 
 		// 30, 40, 50
 		twoThirds     = keys[1:]
-		twoThirdsVals = twoThirds.ToValidators(30, 10)
+		twoThirdsVals = twoThirds.ToValidators(nil)
 
 		// 50
 		oneThird     = keys[len(keys)-1:]
-		oneThirdVals = oneThird.ToValidators(50, 10)
+		oneThirdVals = oneThird.ToValidators(nil)
 
 		// 20
 		lessThanOneThird     = keys[0:1]
-		lessThanOneThirdVals = lessThanOneThird.ToValidators(20, 10)
+		lessThanOneThirdVals = lessThanOneThird.ToValidators(nil)
 	)
 
 	testCases := []struct {
@@ -292,10 +290,10 @@ func TestVerifyReturnsErrorIfTrustLevelIsInvalid(t *testing.T) {
 		lastHeight = 1
 	)
 
+
 	var (
-		keys = genPrivKeys(4, crypto.BLS12381)
-		// 20, 30, 40, 50 - the first 3 don't have 2/3, the last 3 do!
-		vals     = keys.ToValidators(20, 10)
+		vals, privVals = types.GenerateMockValidatorSet(4)
+		keys = exposeMockPVKeys(privVals)
 		bTime, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		header   = keys.GenSignedHeader(chainID, lastHeight, bTime, nil, vals, vals,
 			hash("app_hash"), hash("cons_hash"), hash("results_hash"), 0, len(keys))

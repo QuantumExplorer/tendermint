@@ -231,7 +231,7 @@ func (th *TestHarness) TestSignProposal() error {
 		Timestamp: time.Now(),
 	}
 	p := prop.ToProto()
-	propBytes := types.ProposalSignBytes(th.chainID, p)
+	propBytes := types.ProposalBlockSignBytes(th.chainID, p)
 	if err := th.signerClient.SignProposal(th.chainID, p); err != nil {
 		th.logger.Error("FAILED: Signing of proposal", "err", err)
 		return newTestHarnessError(ErrTestSignProposalFailed, err, "")
@@ -264,6 +264,7 @@ func (th *TestHarness) TestSignVote() error {
 	for _, voteType := range voteTypes {
 		th.logger.Info("Testing vote type", "type", voteType)
 		hash := tmhash.Sum([]byte("hash"))
+		lastAppHash := tmhash.Sum([]byte("hash"))
 		vote := &types.Vote{
 			Type:   voteType,
 			Height: 101,
@@ -275,18 +276,22 @@ func (th *TestHarness) TestSignVote() error {
 					Total: 1000000,
 				},
 			},
+			StateID: types.StateID{
+				LastAppHash: lastAppHash,
+			},
 			ValidatorIndex:   0,
-			ValidatorAddress: tmhash.SumTruncated([]byte("addr")),
-			Timestamp:        time.Now(),
+			ValidatorProTxHash: tmhash.Sum([]byte("pro_tx_hash")),
 		}
 		v := vote.ToProto()
-		voteBytes := types.VoteSignBytes(th.chainID, v)
+		voteBlockBytes := types.VoteBlockSignBytes(th.chainID, v)
+		voteStateBytes := types.VoteStateSignBytes(th.chainID, v)
 		// sign the vote
 		if err := th.signerClient.SignVote(th.chainID, v); err != nil {
 			th.logger.Error("FAILED: Signing of vote", "err", err)
 			return newTestHarnessError(ErrTestSignVoteFailed, err, fmt.Sprintf("voteType=%d", voteType))
 		}
-		vote.Signature = v.Signature
+		vote.BlockSignature = v.BlockSignature
+		vote.StateSignature = v.StateSignature
 		th.logger.Debug("Signed vote", "vote", vote)
 		// validate the contents of the vote
 		if err := vote.ValidateBasic(); err != nil {
@@ -299,7 +304,14 @@ func (th *TestHarness) TestSignVote() error {
 		}
 
 		// now validate the signature on the proposal
-		if sck.VerifySignature(voteBytes, vote.Signature) {
+		if sck.VerifySignature(voteBlockBytes, vote.BlockSignature) {
+			th.logger.Info("Successfully validated vote signature", "type", voteType)
+		} else {
+			th.logger.Error("FAILED: Vote signature validation failed", "type", voteType)
+			return newTestHarnessError(ErrTestSignVoteFailed, nil, "signature validation failed")
+		}
+
+		if sck.VerifySignature(voteStateBytes, vote.StateSignature) {
 			th.logger.Info("Successfully validated vote signature", "type", voteType)
 		} else {
 			th.logger.Error("FAILED: Vote signature validation failed", "type", voteType)

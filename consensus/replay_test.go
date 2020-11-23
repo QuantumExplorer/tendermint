@@ -358,11 +358,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	// HEIGHT 2
 	height++
 	incrementHeight(vss...)
+	newValidatorProTxHash1, err := css[nVals].privValidator.GetProTxHash()
+	require.NoError(t, err)
 	newValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
 	require.NoError(t, err)
 	valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
 	require.NoError(t, err)
-	newValidatorTx1 := kvstore.MakeValSetChangeTx(valPubKey1ABCI, testMinPower)
+	newValidatorTx1 := kvstore.MakeValSetChangeTx(newValidatorProTxHash1, valPubKey1ABCI, testMinPower)
 	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
 	propBlock, _ := css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
@@ -388,11 +390,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	// HEIGHT 3
 	height++
 	incrementHeight(vss...)
+	updateValidatorProTxHash1, err := css[nVals].privValidator.GetProTxHash()
+	require.NoError(t, err)
 	updateValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
 	require.NoError(t, err)
 	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
 	require.NoError(t, err)
-	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updatePubKey1ABCI, 25)
+	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updateValidatorProTxHash1, updatePubKey1ABCI, 25)
 	err = assertMempool(css[0].txNotifier).CheckTx(updateValidatorTx1, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
 	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
@@ -418,18 +422,22 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	// HEIGHT 4
 	height++
 	incrementHeight(vss...)
+	newValidatorProTxHash2, err := css[nVals+1].privValidator.GetProTxHash()
+	require.NoError(t, err)
 	newValidatorPubKey2, err := css[nVals+1].privValidator.GetPubKey()
 	require.NoError(t, err)
 	newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
 	require.NoError(t, err)
-	newValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, testMinPower)
+	newValidatorTx2 := kvstore.MakeValSetChangeTx(newValidatorProTxHash2, newVal2ABCI, testMinPower)
 	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx2, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
+	newValidatorProTxHash3, err := css[nVals+2].privValidator.GetProTxHash()
+	require.NoError(t, err)
 	newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
 	require.NoError(t, err)
 	newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
 	require.NoError(t, err)
-	newValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, testMinPower)
+	newValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, testMinPower)
 	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx3, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
 	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
@@ -469,7 +477,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 
-	removeValidatorTx2 := kvstore.MakeValSetChangeTx(newVal2ABCI, 0)
+	removeValidatorTx2 := kvstore.MakeValSetChangeTx(newValidatorProTxHash2, newVal2ABCI, 0)
 	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx2, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
 
@@ -504,7 +512,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	// HEIGHT 6
 	height++
 	incrementHeight(vss...)
-	removeValidatorTx3 := kvstore.MakeValSetChangeTx(newVal3ABCI, 0)
+	removeValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, 0)
 	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
 	assert.Nil(t, err)
 	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
@@ -979,20 +987,22 @@ func makeBlocks(n int, state *sm.State, privVal types.PrivValidator) []*types.Bl
 func makeBlock(state sm.State, lastBlock *types.Block, lastBlockMeta *types.BlockMeta,
 	privVal types.PrivValidator, height int64) (*types.Block, *types.PartSet) {
 
-	lastCommit := types.NewCommit(height-1, 0, types.BlockID{}, nil)
+	lastCommit := types.NewCommit(height-1, 0, types.BlockID{}, types.StateID{}, nil, nil, nil)
 	if height > 1 {
 		vote, _ := types.MakeVote(
 			lastBlock.Header.Height,
 			lastBlockMeta.BlockID,
+			lastBlockMeta.StateID,
 			state.Validators,
 			privVal,
-			lastBlock.Header.ChainID,
-			time.Now())
+			lastBlock.Header.ChainID)
+		//since there is only 1 vote, use it as threshold
+		commitSig := vote.CommitSig()
 		lastCommit = types.NewCommit(vote.Height, vote.Round,
-			lastBlockMeta.BlockID, []types.CommitSig{vote.CommitSig()})
+			lastBlockMeta.BlockID, lastBlockMeta.StateID, []types.CommitSig{commitSig}, commitSig.BlockSignature, commitSig.StateSignature)
 	}
 
-	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().Address)
+	return state.MakeBlock(height, []types.Tx{}, lastCommit, nil, state.Validators.GetProposer().ProTxHash)
 }
 
 type badApp struct {
@@ -1095,7 +1105,7 @@ func makeBlockchainFromWAL(wal WAL) ([]*types.Block, []*types.Commit, error) {
 		case *types.Vote:
 			if p.Type == tmproto.PrecommitType {
 				thisBlockCommit = types.NewCommit(p.Height, p.Round,
-					p.BlockID, []types.CommitSig{p.CommitSig()})
+					p.BlockID, p.StateID, []types.CommitSig{p.CommitSig()}, p.BlockSignature, p.StateSignature)
 			}
 		}
 	}
@@ -1216,8 +1226,8 @@ func (bs *mockBlockStore) PruneBlocks(height int64) (uint64, error) {
 // Test handshake/init chain
 
 func TestHandshakeUpdatesValidators(t *testing.T) {
-	val, _ := types.RandValidator(true, 10)
-	vals := types.NewValidatorSet([]*types.Validator{val})
+	val, _ := types.RandValidator()
+	vals := types.NewValidatorSet([]*types.Validator{val}, nil)
 	app := &initChainApp{vals: types.TM2PB.ValidatorUpdates(vals)}
 	clientCreator := proxy.NewLocalClientCreator(app)
 
@@ -1250,10 +1260,10 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 	state, err = stateStore.Load()
 	require.NoError(t, err)
 
-	newValAddr := state.Validators.Validators[0].Address
-	expectValAddr := val.Address
-	assert.NotEqual(t, oldValAddr, newValAddr)
-	assert.Equal(t, newValAddr, expectValAddr)
+	newValProTxHash := state.Validators.Validators[0].ProTxHash
+	expectValProTxHash := val.ProTxHash
+	assert.NotEqual(t, oldValAddr, newValProTxHash)
+	assert.Equal(t, newValProTxHash, expectValProTxHash)
 }
 
 // returns the vals on InitChain

@@ -122,7 +122,7 @@ func (app *Application) CheckTx(req types.RequestCheckTx) types.ResponseCheckTx 
 
 func (app *Application) Commit() types.ResponseCommit {
 	// Using a memdb - just return the big endian size of the db
-	appHash := make([]byte, 8)
+	appHash := make([]byte, 32)
 	binary.PutVarint(appHash, app.state.Size)
 	app.state.AppHash = appHash
 	app.state.Height++

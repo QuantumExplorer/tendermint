@@ -8,7 +8,7 @@ import (
 )
 
 func TestValidatorProtoBuf(t *testing.T) {
-	val, _ := RandValidator(true, 100)
+	val, _ := RandValidator()
 	testCases := []struct {
 		msg      string
 		v1       *Validator
@@ -47,7 +47,7 @@ func TestValidatorValidateBasic(t *testing.T) {
 		msg string
 	}{
 		{
-			val: NewValidator(pubKey, 1),
+			val: NewValidatorDefaultVotingPower(pubKey, priv.ProTxHash),
 			err: false,
 			msg: "",
 		},
@@ -64,7 +64,7 @@ func TestValidatorValidateBasic(t *testing.T) {
 			msg: "validator does not have a public key",
 		},
 		{
-			val: NewValidator(pubKey, -1),
+			val: NewValidator(pubKey, -1, priv.ProTxHash),
 			err: true,
 			msg: "validator has negative voting power",
 		},
@@ -72,6 +72,7 @@ func TestValidatorValidateBasic(t *testing.T) {
 			val: &Validator{
 				PubKey:  pubKey,
 				Address: nil,
+				ProTxHash: priv.ProTxHash,
 			},
 			err: true,
 			msg: "validator address is the wrong size: ",
@@ -80,9 +81,19 @@ func TestValidatorValidateBasic(t *testing.T) {
 			val: &Validator{
 				PubKey:  pubKey,
 				Address: []byte{'a'},
+				ProTxHash: priv.ProTxHash,
 			},
 			err: true,
 			msg: "validator address is the wrong size: 61",
+		},
+		{
+			val: &Validator{
+				PubKey:  pubKey,
+				Address: pubKey.Address(),
+				ProTxHash: nil,
+			},
+			err: true,
+			msg: "validator does not have a provider transaction hash",
 		},
 	}
 

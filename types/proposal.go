@@ -113,9 +113,27 @@ func (p *Proposal) String() string {
 // devices that rely on this encoding.
 //
 // See CanonicalizeProposal
-func ProposalSignBytes(chainID string, p *tmproto.Proposal) []byte {
+func ProposalBlockSignBytes(chainID string, p *tmproto.Proposal) []byte {
 	pb := CanonicalizeProposal(chainID, p)
 	bz, err := protoio.MarshalDelimited(&pb)
+	if err != nil {
+		panic(err)
+	}
+
+	return bz
+}
+
+// ProposalStateSignBytes returns the proto-encoding of the canonicalized last app hash state, for
+// signing. Panics is the marshaling fails.
+//
+// The encoded Protobuf message is varint length-prefixed (using MarshalDelimited)
+// for backwards-compatibility with the Amino encoding, due to e.g. hardware
+// devices that rely on this encoding.
+//
+// See CanonicalizeVote
+func ProposalStateSignBytes(chainID string, p *tmproto.Proposal) []byte {
+	pb := CanonicalizeStateID(p.StateID)
+	bz, err := protoio.MarshalDelimited(pb)
 	if err != nil {
 		panic(err)
 	}

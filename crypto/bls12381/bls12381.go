@@ -3,12 +3,15 @@ package bls12381
 import (
 	"bytes"
 	"crypto/subtle"
+	"errors"
 	"fmt"
+
 	bls "github.com/dashpay/bls-signatures/go-bindings"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"io"
+	"sort"
 )
 
 //-------------------------------------
@@ -129,12 +132,152 @@ func genPrivKey(rand io.Reader) PrivKey {
 // if it's derived from user input.
 func GenPrivKeyFromSecret(secret []byte) PrivKey {
 	seed := crypto.Sha256(secret) // Not Ripemd160 because we want 32 bytes.
-
-	privateKey, err := bls.PrivateKeyFromSeed(seed)
+	privKey, err := bls.PrivateKeyFromSeed(seed)
 	if err != nil {
 		panic(err)
 	}
-	return PrivKey(privateKey.Serialize())
+	return PrivKey(privKey.Serialize())
+}
+
+func CreatePrivLLMQDataDefaultThreshold(members int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
+	return CreatePrivLLMQData(members, members * 2 / 3 + 1)
+}
+
+func CreateProTxHashes(members int) []crypto.ProTxHash {
+	proTxHashes := make([]crypto.ProTxHash, members)
+	for i := 0; i < members; i++ {
+		proTxHashes[i] = crypto.RandProTxHash()
+	}
+	return proTxHashes
+}
+
+func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
+	proTxHashes := CreateProTxHashes(members)
+	skShares, thresholdPublicKey := CreatePrivLLMQDataOnProTxHashes(proTxHashes, threshold)
+	return skShares, proTxHashes, thresholdPublicKey
+}
+
+func CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes []crypto.ProTxHash) ([]crypto.PrivKey, crypto.PubKey) {
+	return CreatePrivLLMQDataOnProTxHashes(proTxHashes, len(proTxHashes) * 2 / 3 + 1)
+}
+
+func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold int) ([]crypto.PrivKey, crypto.PubKey) {
+	members := len(proTxHashes)
+	if members < threshold {
+		panic("members must be bigger than threshold")
+	}
+	if threshold == 0 {
+		panic("threshold must not be 0")
+	}
+	if len(proTxHashes) == 0 {
+		panic("there must be at least one pro_tx_hash")
+	}
+	if len(proTxHashes) == 1 {
+		privKey := GenPrivKey()
+		return []crypto.PrivKey{privKey}, privKey.PubKey()
+	}
+
+	//sorting makes this easier
+	sort.Sort(crypto.SortProTxHash(proTxHashes))
+
+	ids := make([]bls.Hash, members)
+	secrets := make([]*bls.PrivateKey, threshold)
+	skShares := make([]crypto.PrivKey, members)
+
+	for i := 0; i < threshold; i++ {
+		seed := make([]byte, SeedSize)
+
+		_, err := io.ReadFull(crypto.CReader(), seed)
+		if err != nil {
+			panic(err)
+		}
+		privKey, err := bls.PrivateKeyFromSeed(seed)
+		secrets[i] = privKey
+	}
+
+	for i := 0; i < members; i++ {
+		var hash bls.Hash
+		copy(hash[:], proTxHashes[i].Bytes())
+		ids[i] = hash
+		skShare, err := bls.PrivateKeyShare(secrets, ids[i])
+		if err != nil {
+			panic(err)
+		}
+		skShares[i] = PrivKey(skShare.Serialize())
+	}
+
+	return skShares, PubKey(secrets[0].PublicKey().Serialize())
+}
+
+func RecoverThresholdPublicKeyFromPublicKeys(publicKeys []crypto.PubKey, blsIds [][]byte) (crypto.PubKey, error) {
+	if len(publicKeys) != len(blsIds) {
+		return nil, errors.New("the length of the public keys must match the length of the blsIds")
+	}
+	//if there is only 1 key use it
+	if len(publicKeys) == 1 {
+		return publicKeys[0], nil
+	}
+	publicKeyShares := make([]*bls.PublicKey, len(publicKeys))
+	hashes := make([]bls.Hash, len(publicKeys))
+	// Create and validate sigShares for each member and populate BLS-IDs from members into ids
+	for i, publicKey := range publicKeys {
+		publicKeyShare, error := bls.PublicKeyFromBytes(publicKey.Bytes())
+		if error != nil {
+			return nil, error
+		}
+		publicKeyShares[i] = publicKeyShare
+	}
+
+	for i, blsId := range blsIds {
+		if len(blsId) != tmhash.Size {
+			return nil, errors.New("blsId incorrect size, expected 32 bytes")
+		}
+		var hash bls.Hash
+		copy(hash[:],blsId)
+		hashes[i] = hash
+	}
+
+	thresholdPublicKey, error := bls.PublicKeyRecover(publicKeyShares, hashes)
+	if error != nil {
+		return nil, error
+	}
+	return PubKey(thresholdPublicKey.Serialize()), nil
+}
+
+//BLS Ids are the Pro_tx_hashes from validators
+func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte) ([]byte, error) {
+	sigShares := make([]*bls.InsecureSignature, len(sigSharesData))
+	hashes := make([]bls.Hash, len(sigSharesData))
+	if len(sigSharesData) != len(blsIds) {
+		return nil, errors.New("the length of the signature shares must match the length of the blsIds")
+	}
+	//if there is only 1 share use it
+	if len(sigSharesData) == 1 {
+		return sigSharesData[0], nil
+	}
+	// Create and validate sigShares for each member and populate BLS-IDs from members into ids
+	for i, sigShareData := range sigSharesData {
+		sigShare, error := bls.InsecureSignatureFromBytes(sigShareData)
+		if error != nil {
+			return nil, error
+		}
+		sigShares[i] = sigShare
+	}
+
+	for i, blsId := range blsIds {
+		if len(blsId) != tmhash.Size {
+			return nil, errors.New("blsId incorrect size, expected 32 bytes")
+		}
+		var hash bls.Hash
+		copy(hash[:], blsId)
+		hashes[i] = hash
+	}
+
+	thresholdSignature, error := bls.InsecureSignatureRecover(sigShares, hashes)
+	if error != nil {
+		return nil, error
+	}
+	return thresholdSignature.Serialize(), error
 }
 
 //-------------------------------------
@@ -157,6 +300,60 @@ func (pubKey PubKey) Bytes() []byte {
 	return []byte(pubKey)
 }
 
+func (pubKey PubKey) AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error) {
+	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+	if err != nil {
+		return nil, err
+	}
+	var aggregationInfos []*bls.AggregationInfo
+	for _, message := range messages {
+		aggregationInfo := bls.AggregationInfoFromMsg(publicKey, message)
+		aggregationInfos = append(aggregationInfos, aggregationInfo)
+	}
+	var sigShares []*bls.Signature
+	for i, sigShareData := range sigSharesData {
+		sigShare, error := bls.SignatureFromBytesWithAggregationInfo(sigShareData, aggregationInfos[i])
+		if error != nil {
+			return nil, error
+		}
+		sigShares = append(sigShares, sigShare)
+	}
+
+	aggregatedSignature, error := bls.SignatureAggregate(sigShares)
+	return aggregatedSignature.Serialize(), error
+}
+
+//func (pubKey PubKey) DeaggregateSignature(signature []byte, messages [][]byte) (*[]bls.Signature, error) {
+//	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//	var aggregationInfos []*bls.AggregationInfo
+//	for _, message := range messages {
+//		aggregationInfo := bls.AggregationInfoFromMsg(publicKey, message)
+//		aggregationInfos = append(aggregationInfos, aggregationInfo)
+//	}
+//	aggregatedInfo := bls.MergeAggregationInfos(aggregationInfos)
+//	insecureBlsSignature, err := bls.InsecureSignatureFromBytes(signature)
+//	if err != nil {
+//		return nil, err
+//	}
+//	blsSignature := bls.SignatureFromInsecureSigWithAggregationInfo(insecureBlsSignature, aggregatedInfo)
+//	blsSignature.DivideBy()
+//	var sigShares []*bls.Signature
+//	for i, sigShareData := range sigSharesData {
+//		sigShare, error := bls.SignatureFromBytesWithAggregationInfo(sigShareData, aggregationInfos[i])
+//		if error != nil {
+//			return nil, error
+//		}
+//		sigShares = append(sigShares, sigShare)
+//	}
+//
+//	aggregatedSignature, error := bls.SignatureAggregate(sigShares)
+//	return aggregatedSignature, error
+//}
+
+
 func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
 	if len(sig) != SignatureSize {
@@ -167,6 +364,36 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 		return false
 	}
 	aggregationInfo := bls.AggregationInfoFromMsg(publicKey, msg)
+	if err != nil {
+		return false
+	}
+	blsSignature, err := bls.SignatureFromBytesWithAggregationInfo(sig, aggregationInfo)
+	if err != nil {
+		// maybe log/panic?
+		return false
+	}
+	return blsSignature.Verify()
+}
+
+func VerifyAggregateSignatureSameMessage(pubKeys []PubKey, msg []byte, sig []byte) bool {
+	return true
+}
+
+func (pubKey PubKey) VerifyAggregateSignature(messages [][]byte, sig []byte) bool {
+	if len(sig) != SignatureSize {
+		return false
+	}
+	publicKey, err := bls.PublicKeyFromBytes(pubKey)
+	if err != nil {
+		return false
+	}
+	var aggregationInfos []*bls.AggregationInfo
+	for _, message := range messages {
+		aggregationInfo := bls.AggregationInfoFromMsg(publicKey, message)
+		aggregationInfos = append(aggregationInfos, aggregationInfo)
+	}
+	aggregationInfo := bls.MergeAggregationInfos(aggregationInfos)
+
 	if err != nil {
 		return false
 	}

@@ -28,7 +28,8 @@ const (
   	"priv_key": {
     	"type": "tendermint/PrivKeyBLS12381",
     	"value": "RokcLOxJWTyBkh5HPbdIACng/B65M8a5PYH1Nw6xn70="
-  	}
+  	},
+	"pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 }`
 
 	stateFileContents = `{
@@ -64,10 +65,15 @@ const (
 			"type": "tendermint/PubKeyBLS12381",
 			"value": "F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
 		},
-		"power": "10",
-		"name": ""
+		"power": "100",
+		"name": "",
+		"pro_tx_hash": "51BF39CC1F41B9FC63DFA5B1EDF3F0CA3AD5CAFAE4B12B4FE9263B08BB50C45F"
 		}
 	],
+    "threshold_public_key": {
+		"type": "tendermint/PubKeyBLS12381",
+        "value": "F5BjXeh0DppqaxX7a3LzoWr6CXPZcZeba6VHYdbiUCxQ23b00mFD8FRZpCz9Ug1E"
+    },
 	"app_hash": ""
 }`
 
@@ -88,7 +94,7 @@ func TestRemoteSignerTestHarnessSuccessfulRun(t *testing.T) {
 	harnessTest(
 		t,
 		func(th *TestHarness) *privval.SignerServer {
-			return newMockSignerServer(t, th, th.fpv.Key.PrivKey, false, false)
+			return newMockSignerServer(t, th, th.fpv.Key.PrivKey, th.fpv.Key.ProTxHash, false, false)
 		},
 		NoError,
 	)
@@ -98,7 +104,7 @@ func TestRemoteSignerPublicKeyCheckFailed(t *testing.T) {
 	harnessTest(
 		t,
 		func(th *TestHarness) *privval.SignerServer {
-			return newMockSignerServer(t, th, bls12381.GenPrivKey(), false, false)
+			return newMockSignerServer(t, th, bls12381.GenPrivKey(), crypto.CRandBytes(32), false, false)
 		},
 		ErrTestPublicKeyFailed,
 	)
@@ -108,7 +114,7 @@ func TestRemoteSignerProposalSigningFailed(t *testing.T) {
 	harnessTest(
 		t,
 		func(th *TestHarness) *privval.SignerServer {
-			return newMockSignerServer(t, th, th.fpv.Key.PrivKey, true, false)
+			return newMockSignerServer(t, th, th.fpv.Key.PrivKey, th.fpv.Key.ProTxHash, true, false)
 		},
 		ErrTestSignProposalFailed,
 	)
@@ -118,7 +124,7 @@ func TestRemoteSignerVoteSigningFailed(t *testing.T) {
 	harnessTest(
 		t,
 		func(th *TestHarness) *privval.SignerServer {
-			return newMockSignerServer(t, th, th.fpv.Key.PrivKey, false, true)
+			return newMockSignerServer(t, th, th.fpv.Key.PrivKey, th.fpv.Key.ProTxHash, false, true)
 		},
 		ErrTestSignVoteFailed,
 	)
@@ -128,10 +134,11 @@ func newMockSignerServer(
 	t *testing.T,
 	th *TestHarness,
 	privKey crypto.PrivKey,
+	proTxHash crypto.ProTxHash,
 	breakProposalSigning bool,
 	breakVoteSigning bool,
 ) *privval.SignerServer {
-	mockPV := types.NewMockPVWithParams(privKey, breakProposalSigning, breakVoteSigning)
+	mockPV := types.NewMockPVWithParams(privKey, proTxHash, breakProposalSigning, breakVoteSigning)
 
 	dialerEndpoint := privval.NewSignerDialerEndpoint(
 		th.logger,
