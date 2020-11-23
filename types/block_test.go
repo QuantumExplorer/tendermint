@@ -490,11 +490,11 @@ func TestBlockMaxDataBytes(t *testing.T) {
 	}{
 		0: {-10, crypto.BLS12381, 1, 0, true, 0},
 		1: {10, crypto.BLS12381, 1, 0, true, 0},
-		2: {1151, crypto.BLS12381, 1, 0, true, 0},
-		3: {1152, crypto.BLS12381, 1, 0, false, 0},
-		4: {1153, crypto.BLS12381, 1, 0, false, 1},
-		5: {1388, crypto.BLS12381, 2, 0, false, 1},
-		6: {1487, crypto.BLS12381, 2, 100, false, 0},
+		2: {1153, crypto.BLS12381, 1, 0, true, 0},
+		3: {1154, crypto.BLS12381, 1, 0, false, 0},
+		4: {1155, crypto.BLS12381, 1, 0, false, 1},
+		5: {1390, crypto.BLS12381, 2, 0, false, 1},
+		6: {1489, crypto.BLS12381, 2, 100, false, 0},
 	}
 	//An extra 33 bytes (32 for sig, 1 for proto encoding are needed for BLS compared to edwards per validator
 
@@ -517,16 +517,16 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 	testCases := []struct {
 		maxBytes    int64
 		maxEvidence uint32
-		keyType       crypto.KeyType
+		keyType     crypto.KeyType
 		valsCount   int
 		panics      bool
 		result      int64
 	}{
 		0: {-10, 1, crypto.BLS12381,1, true, 0},
 		1: {10, 1, crypto.BLS12381,1, true, 0},
-		2: {1151, 1, crypto.BLS12381,1, true, 0},
-		3: {1152, 1, crypto.BLS12381,1, false, 0},
-		4: {1153, 1, crypto.BLS12381,1, false, 1},
+		2: {1153, 1, crypto.BLS12381,1, true, 0},
+		3: {1154, 1, crypto.BLS12381,1, false, 0},
+		4: {1155, 1, crypto.BLS12381,1, false, 1},
 	}
 
 	for i, tc := range testCases {
