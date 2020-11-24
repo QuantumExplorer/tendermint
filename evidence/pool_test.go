@@ -36,7 +36,7 @@ var (
 	defaultEvidenceMaxBytes int64 = 1000
 )
 
-func TestEvidencePoolBasic(t *testing.T) {
+func TestEvidencePoolSingleValidator(t *testing.T) {
 	var (
 		height     = int64(1)
 		stateStore = &smmocks.Store{}
@@ -44,7 +44,7 @@ func TestEvidencePoolBasic(t *testing.T) {
 		blockStore = &mocks.BlockStore{}
 	)
 
-	valSet, privVals := types.GenerateValidatorSet(3)
+	valSet, privVals := types.GenerateValidatorSet(1)
 
 	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
 		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
@@ -82,10 +82,68 @@ func TestEvidencePoolBasic(t *testing.T) {
 	next := pool.EvidenceFront()
 	assert.Equal(t, ev, next.Value.(types.Evidence))
 
-	const evidenceBytes int64 = 629 // bls is 64 more than edwards
+	const evidenceBytes int64 = 712 // bls is 64 more than edwards
 	evs, size = pool.PendingEvidence(evidenceBytes)
 	assert.Equal(t, 1, len(evs))
-	assert.Equal(t, int64(629), size) // check that the size of the single evidence in bytes is correct, bls is 64 more than edwards
+	assert.Equal(t, int64(evidenceBytes), size) // check that the size of the single evidence in bytes is correct, bls is 64 more than edwards
+
+	// shouldn't be able to add evidence twice
+	assert.NoError(t, pool.AddEvidence(ev))
+	evs, _ = pool.PendingEvidence(defaultEvidenceMaxBytes)
+	assert.Equal(t, 1, len(evs))
+
+}
+
+func TestEvidencePoolQuorum(t *testing.T) {
+	var (
+		height     = int64(1)
+		stateStore = &smmocks.Store{}
+		evidenceDB = dbm.NewMemDB()
+		blockStore = &mocks.BlockStore{}
+	)
+
+	valSet, privVals := types.GenerateValidatorSet(4)
+
+	blockStore.On("LoadBlockMeta", mock.AnythingOfType("int64")).Return(
+		&types.BlockMeta{Header: types.Header{Time: defaultEvidenceTime}},
+	)
+	stateStore.On("LoadValidators", mock.AnythingOfType("int64")).Return(valSet, nil)
+	stateStore.On("Load").Return(createState(height+1, valSet), nil)
+
+	pool, err := evidence.NewPool(evidenceDB, stateStore, blockStore)
+	require.NoError(t, err)
+	pool.SetLogger(log.TestingLogger())
+
+	// evidence not seen yet:
+	evs, size := pool.PendingEvidence(defaultEvidenceMaxBytes)
+	assert.Equal(t, 0, len(evs))
+	assert.Zero(t, size)
+
+	ev := types.NewMockDuplicateVoteEvidenceWithPrivValInValidatorSet(height, defaultEvidenceTime, privVals[0], valSet, evidenceChainID)
+
+	// good evidence
+	evAdded := make(chan struct{})
+	go func() {
+		<-pool.EvidenceWaitChan()
+		close(evAdded)
+	}()
+
+	// evidence seen but not yet committed:
+	assert.NoError(t, pool.AddEvidence(ev))
+
+	select {
+	case <-evAdded:
+	case <-time.After(5 * time.Second):
+		t.Fatal("evidence was not added to list after 5s")
+	}
+
+	next := pool.EvidenceFront()
+	assert.Equal(t, ev, next.Value.(types.Evidence))
+
+	const evidenceBytes int64 = 713 // bls is 64 more than edwards
+	evs, size = pool.PendingEvidence(evidenceBytes)
+	assert.Equal(t, 1, len(evs))
+	assert.Equal(t, int64(evidenceBytes), size) // check that the size of the single evidence in bytes is correct, bls is 64 more than edwards
 
 	// shouldn't be able to add evidence twice
 	assert.NoError(t, pool.AddEvidence(ev))
@@ -234,7 +292,7 @@ func TestVerifyDuplicatedEvidenceFails(t *testing.T) {
 func TestCheckEvidenceWithLightClientAttack(t *testing.T) {
 	var (
 		nValidators          = 5
-		validatorPower int64 = 10
+		validatorPower int64 = types.DefaultDashVotingPower
 		height         int64 = 10
 	)
 	conflictingVals, conflictingPrivVals := types.GenerateValidatorSet(nValidators)

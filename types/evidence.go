@@ -545,7 +545,7 @@ func NewMockDuplicateVoteEvidence(height int64, time time.Time, chainID string) 
 	return NewMockDuplicateVoteEvidenceWithValidator(height, time, val, chainID)
 }
 
-// assumes voting power to be 10 and validator to be the only one in the set
+// assumes voting power to be DefaultDashVotingPower and validator to be the only one in the set
 func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	pv PrivValidator, chainID string) *DuplicateVoteEvidence {
 	pubKey, _ := pv.GetPubKey()
@@ -563,6 +563,24 @@ func NewMockDuplicateVoteEvidenceWithValidator(height int64, time time.Time,
 	voteB.BlockSignature = vB.BlockSignature
 	voteB.StateSignature = vB.StateSignature
 	return NewDuplicateVoteEvidence(voteA, voteB, time, NewValidatorSet([]*Validator{val}, val.PubKey))
+}
+
+// assumes voting power to be DefaultDashVotingPower and validator to be the only one in the set
+func NewMockDuplicateVoteEvidenceWithPrivValInValidatorSet(height int64, time time.Time,
+	pv PrivValidator, valSet *ValidatorSet, chainID string) *DuplicateVoteEvidence {
+	proTxHash, _ := pv.GetProTxHash()
+
+	voteA := makeMockVote(height, 0, 0, proTxHash, randBlockID(), randStateID())
+	vA := voteA.ToProto()
+	_ = pv.SignVote(chainID, vA)
+	voteA.BlockSignature = vA.BlockSignature
+	voteA.StateSignature = vA.StateSignature
+	voteB := makeMockVote(height, 0, 0, proTxHash, randBlockID(), randStateID())
+	vB := voteB.ToProto()
+	_ = pv.SignVote(chainID, vB)
+	voteB.BlockSignature = vB.BlockSignature
+	voteB.StateSignature = vB.StateSignature
+	return NewDuplicateVoteEvidence(voteA, voteB, time, valSet)
 }
 
 func makeMockVote(height int64, round, index int32, proTxHash crypto.ProTxHash,

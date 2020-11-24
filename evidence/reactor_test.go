@@ -3,6 +3,7 @@ package evidence_test
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"sync"
 	"testing"
 	"time"
@@ -181,7 +182,7 @@ func TestReactorsGossipNoCommittedEvidence(t *testing.T) {
 	// wait to see that only two evidence is sent
 	time.Sleep(300 * time.Millisecond)
 
-	peerEv, _ = pools[1].PendingEvidence(1000)
+	peerEv, _ = pools[1].PendingEvidence(2000)
 	assert.EqualValues(t, []types.Evidence{evList[0], evList[1]}, peerEv)
 }
 
@@ -331,7 +332,8 @@ func exampleVote(t byte) *types.Vote {
 func TestEvidenceVectors(t *testing.T) {
 
 	val := &types.Validator{
-		Address:     crypto.AddressHash([]byte("validator_address")),
+		ProTxHash:   crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
+		PubKey:      bls12381.GenPrivKey().PubKey(),
 		VotingPower: types.DefaultDashVotingPower,
 	}
 
@@ -349,7 +351,7 @@ func TestEvidenceVectors(t *testing.T) {
 		evidenceList []types.Evidence
 		expBytes     string
 	}{
-		{"DuplicateVoteEvidence", []types.Evidence{dupl}, "0ac1020abe020a9c01080210031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a3220959a8f5ef2be68d0ed3a07ed8cff85991ee7995c2ac17030f742c135f9729fbe38d5bb034a220a2062b1d24a04df3db8c9735668e2fc0f9dad612cef4fed678fe07e67388ffd99c6129c01080110031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a3220959a8f5ef2be68d0ed3a07ed8cff85991ee7995c2ac17030f742c135f9729fbe38d5bb034a220a2062b1d24a04df3db8c9735668e2fc0f9dad612cef4fed678fe07e67388ffd99c6"},
+		{"DuplicateVoteEvidence", []types.Evidence{dupl}, "0acd020aca020a9c01080210031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a3220959a8f5ef2be68d0ed3a07ed8cff85991ee7995c2ac17030f742c135f9729fbe38d5bb034a220a2062b1d24a04df3db8c9735668e2fc0f9dad612cef4fed678fe07e67388ffd99c6129c01080110031802224a0a208b01023386c371778ecb6368573e539afc3cc860ec3a2f614e54fe5652f4fc80122608c0843d122072db3d959635dff1bb567bedaa70573392c5159666a3f8caf11e413aac52207a3220959a8f5ef2be68d0ed3a07ed8cff85991ee7995c2ac17030f742c135f9729fbe38d5bb034a220a2062b1d24a04df3db8c9735668e2fc0f9dad612cef4fed678fe07e67388ffd99c6186420642a060880dbaae105"},
 	}
 
 	for _, tc := range testCases {

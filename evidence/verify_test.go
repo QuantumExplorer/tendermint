@@ -51,7 +51,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 			ValidatorSet: conflictingVals,
 		},
 		CommonHeight:        4,
-		TotalVotingPower:    20,
+		TotalVotingPower:    2*types.DefaultDashVotingPower,
 		ByzantineValidators: commonVals.Validators,
 		Timestamp:           defaultEvidenceTime,
 	}
@@ -82,11 +82,11 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	assert.Error(t, err)
 
 	// evidence with different total validator power should fail
-	ev.TotalVotingPower = 1
+	ev.TotalVotingPower = types.DefaultDashVotingPower+1
 	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVals,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour)
 	assert.Error(t, err)
-	ev.TotalVotingPower = 20
+	ev.TotalVotingPower = 2*types.DefaultDashVotingPower
 
 	state := sm.State{
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
@@ -156,7 +156,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		},
 		CommonHeight:        10,
 		ByzantineValidators: conflictingVals.Validators[:4],
-		TotalVotingPower:    50,
+		TotalVotingPower:    5*types.DefaultDashVotingPower,
 		Timestamp:           defaultEvidenceTime,
 	}
 
@@ -242,7 +242,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		},
 		CommonHeight:        10,
 		ByzantineValidators: nil, // with amnesia evidence no validators are submitted as abci evidence
-		TotalVotingPower:    50,
+		TotalVotingPower:    5*types.DefaultDashVotingPower,
 		Timestamp:           defaultEvidenceTime,
 	}
 
@@ -340,8 +340,8 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 		ev := &types.DuplicateVoteEvidence{
 			VoteA:            c.vote1,
 			VoteB:            c.vote2,
-			ValidatorPower:   1,
-			TotalVotingPower: 1,
+			ValidatorPower:   types.DefaultDashVotingPower,
+			TotalVotingPower: types.DefaultDashVotingPower,
 			Timestamp:        defaultEvidenceTime,
 		}
 		if c.valid {
@@ -353,12 +353,14 @@ func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 
 	// create good evidence and correct validator power
 	goodEv := types.NewMockDuplicateVoteEvidenceWithValidator(10, defaultEvidenceTime, val, chainID)
-	goodEv.ValidatorPower = 1
-	goodEv.TotalVotingPower = 1
+	goodEv.ValidatorPower = types.DefaultDashVotingPower
+	goodEv.TotalVotingPower = types.DefaultDashVotingPower
 	badEv := types.NewMockDuplicateVoteEvidenceWithValidator(10, defaultEvidenceTime, val, chainID)
+	badEv.ValidatorPower = types.DefaultDashVotingPower + 1
+	badEv.TotalVotingPower = types.DefaultDashVotingPower
 	badTimeEv := types.NewMockDuplicateVoteEvidenceWithValidator(10, defaultEvidenceTime.Add(1*time.Minute), val, chainID)
-	badTimeEv.ValidatorPower = 1
-	badTimeEv.TotalVotingPower = 1
+	badTimeEv.ValidatorPower = types.DefaultDashVotingPower
+	badTimeEv.TotalVotingPower = types.DefaultDashVotingPower
 	state := sm.State{
 		ChainID:         chainID,
 		LastBlockTime:   defaultEvidenceTime.Add(1 * time.Minute),
