@@ -16,7 +16,7 @@ import (
 // for the validators in the set as used in computing their Merkle root.
 //
 // More: https://docs.tendermint.com/master/rpc/#/Info/validators
-func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int, requestThresholdPublicKey *bool) (*ctypes.ResultValidators, error) {
+func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *int, requestThresholdPublicKeyPtr *bool) (*ctypes.ResultValidators, error) {
 	// The latest validator that we know is the NextValidator of the last block.
 	height, err := getHeight(latestUncommittedHeight(), heightPtr)
 	if err != nil {
@@ -35,11 +35,13 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 		return nil, err
 	}
 
+	requestThresholdPublicKey := validateRequestThresholdPublicKey(requestThresholdPublicKeyPtr)
+
 	skipCount := validateSkipCount(page, perPage)
 
 	v := validators.Validators[skipCount : skipCount+tmmath.MinInt(perPage, totalCount-skipCount)]
 	var thresholdPublicKey crypto.PubKey = nil
-	if *requestThresholdPublicKey {
+	if requestThresholdPublicKey {
 		thresholdPublicKey = validators.ThresholdPublicKey
 	}
 

@@ -20,6 +20,7 @@ const (
 	// see README
 	defaultPerPage = 30
 	maxPerPage     = 100
+	defaultRequestThresholdPublicKey = true
 
 	// SubscribeTimeout is the maximum time we wait to subscribe for an event.
 	// must be less than the server's write timeout (see rpcserver.DefaultConfig)
@@ -127,6 +128,14 @@ func validatePerPage(perPagePtr *int) int {
 		return maxPerPage
 	}
 	return perPage
+}
+
+func validateRequestThresholdPublicKey(requestThresholdPublicKeyPtr *bool) bool {
+	if requestThresholdPublicKeyPtr == nil { // no per_page parameter
+		return defaultRequestThresholdPublicKey
+	}
+	requestThresholdPublicKey := *requestThresholdPublicKeyPtr
+	return requestThresholdPublicKey
 }
 
 func validateSkipCount(page, perPage int) int {
