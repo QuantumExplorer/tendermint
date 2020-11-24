@@ -405,11 +405,11 @@ func brokenHandler(privVal types.PrivValidator, request privvalproto.Message,
 	case *privvalproto.Message_PubKeyRequest:
 		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
 	case *privvalproto.Message_ProTxHashRequest:
-		res = mustWrapMsg(&privvalproto.ProTxHashResponse{ProTxHash: nil, Error: nil})
+		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
 	case *privvalproto.Message_SignVoteRequest:
-		res = mustWrapMsg(&privvalproto.SignedVoteResponse{Vote: tmproto.Vote{}, Error: nil})
+		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
 	case *privvalproto.Message_SignProposalRequest:
-		res = mustWrapMsg(&privvalproto.SignedProposalResponse{Proposal: tmproto.Proposal{}, Error: nil})
+		res = mustWrapMsg(&privvalproto.PubKeyResponse{PubKey: cryptoproto.PublicKey{}, Error: nil})
 	case *privvalproto.Message_PingRequest:
 		err, res = nil, mustWrapMsg(&privvalproto.PingResponse{})
 	default:
