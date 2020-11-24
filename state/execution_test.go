@@ -154,7 +154,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 
 	// we don't need to worry about validating the evidence as long as they pass validate basic
 	dve := types.NewMockDuplicateVoteEvidenceWithValidator(3, defaultEvidenceTime, privVal, state.ChainID)
-	dve.ValidatorPower = 1000
+	dve.ValidatorPower = types.DefaultDashVotingPower
 	commitSig := []types.CommitSig{{
 		BlockIDFlag:      types.BlockIDFlagNil,
 		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_address")),
@@ -174,7 +174,7 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 		},
 		CommonHeight:        8,
 		ByzantineValidators: []*types.Validator{state.Validators.Validators[0]},
-		TotalVotingPower:    12,
+		TotalVotingPower:    types.DefaultDashVotingPower,
 		Timestamp:           defaultEvidenceTime,
 	}
 
@@ -186,14 +186,14 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 			Height:           3,
 			Time:             defaultEvidenceTime,
 			Validator:        types.TM2PB.Validator(state.Validators.Validators[0]),
-			TotalVotingPower: 10,
+			TotalVotingPower: types.DefaultDashVotingPower,
 		},
 		{
 			Type:             abci.EvidenceType_LIGHT_CLIENT_ATTACK,
 			Height:           8,
 			Time:             defaultEvidenceTime,
 			Validator:        types.TM2PB.Validator(state.Validators.Validators[0]),
-			TotalVotingPower: 12,
+			TotalVotingPower: types.DefaultDashVotingPower,
 		},
 	}
 
