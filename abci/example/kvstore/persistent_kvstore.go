@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"strconv"
 	"strings"
 
@@ -20,6 +19,7 @@ import (
 const (
 	ValidatorSetChangePrefix string = "val:"
 	ValidatorThresholdPublicKeyChangePrefix string = "tpk:"
+	ValidatorThresholdPublicKeyPrefix string = "tpk"
 )
 
 //-----------------------------------------
@@ -111,7 +111,7 @@ func (app *PersistentKVStoreApplication) Query(reqQuery types.RequestQuery) (res
 		resQuery.Value = value
 		return
 	case "/tpk":
-		key := []byte("tpk:" + string(reqQuery.Data))
+		key := []byte("tpk")
 		value, err := app.app.state.db.Get(key)
 		if err != nil {
 			panic(err)
@@ -133,7 +133,9 @@ func (app *PersistentKVStoreApplication) InitChain(req types.RequestInitChain) t
 			app.logger.Error("Error updating validators", "r", r)
 		}
 	}
-	app.ValidatorSetUpdates.ThresholdPublicKey = req.ValidatorSet.ThresholdPublicKey
+	app.updateThresholdPublicKey(types.ThresholdPublicKeyUpdate{
+		ThresholdPublicKey: req.ValidatorSet.ThresholdPublicKey,
+	})
 	return types.ResponseInitChain{}
 }
 
@@ -173,27 +175,27 @@ func (app *PersistentKVStoreApplication) ApplySnapshotChunk(
 //---------------------------------------------
 // update validators
 
-func (app *PersistentKVStoreApplication) Validators() (validators []types.ValidatorUpdate, thresholdPublicKey crypto.PubKey) {
+func (app *PersistentKVStoreApplication) ValidatorSet() (validatorSet types.ValidatorSetUpdate) {
 	itr, err := app.app.state.db.Iterator(nil, nil)
 	if err != nil {
 		panic(err)
 	}
 	for ; itr.Valid(); itr.Next() {
-		if isValidatorTx(itr.Key()) {
+		key := itr.Key()
+		if isValidatorTx(key) {
 			validator := new(types.ValidatorUpdate)
 			err := types.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
 			if err != nil {
 				panic(err)
 			}
-			validators = append(validators, *validator)
-		}
-		if isThresholdPublicKeyTx(itr.Key()) {
+			validatorSet.ValidatorUpdates = append(validatorSet.ValidatorUpdates, *validator)
+		} else if isThresholdPublicKeyTx(key) {
 			thresholdPublicKeyMessage := new(types.ThresholdPublicKeyUpdate)
 			err := types.ReadMessage(bytes.NewBuffer(itr.Value()), thresholdPublicKeyMessage)
 			if err != nil {
 				panic(err)
 			}
-			thresholdPublicKey, _ = cryptoenc.PubKeyFromProto(thresholdPublicKeyMessage.GetThresholdPublicKey())
+			validatorSet.ThresholdPublicKey = thresholdPublicKeyMessage.GetThresholdPublicKey()
 		}
 	}
 	if err = itr.Error(); err != nil {
@@ -212,12 +214,21 @@ func MakeValSetChangeTx(proTxHash []byte, pubkey pc.PublicKey, power int64) []by
 	return []byte(fmt.Sprintf("val:%s!%s!%d", proTxHashStr, pubStr, power))
 }
 
+func MakeThresholdPublicKeyChangeTx(thresholdPublicKey pc.PublicKey) []byte {
+	pk, err := cryptoenc.PubKeyFromProto(thresholdPublicKey)
+	if err != nil {
+		panic(err)
+	}
+	pubStr := base64.StdEncoding.EncodeToString(pk.Bytes())
+	return []byte(fmt.Sprintf("tpk:%s", pubStr))
+}
+
 func isValidatorTx(tx []byte) bool {
 	return strings.HasPrefix(string(tx), ValidatorSetChangePrefix)
 }
 
 func isThresholdPublicKeyTx(tx []byte) bool {
-	return strings.HasPrefix(string(tx), ValidatorThresholdPublicKeyChangePrefix)
+	return strings.HasPrefix(string(tx), ValidatorThresholdPublicKeyPrefix)
 }
 
 // format is "val:proTxHash!pubkey!power"
@@ -286,7 +297,7 @@ func (app *PersistentKVStoreApplication) updateValidatorSet(v types.ValidatorUpd
 	if err != nil {
 		panic(fmt.Errorf("can't decode public key: %w", err))
 	}
-	key := []byte("vals:" + string(v.ProTxHash))
+	key := []byte("val:" + string(v.ProTxHash))
 
 	if v.Power == 0 {
 		// remove validator
@@ -329,15 +340,14 @@ func (app *PersistentKVStoreApplication) updateThresholdPublicKey(thresholdPubli
 	if err != nil {
 		panic(fmt.Errorf("can't decode threshold public key: %w", err))
 	}
-	key := []byte("tpk:" + thresholdPublicKeyUpdate.ThresholdPublicKey.String())
-
+	key := []byte("tpk")
 
 	// add or update thresholdPublicKey
 	value := bytes.NewBuffer(make([]byte, 0))
 	if err := types.WriteMessage(&thresholdPublicKeyUpdate, value); err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.CodeTypeEncodingError,
-			Log:  fmt.Sprintf("Error encoding validator: %v", err)}
+			Log:  fmt.Sprintf("Error encoding threshold public key: %v", err)}
 	}
 	if err = app.app.state.db.Set(key, value.Bytes()); err != nil {
 		panic(err)
