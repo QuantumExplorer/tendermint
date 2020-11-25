@@ -1038,13 +1038,20 @@ func (e ErrNotEnoughVotingPowerSigned) Error() string {
 	return fmt.Sprintf("invalid commit -- insufficient voting power: got %d, needed more than %d", e.Got, e.Needed)
 }
 
-func (vals *ValidatorSet) ABCIEquivalentValidatorUpdates() []abci.ValidatorUpdate {
+func (vals *ValidatorSet) ABCIEquivalentValidatorUpdates() *abci.ValidatorSetUpdate {
 	var valUpdates []abci.ValidatorUpdate
 	for i := 0; i < len(vals.Validators) ; i++ {
 		valUpdate := TM2PB.NewValidatorUpdate(vals.Validators[i].PubKey, DefaultDashVotingPower, vals.Validators[i].ProTxHash)
 		valUpdates = append(valUpdates,valUpdate)
 	}
-	return valUpdates
+	abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(vals.ThresholdPublicKey)
+	if err != nil {
+		panic(err)
+	}
+	return &abci.ValidatorSetUpdate{
+		ValidatorUpdates: valUpdates,
+		ThresholdPublicKey: abciThresholdPublicKey,
+	}
 }
 
 //----------------

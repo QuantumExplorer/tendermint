@@ -289,9 +289,9 @@ func TestUpdateValidators(t *testing.T) {
 	removedProTxHashes := combinedValidatorSet.GetProTxHashes()[0:len(combinedProTxHashes)-2] //these are sorted
 	removedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(removedProTxHashes) //size 6
 	abciRemovalValidatorUpdates := removedValidatorSet.ABCIEquivalentValidatorUpdates()
-	abciRemovalValidatorUpdates = append(abciRemovalValidatorUpdates,abciRegeneratedValidatorUpdates[6:]...)
-	abciRemovalValidatorUpdates[6].Power = 0
-	abciRemovalValidatorUpdates[7].Power = 0
+	abciRemovalValidatorUpdates.ValidatorUpdates = append(abciRemovalValidatorUpdates.ValidatorUpdates,abciRegeneratedValidatorUpdates.ValidatorUpdates[6:]...)
+	abciRemovalValidatorUpdates.ValidatorUpdates[6].Power = 0
+	abciRemovalValidatorUpdates.ValidatorUpdates[7].Power = 0
 
 	pubkeyRemoval := bls12381.GenPrivKey().PubKey()
 	pk, err := cryptoenc.PubKeyToProto(pubkeyRemoval)
@@ -301,7 +301,7 @@ func TestUpdateValidators(t *testing.T) {
 		name string
 
 		currentSet  *types.ValidatorSet
-		abciUpdates []abci.ValidatorUpdate
+		abciUpdates *abci.ValidatorSetUpdate
 		thresholdPublicKeyUpdate crypto.PubKey
 
 		resultingSet *types.ValidatorSet
@@ -334,7 +334,10 @@ func TestUpdateValidators(t *testing.T) {
 		{
 			"removing a non-existing validator results in error",
 			removedValidatorSet,
-			[]abci.ValidatorUpdate{{ProTxHash: crypto.RandProTxHash(), PubKey: pk, Power: 0}},
+			&abci.ValidatorSetUpdate{
+				ValidatorUpdates: []abci.ValidatorUpdate{{ProTxHash: crypto.RandProTxHash(), PubKey: pk, Power: 0}},
+				ThresholdPublicKey: pk,
+			},
 			removedValidatorSet.ThresholdPublicKey,
 			removedValidatorSet,
 			true,
@@ -344,7 +347,7 @@ func TestUpdateValidators(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			updates, err := types.PB2TM.ValidatorUpdates(tc.abciUpdates)
+			updates, _, err := types.PB2TM.ValidatorUpdatesFromValidatorSet(tc.abciUpdates)
 			assert.NoError(t, err)
 			err = tc.currentSet.UpdateWithChangeSet(updates, tc.thresholdPublicKeyUpdate)
 			if tc.shouldErr {
@@ -355,9 +358,9 @@ func TestUpdateValidators(t *testing.T) {
 
 				assert.Equal(t, tc.resultingSet.TotalVotingPower(), tc.currentSet.TotalVotingPower())
 
-				assert.Equal(t, tc.resultingSet.Validators[0].Address, tc.currentSet.Validators[0].Address)
+				assert.Equal(t, tc.resultingSet.Validators[0].ProTxHash, tc.currentSet.Validators[0].ProTxHash)
 				if tc.resultingSet.Size() > 1 {
-					assert.Equal(t, tc.resultingSet.Validators[1].Address, tc.currentSet.Validators[1].Address)
+					assert.Equal(t, tc.resultingSet.Validators[1].ProTxHash, tc.currentSet.Validators[1].ProTxHash)
 				}
 			}
 		})
@@ -414,12 +417,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 		}
 	}
 
-	app.ValidatorUpdates = newVals.ABCIEquivalentValidatorUpdates()
-	if newVals.ThresholdPublicKey != nil {
-		abciThresholdPublicKeyUpdate, err := cryptoenc.PubKeyToProto(newVals.ThresholdPublicKey)
-		require.NoError(t, err)
-		app.ThresholdPublicKeyUpdate = &abciThresholdPublicKeyUpdate
-	}
+	app.ValidatorSetUpdate = newVals.ABCIEquivalentValidatorUpdates()
 
 	state, _, err = blockExec.ApplyBlock(state, blockID, block)
 	require.Nil(t, err)
@@ -476,13 +474,13 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 	publicKey, err := cryptoenc.PubKeyToProto(bls12381.GenPrivKey().PubKey())
 	require.NoError(t, err)
 	// Remove the only validator
-	app.ValidatorUpdates = []abci.ValidatorUpdate{
+	validatorUpdates := []abci.ValidatorUpdate{
 		{PubKey:publicKey, ProTxHash: proTxHash, Power: 0},
 	}
-
-	abciThresholdPublicKeyUpdate, err := cryptoenc.PubKeyToProto(state.Validators.ThresholdPublicKey)
-	require.NoError(t, err)
-	app.ThresholdPublicKeyUpdate = &abciThresholdPublicKeyUpdate
+	app.ValidatorSetUpdate = &abci.ValidatorSetUpdate{
+		ValidatorUpdates: validatorUpdates,
+		ThresholdPublicKey: publicKey,
+	}
 
 	assert.NotPanics(t, func() { state, _, err = blockExec.ApplyBlock(state, blockID, block) })
 	assert.NotNil(t, err)
