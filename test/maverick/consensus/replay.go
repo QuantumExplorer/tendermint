@@ -313,7 +313,7 @@ func (h *Handshaker) ReplayBlocks(
 			ChainId:         h.genDoc.ChainID,
 			InitialHeight:   h.genDoc.InitialHeight,
 			ConsensusParams: csParams,
-			Validators:      nextVals,
+			ValidatorSet:    nextVals,
 			AppStateBytes:   h.genDoc.AppState,
 		}
 		res, err := proxyApp.Consensus().InitChainSync(req)
@@ -331,12 +331,8 @@ func (h *Handshaker) ReplayBlocks(
 				state.AppHash = res.AppHash
 			}
 			// If the app returned validators or consensus params, update the state.
-			if len(res.Validators) > 0 {
-				vals, err := types.PB2TM.ValidatorUpdates(res.Validators)
-				if err != nil {
-					return nil, err
-				}
-				thresholdPublicKey, err := types.PB2TM.ThresholdPublicKeyUpdate(&res.ThresholdPublicKey)
+			if len(res.ValidatorSetUpdate.ValidatorUpdates) > 0 {
+				vals, thresholdPublicKey, err := types.PB2TM.ValidatorUpdatesFromValidatorSet(&res.ValidatorSetUpdate)
 				if err != nil {
 					return nil, err
 				}

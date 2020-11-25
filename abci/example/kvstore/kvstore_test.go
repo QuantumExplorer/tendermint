@@ -183,7 +183,7 @@ func makeApplyBlock(
 	resEndBlock := kvstore.EndBlock(types.RequestEndBlock{Height: header.Height})
 	kvstore.Commit()
 
-	valSetEqualTest(t, diff, resEndBlock.ValidatorSetUpdate)
+	valSetEqualTest(t, diff, *resEndBlock.ValidatorSetUpdate)
 
 }
 

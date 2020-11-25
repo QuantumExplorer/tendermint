@@ -108,11 +108,15 @@ func TestABCIResponsesSaveLoad1(t *testing.T) {
 
 	abciResponses.DeliverTxs[0] = &abci.ResponseDeliverTx{Data: []byte("foo"), Events: nil}
 	abciResponses.DeliverTxs[1] = &abci.ResponseDeliverTx{Data: []byte("bar"), Log: "ok", Events: nil}
-	abciResponses.EndBlock = &abci.ResponseEndBlock{ValidatorUpdates: []abci.ValidatorUpdate{
-		types.TM2PB.NewValidatorUpdate(bls12381.GenPrivKey().PubKey(), 10, make([]byte, 32)),
+	pubKey := bls12381.GenPrivKey().PubKey()
+	abciPubKey, err := cryptoenc.PubKeyToProto(pubKey)
+	require.NoError(t, err)
+	abciResponses.EndBlock = &abci.ResponseEndBlock{ValidatorSetUpdate: &abci.ValidatorSetUpdate{
+		ValidatorUpdates: []abci.ValidatorUpdate{types.TM2PB.NewValidatorUpdate(pubKey, 100, crypto.RandProTxHash())},
+		ThresholdPublicKey: abciPubKey,
 	}}
 
-	err := stateStore.SaveABCIResponses(block.Height, abciResponses)
+	err = stateStore.SaveABCIResponses(block.Height, abciResponses)
 	require.NoError(t, err)
 	loadedABCIResponses, err := stateStore.LoadABCIResponses(block.Height)
 	assert.Nil(err)
@@ -271,10 +275,10 @@ func TestOneValidatorChangesSaveLoad(t *testing.T) {
 			regenerate = true
 		}
 		header, coreChainLock, blockID, responses := makeHeaderPartsResponsesValKeysRegenerate(state, regenerate)
-		validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 
 		require.NoError(t, err)
-		thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ThresholdPublicKey)
+		thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 		require.NoError(t, err)
 		nextCoreChainLock, err = types.CoreChainLockFromProto(responses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)
@@ -450,11 +454,11 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil, ThresholdPublicKey: nil},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 	}
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 	require.NoError(t, err)
-	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ThresholdPublicKey)
+	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 	require.NoError(t, err)
 	nextCoreChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	require.NoError(t, err)
@@ -506,8 +510,10 @@ func TestProposerPriorityDoesNotGetResetToZero(t *testing.T) {
 
 	// Updating validators does not reset the ProposerPriority to zero:
 	// 1. Add - Val2 VotingPower change to 1 =>
-	abciValidatorUpdates, thresholdPublicKey := types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
-	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciValidatorUpdates)
+	abciValidatorUpdates := types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
+	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciValidatorUpdates.ValidatorUpdates)
+	assert.NoError(t, err)
+	thresholdPublicKey, err = cryptoenc.PubKeyFromProto(abciValidatorUpdates.ThresholdPublicKey)
 	assert.NoError(t, err)
 
 	// this will cause the diff of priorities (77)
@@ -581,11 +587,11 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	// no updates:
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil, ThresholdPublicKey: nil},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 	}
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 	require.NoError(t, err)
-	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ThresholdPublicKey)
+	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 	nextChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	require.NoError(t, err)
 
@@ -653,9 +659,9 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 		updatedVal2,
 	)
 
-	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 	require.NoError(t, err)
-	thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ThresholdPublicKey)
+	thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 	require.NoError(t, err)
 	nextChainLock, err = types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	require.NoError(t, err)
@@ -698,14 +704,16 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 	oldState := updatedState3
 	abciResponses = &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 	}
-	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
+	require.NoError(t, err)
+	thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 	require.NoError(t, err)
 	nextChainLock, err = types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	require.NoError(t, err)
 
-	oldState, err = sm.UpdateState(oldState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
+	oldState, err = sm.UpdateState(oldState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKeyUpdate)
 	assert.NoError(t, err)
 	expectedVal1Prio2 = 13
 	expectedVal2Prio2 = -12
@@ -716,14 +724,16 @@ func TestProposerPriorityProposerAlternates(t *testing.T) {
 		// no validator updates:
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 		}
-		validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
+		require.NoError(t, err)
+		thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 		require.NoError(t, err)
 		nextChainLock, err = types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)
 
-		updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
+		updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKeyUpdate)
 		assert.NoError(t, err)
 		// alternate (and cyclic priorities):
 		assert.NotEqual(
@@ -771,11 +781,11 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 		// no updates:
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 		}
-		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 		require.NoError(t, err)
-		thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ThresholdPublicKey)
+		thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 		require.NoError(t, err)
 		nextChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)
@@ -795,20 +805,20 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 
 	addedProTxHashes := bls12381.CreateProTxHashes(4)
 	proTxHashes := append(originalValidatorSet.GetProTxHashes(), addedProTxHashes...)
-	abciValidatorUpdates0, thresholdPublicKey0 :=  types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
+	abciValidatorUpdates0 :=  types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 
-	abciThresholdPublicKey0, err := cryptoenc.PubKeyToProto(thresholdPublicKey0)
-	require.NoError(t, err)
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: abciValidatorUpdates0, ThresholdPublicKey: &abciThresholdPublicKey0},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: &abciValidatorUpdates0},
 	}
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 	require.NoError(t, err)
+	thresholdPublicKey, err := cryptoenc.PubKeyFromProto(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
+	assert.NoError(t, err)
 
 	block := makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-	updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.CoreChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey0)
+	updatedState, err := sm.UpdateState(oldState, blockID, &block.Header, block.CoreChainLock, nil, abciResponses, validatorUpdates, thresholdPublicKey)
 	require.NoError(t, err)
 
 	lastState := updatedState
@@ -816,17 +826,19 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 		// no updates:
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 		}
-		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 		require.NoError(t, err)
+		thresholdPublicKey, err = cryptoenc.PubKeyFromProto(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
+		assert.NoError(t, err)
 		nextChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)
 
 		block := makeBlock(lastState, lastState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-		updatedStateInner, err := sm.UpdateState(lastState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
+		updatedStateInner, err := sm.UpdateState(lastState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey)
 		require.NoError(t, err)
 		lastState = updatedStateInner
 	}
@@ -842,18 +854,23 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 		addedProTxHash := crypto.RandProTxHash()
 		proTxHashes := append(proTxHashes, addedProTxHash)
 		privateKeys3, thresholdPublicKey3 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
-		var abciValidatorUpdates []abci.ValidatorUpdate
-		updatedPubKey, err := cryptoenc.PubKeyToProto(privateKeys3[len(proTxHashes) - 1].PubKey())
-		require.NoError(t, err)
-		updatePreviousVal := abci.ValidatorUpdate{ProTxHash: addedProTxHash, Power: types.DefaultDashVotingPower, PubKey: updatedPubKey}
-		abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
+		abciValidatorUpdates := make([]abci.ValidatorUpdate, len(proTxHashes))
+		for j, proTxHash := range proTxHashes {
+			abciValidatorUpdates[j] = abci.UpdateValidator(proTxHash, privateKeys3[i].PubKey().Bytes(), types.DefaultDashVotingPower)
+		}
+		abciThresholdPublicKey3, err := cryptoenc.PubKeyToProto(thresholdPublicKey3)
+		assert.NoError(t, err)
+		abciValidatorSetUpdate := abci.ValidatorSetUpdate{
+			ValidatorUpdates: abciValidatorUpdates,
+			ThresholdPublicKey: abciThresholdPublicKey3,
+		}
 
 		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciValidatorUpdates)
 		assert.NoError(t, err)
 
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: abciValidatorUpdates},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: &abciValidatorSetUpdate},
 		}
 		block := makeBlock(oldState, oldState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
@@ -875,17 +892,27 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 		abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
 	}
 
+	abciThresholdPublicKey4, err := cryptoenc.PubKeyToProto(thresholdPublicKey4)
+	assert.NoError(t, err)
+
+	abciValidatorSetUpdate := abci.ValidatorSetUpdate{
+		ValidatorUpdates: abciValidatorUpdates,
+		ThresholdPublicKey: abciThresholdPublicKey4,
+	}
+
 	abciResponses = &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: abciValidatorUpdates},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: &abciValidatorSetUpdate},
 	}
 	block = makeBlock(oldState, oldState.LastBlockHeight+1)
 	blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 	require.NoError(t, err)
+	thresholdPublicKey, err = cryptoenc.PubKeyFromProto(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
+	assert.NoError(t, err)
 	nextChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	require.NoError(t, err)
-	updatedState, err = sm.UpdateState(state, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey4)
+	updatedState, err = sm.UpdateState(state, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey)
 	require.NoError(t, err)
 	// only the first added val (not the genesis val) should be left
 	assert.Equal(t, 17, len(updatedState.NextValidators.Validators))
@@ -898,15 +925,17 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 	for isProposerUnchanged {
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 		}
-		validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err = types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 		require.NoError(t, err)
+		thresholdPublicKey, err = cryptoenc.PubKeyFromProto(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
+		assert.NoError(t, err)
 		nextChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)
 		block = makeBlock(curState, curState.LastBlockHeight+1)
 		blockID = types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
-		curState, err = sm.UpdateState(curState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
+		curState, err = sm.UpdateState(curState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey)
 		require.NoError(t, err)
 		if !bytes.Equal(curState.Validators.Proposer.Address, curState.NextValidators.Proposer.Address) {
 			isProposerUnchanged = false
@@ -924,17 +953,19 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 		// no updates:
 		abciResponses := &tmstate.ABCIResponses{
 			BeginBlock: &abci.ResponseBeginBlock{},
-			EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+			EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 		}
-		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 		require.NoError(t, err)
+		thresholdPublicKey, err = cryptoenc.PubKeyFromProto(abciResponses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
+		assert.NoError(t, err)
 		nextChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)
 
 		block := makeBlock(updatedState, updatedState.LastBlockHeight+1)
 		blockID := types.BlockID{Hash: block.Hash(), PartSetHeader: block.MakePartSet(testPartSize).Header()}
 
-		updatedState, err = sm.UpdateState(updatedState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, nil)
+		updatedState, err = sm.UpdateState(updatedState, blockID, &block.Header, block.CoreChainLock, nextChainLock, abciResponses, validatorUpdates, thresholdPublicKey)
 		require.NoError(t, err)
 		if i > numVals { // expect proposers to cycle through after the first iteration (of numVals blocks):
 			if proposers[i%numVals] == nil {
@@ -992,9 +1023,9 @@ func TestManyValidatorChangesSaveLoad(t *testing.T) {
 
 	// Save state etc.
 	var validatorUpdates []*types.Validator
-	validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorUpdates)
+	validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 	require.NoError(t, err)
-	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ThresholdPublicKey)
+	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 	require.NoError(t, err)
 	nextCoreChainLock, err := types.CoreChainLockFromProto(responses.EndBlock.NextCoreChainLockUpdate)
 	require.NoError(t, err)
@@ -1085,9 +1116,9 @@ func TestConsensusParamsChangesSaveLoad(t *testing.T) {
 			cp = params[changeIndex]
 		}
 		header, lastCoreChainLock, blockID, responses := makeHeaderPartsResponsesParams(state, cp)
-		validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorUpdates)
+		validatorUpdates, err = types.PB2TM.ValidatorUpdates(responses.EndBlock.ValidatorSetUpdate.ValidatorUpdates)
 		require.NoError(t, err)
-		thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ThresholdPublicKey)
+		thresholdPublicKeyUpdate, err = types.PB2TM.ThresholdPublicKeyUpdate(responses.EndBlock.ValidatorSetUpdate.ThresholdPublicKey)
 		require.NoError(t, err)
 		nextCoreChainLock, err = types.CoreChainLockFromProto(responses.EndBlock.NextCoreChainLockUpdate)
 		require.NoError(t, err)

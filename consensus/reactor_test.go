@@ -143,7 +143,7 @@ func TestReactorWithEvidence(t *testing.T) {
 		ensureDir(path.Dir(thisConfig.Consensus.WalFile()), 0700) // dir for wal
 		app := appFunc()
 		vals := types.TM2PB.ValidatorUpdates(state.Validators)
-		app.InitChain(abci.RequestInitChain{Validators: vals})
+		app.InitChain(abci.RequestInitChain{ValidatorSet: vals})
 
 		pv := privVals[i]
 		// duplicate code from:
@@ -297,92 +297,6 @@ func TestReactorRecordsVotesAndBlockParts(t *testing.T) {
 
 	assert.Equal(t, true, ps.VotesSent() > 0, "number of votes sent should have increased")
 	assert.Equal(t, true, ps.BlockPartsSent() > 0, "number of votes sent should have increased")
-}
-
-//-------------------------------------------------------------
-// ensure we can make blocks despite cycling a validator set
-
-func TestReactorVotingPowerChange(t *testing.T) {
-	nVals := 4
-	logger := log.TestingLogger()
-	css, cleanup := randConsensusNet(
-		nVals,
-		"consensus_voting_power_changes_test",
-		newMockTickerFunc(true),
-		newPersistentKVStore)
-	defer cleanup()
-	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, nVals)
-	defer stopConsensusNet(logger, reactors, eventBuses)
-
-	// map of active validators
-	activeVals := make(map[string]struct{})
-	for i := 0; i < nVals; i++ {
-		pubKey, err := css[i].privValidator.GetPubKey()
-		require.NoError(t, err)
-		addr := pubKey.Address()
-		activeVals[string(addr)] = struct{}{}
-	}
-
-	// wait till everyone makes block 1
-	timeoutWaitGroup(t, nVals, func(j int) {
-		<-blocksSubs[j].Out()
-	}, css)
-
-	//---------------------------------------------------------------------------
-	logger.Debug("---------------------------- Testing changing the voting power of one validator a few times")
-
-	val1ProTxHash, err := css[0].privValidator.GetProTxHash()
-	assert.NoError(t, err)
-
-	val1PubKey, err := css[0].privValidator.GetPubKey()
-	require.NoError(t, err)
-
-	val1PubKeyABCI, err := cryptoenc.PubKeyToProto(val1PubKey)
-	require.NoError(t, err)
-	updateValidatorTx := kvstore.MakeValSetChangeTx(val1ProTxHash, val1PubKeyABCI, 25)
-	previousTotalVotingPower := css[0].GetRoundState().LastValidators.TotalVotingPower()
-
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
-	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
-
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
-		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
-	}
-
-	updateValidatorTx = kvstore.MakeValSetChangeTx(val1ProTxHash, val1PubKeyABCI, 2)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
-
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
-	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
-
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
-		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
-	}
-
-	updateValidatorTx = kvstore.MakeValSetChangeTx(val1ProTxHash, val1PubKeyABCI, 26)
-	previousTotalVotingPower = css[0].GetRoundState().LastValidators.TotalVotingPower()
-
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
-	waitForAndValidateBlockWithTx(t, nVals, activeVals, blocksSubs, css, updateValidatorTx)
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
-	waitForAndValidateBlock(t, nVals, activeVals, blocksSubs, css)
-
-	if css[0].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
-		t.Fatalf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[0].GetRoundState().LastValidators.TotalVotingPower())
-	}
 }
 
 func TestReactorValidatorSetChanges(t *testing.T) {

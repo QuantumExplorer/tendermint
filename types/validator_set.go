@@ -1393,14 +1393,21 @@ func GenerateMockValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }
 
-func ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes []crypto.ProTxHash) ([]abci.ValidatorUpdate, crypto.PubKey) {
+func ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes []crypto.ProTxHash) abci.ValidatorSetUpdate {
 	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 	var valUpdates []abci.ValidatorUpdate
 	for i := 0; i < len(proTxHashes) ; i++ {
 		valUpdate := TM2PB.NewValidatorUpdate(privateKeys[i].PubKey(), DefaultDashVotingPower, proTxHashes[i])
 		valUpdates = append(valUpdates,valUpdate)
 	}
-	return valUpdates, thresholdPublicKey
+	abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(thresholdPublicKey)
+	if err != nil {
+		panic(err)
+	}
+	return abci.ValidatorSetUpdate{
+		ValidatorUpdates: valUpdates,
+		ThresholdPublicKey: abciThresholdPublicKey,
+	}
 }
 
 // safe addition/subtraction/multiplication

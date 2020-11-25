@@ -808,7 +808,7 @@ func buildAppStateFromChain(proxyApp proxy.AppConns, stateStore sm.Store,
 	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
 	validators := types.TM2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
-		Validators: validators,
+		ValidatorSet: validators,
 	}); err != nil {
 		panic(err)
 	}
@@ -858,7 +858,7 @@ func buildTMStateFromChain(
 	state.Version.Consensus.App = kvstore.ProtocolVersion // simulate handshake, receive app version
 	validators := types.TM2PB.ValidatorUpdates(state.Validators)
 	if _, err := proxyApp.Consensus().InitChainSync(abci.RequestInitChain{
-		Validators: validators,
+		ValidatorSet: validators,
 	}); err != nil {
 		panic(err)
 	}
@@ -1227,8 +1227,9 @@ func (bs *mockBlockStore) PruneBlocks(height int64) (uint64, error) {
 
 func TestHandshakeUpdatesValidators(t *testing.T) {
 	val, _ := types.RandValidator()
-	vals := types.NewValidatorSet([]*types.Validator{val}, nil)
-	app := &initChainApp{vals: types.TM2PB.ValidatorUpdates(vals)}
+	vals := types.NewValidatorSet([]*types.Validator{val}, val.PubKey)
+	abciValidatorSetUpdates := types.TM2PB.ValidatorUpdates(vals)
+	app := &initChainApp{vals: &abciValidatorSetUpdates}
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	config := ResetConfig("handshake_test_")
@@ -1269,11 +1270,11 @@ func TestHandshakeUpdatesValidators(t *testing.T) {
 // returns the vals on InitChain
 type initChainApp struct {
 	abci.BaseApplication
-	vals []abci.ValidatorUpdate
+	vals *abci.ValidatorSetUpdate
 }
 
 func (ica *initChainApp) InitChain(req abci.RequestInitChain) abci.ResponseInitChain {
 	return abci.ResponseInitChain{
-		Validators: ica.vals,
+		ValidatorSetUpdate: *ica.vals,
 	}
 }

@@ -159,28 +159,19 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	fail.Fail() // XXX
 
 	// validate the validator updates and convert to tendermint types
-	abciValUpdates := abciResponses.EndBlock.ValidatorUpdates
-	abciThresholdPublicKeyUpdate := abciResponses.EndBlock.ThresholdPublicKey
-	if len(abciValUpdates) != 0 && abciThresholdPublicKeyUpdate == nil {
-		execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block,
-			blockExec.store, state.InitialHeight)
-		return state, 0, fmt.Errorf("received validator updates without a threshold public key")
-
+	abciValidatorSetUpdates := abciResponses.EndBlock.ValidatorSetUpdate
+	err = validateValidatorSetUpdate(abciValidatorSetUpdates, state.ConsensusParams.Validator)
+	if err != nil {
+		return state, 0, fmt.Errorf("error in validator updates: %v", err)
 	}
+
 	nextCoreChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	if err != nil {
 		return state, 0, fmt.Errorf("error in chain lock from proto: %v", err)
 	}
 
-	err = validateValidatorUpdates(abciValUpdates, state.ConsensusParams.Validator)
-	if err != nil {
-		return state, 0, fmt.Errorf("error in validator updates: %v", err)
-	}
-	validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciValUpdates)
-	if err != nil {
-		return state, 0, err
-	}
-	thresholdPublicKeyUpdate, err := types.PB2TM.ThresholdPublicKeyUpdate(abciThresholdPublicKeyUpdate)
+
+	validatorUpdates, thresholdPublicKeyUpdate, err := types.PB2TM.ValidatorUpdatesFromValidatorSet(abciValidatorSetUpdates)
 	if err != nil {
 		return state, 0, err
 	}
@@ -390,6 +381,17 @@ func getBeginBlockValidatorInfo(block *types.Block, store Store,
 		Round: block.LastCommit.Round,
 		Votes: voteInfos,
 	}
+}
+
+func validateValidatorSetUpdate(abciValidatorSetUpdate *abci.ValidatorSetUpdate, params tmproto.ValidatorParams) error {
+	//if there was no update return no error
+	if abciValidatorSetUpdate == nil {
+		return nil
+	}
+	if len(abciValidatorSetUpdate.ValidatorUpdates) != 0 && abciValidatorSetUpdate.ThresholdPublicKey.Sum == nil {
+		return fmt.Errorf("received validator updates without a threshold public key")
+	}
+	return validateValidatorUpdates(abciValidatorSetUpdate.ValidatorUpdates, params)
 }
 
 func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,

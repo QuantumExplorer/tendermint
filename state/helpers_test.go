@@ -3,8 +3,6 @@ package state_test
 import (
 	"fmt"
 	"github.com/tendermint/tendermint/crypto/bls12381"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
-	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -152,18 +150,13 @@ func makeHeaderPartsResponsesValKeysRegenerate(state sm.State, regenerate bool) 
 	block := makeBlock(state, state.LastBlockHeight+1)
 	abciResponses := &tmstate.ABCIResponses{
 		BeginBlock: &abci.ResponseBeginBlock{},
-		EndBlock:   &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		EndBlock:   &abci.ResponseEndBlock{ValidatorSetUpdate: nil},
 	}
 	if regenerate == true {
 		proTxHashes := state.Validators.GetProTxHashes()
-		valUpdates, thresholdPublicKey := types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
-		abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(thresholdPublicKey)
-		if err != nil {
-			panic(err)
-		}
+		valUpdates := types.ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes)
 		abciResponses.EndBlock = &abci.ResponseEndBlock{
-			ValidatorUpdates: valUpdates,
-			ThresholdPublicKey: &abciThresholdPublicKey,
+			ValidatorSetUpdate: &valUpdates,
 		}
 	}
 
@@ -233,8 +226,7 @@ type testApp struct {
 
 	CommitVotes         []abci.VoteInfo
 	ByzantineValidators []abci.Evidence
-	ValidatorUpdates    []abci.ValidatorUpdate
-	ThresholdPublicKeyUpdate *crypto2.PublicKey
+	ValidatorSetUpdate  *abci.ValidatorSetUpdate
 }
 
 var _ abci.Application = (*testApp)(nil)
@@ -251,8 +243,7 @@ func (app *testApp) BeginBlock(req abci.RequestBeginBlock) abci.ResponseBeginBlo
 
 func (app *testApp) EndBlock(req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return abci.ResponseEndBlock{
-		ValidatorUpdates: app.ValidatorUpdates,
-		ThresholdPublicKey: app.ThresholdPublicKeyUpdate,
+		ValidatorSetUpdate: app.ValidatorSetUpdate,
 		ConsensusParamUpdates: &abci.ConsensusParams{
 			Version: &tmproto.VersionParams{
 				AppVersion: 1}}}

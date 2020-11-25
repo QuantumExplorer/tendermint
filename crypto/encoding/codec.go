@@ -47,6 +47,9 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 
 // PubKeyFromProto takes a protobuf Pubkey and transforms it to a crypto.Pubkey
 func PubKeyFromProto(k pc.PublicKey) (crypto.PubKey, error) {
+	if k.Sum == nil {
+		return nil, fmt.Errorf("fromproto: key is nil")
+	}
 	switch k := k.Sum.(type) {
 	case *pc.PublicKey_Ed25519:
 		if len(k.Ed25519) != ed25519.PubKeySize {

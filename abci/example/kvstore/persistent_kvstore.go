@@ -149,7 +149,7 @@ func (app *PersistentKVStoreApplication) BeginBlock(req types.RequestBeginBlock)
 
 // Update the validator set
 func (app *PersistentKVStoreApplication) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
-	return types.ResponseEndBlock{ValidatorSetUpdate: app.ValidatorSetUpdates}
+	return types.ResponseEndBlock{ValidatorSetUpdate: &app.ValidatorSetUpdates}
 }
 
 func (app *PersistentKVStoreApplication) ListSnapshots(

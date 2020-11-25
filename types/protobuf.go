@@ -100,12 +100,16 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 }
 
 // XXX: panics on nil or unknown pubkey type
-func (tm2pb) ValidatorUpdates(vals *ValidatorSet) []abci.ValidatorUpdate {
+func (tm2pb) ValidatorUpdates(vals *ValidatorSet) abci.ValidatorSetUpdate {
 	validators := make([]abci.ValidatorUpdate, vals.Size())
 	for i, val := range vals.Validators {
 		validators[i] = TM2PB.ValidatorUpdate(val)
 	}
-	return validators
+	abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(vals.ThresholdPublicKey)
+	if err != nil {
+		panic(err)
+	}
+	return abci.ValidatorSetUpdate{ValidatorUpdates: validators, ThresholdPublicKey: abciThresholdPublicKey}
 }
 
 func (tm2pb) ConsensusParams(params *tmproto.ConsensusParams) *abci.ConsensusParams {
@@ -152,11 +156,33 @@ func (pb2tm) ValidatorUpdates(vals []abci.ValidatorUpdate) ([]*Validator, error)
 	return tmVals, nil
 }
 
-func (pb2tm) ThresholdPublicKeyUpdate(thresholdPublicKey *crypto2.PublicKey) (crypto.PubKey, error) {
-	if thresholdPublicKey == nil {
+func (pb2tm) ValidatorUpdatesFromValidatorSet(valSetUpdate *abci.ValidatorSetUpdate) ([]*Validator, crypto.PubKey, error) {
+	if valSetUpdate == nil {
+		return nil, nil, nil
+	}
+	tmVals := make([]*Validator, len(valSetUpdate.ValidatorUpdates))
+	for i, v := range valSetUpdate.ValidatorUpdates {
+		pub, err := cryptoenc.PubKeyFromProto(v.PubKey)
+		if err != nil {
+			return nil, nil, err
+		}
+		tmVals[i] = NewValidator(pub, v.Power, v.ProTxHash)
+	}
+	if valSetUpdate.ThresholdPublicKey.Sum == nil {
+		return nil, nil, nil
+	}
+	pub, err := cryptoenc.PubKeyFromProto(valSetUpdate.ThresholdPublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	return tmVals, pub, nil
+}
+
+func (pb2tm) ThresholdPublicKeyUpdate(thresholdPublicKey crypto2.PublicKey) (crypto.PubKey, error) {
+	if thresholdPublicKey.Sum == nil {
 		return nil, nil
 	}
-	pub, err := cryptoenc.PubKeyFromProto(*thresholdPublicKey)
+	pub, err := cryptoenc.PubKeyFromProto(thresholdPublicKey)
 	if err != nil {
 		return nil, err
 	}

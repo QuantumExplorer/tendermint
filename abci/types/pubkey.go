@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
+	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
@@ -13,10 +14,16 @@ func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 	}
 
 	return ValidatorUpdate{
-		// Address:
 		PubKey: pkp,
 		Power:  power,
 		ProTxHash: proTxHash,
+	}
+}
+
+func UpdateValidatorSet(validatorUpdates []ValidatorUpdate, thresholdPublicKey crypto2.PublicKey) ValidatorSetUpdate {
+	return ValidatorSetUpdate{
+		ValidatorUpdates: validatorUpdates,
+		ThresholdPublicKey: thresholdPublicKey,
 	}
 }
 
