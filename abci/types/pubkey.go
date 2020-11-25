@@ -5,11 +5,6 @@ import (
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 )
 
-const (
-	PubKeyEd25519 = "ed25519"
-	PubKeyBLS12381 = "bls12381"
-)
-
 func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 	pke := bls12381.PubKey(pk)
 	pkp, err := cryptoenc.PubKeyToProto(pke)
@@ -22,5 +17,17 @@ func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 		PubKey: pkp,
 		Power:  power,
 		ProTxHash: proTxHash,
+	}
+}
+
+func UpdateThresholdPublicKey(pk []byte) ThresholdPublicKeyUpdate {
+	pke := bls12381.PubKey(pk)
+	pkp, err := cryptoenc.PubKeyToProto(pke)
+	if err != nil {
+		panic(err)
+	}
+
+	return ThresholdPublicKeyUpdate{
+		ThresholdPublicKey: pkp,
 	}
 }

@@ -355,6 +355,10 @@ message ValidatorSetUpdate {
   tendermint.crypto.PublicKey threshold_public_key = 2 [(gogoproto.nullable) = false];
 }
 
+message ThresholdPublicKeyUpdate {
+  tendermint.crypto.PublicKey threshold_public_key = 1 [(gogoproto.nullable) = false];
+}
+
 // VoteInfo
 message VoteInfo {
   Validator validator         = 1 [(gogoproto.nullable) = false];

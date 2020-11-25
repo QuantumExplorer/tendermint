@@ -1,15 +1,25 @@
 package kvstore
 
 import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"github.com/tendermint/tendermint/crypto"
+	"strconv"
+	"strings"
+
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/libs/log"
 	pc "github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
 const (
-	ValidatorSetChangePrefix string = "vals:"
+	ValidatorSetChangePrefix string = "val:"
+	ValidatorThresholdPublicKeyChangePrefix string = "tpk:"
 )
 
 //-----------------------------------------
@@ -19,9 +29,7 @@ var _ types.Application = (*PersistentKVStoreApplication)(nil)
 type PersistentKVStoreApplication struct {
 	app *Application
 
-	// validator set
-	ValUpdates []types.ValidatorUpdate
-	ThresholdPublicKey pc.PublicKey
+	ValidatorSetUpdates types.ValidatorSetUpdate
 
 	valProTxHashToPubKeyMap map[string]pc.PublicKey
 
@@ -59,7 +67,18 @@ func (app *PersistentKVStoreApplication) SetOption(req types.RequestSetOption) t
 	return app.app.SetOption(req)
 }
 
+// tx is either "val:proTxHash!pubkey!power" or "key=value" or just arbitrary bytes
 func (app *PersistentKVStoreApplication) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
+	// if it starts with "vals:", update the validator set
+	// format is "val:proTxHash!pubkey!power"
+	if isValidatorTx(req.Tx) {
+		// update validators in the merkle tree
+		// and in app.ValUpdates
+		return app.execValidatorTx(req.Tx)
+	} else if isThresholdPublicKeyTx(req.Tx) {
+		return app.execThresholdPublicKeyTx(req.Tx)
+	}
+
 	// otherwise, update the key-value store
 	return app.app.DeliverTx(req)
 }
@@ -91,6 +110,16 @@ func (app *PersistentKVStoreApplication) Query(reqQuery types.RequestQuery) (res
 		resQuery.Key = reqQuery.Data
 		resQuery.Value = value
 		return
+	case "/tpk":
+		key := []byte("tpk:" + string(reqQuery.Data))
+		value, err := app.app.state.db.Get(key)
+		if err != nil {
+			panic(err)
+		}
+
+		resQuery.Key = reqQuery.Data
+		resQuery.Value = value
+		return
 	default:
 		return app.app.Query(reqQuery)
 	}
@@ -98,20 +127,27 @@ func (app *PersistentKVStoreApplication) Query(reqQuery types.RequestQuery) (res
 
 // Save the validators in the merkle tree
 func (app *PersistentKVStoreApplication) InitChain(req types.RequestInitChain) types.ResponseInitChain {
+	for _, v := range req.ValidatorSet.ValidatorUpdates {
+		r := app.updateValidatorSet(v)
+		if r.IsErr() {
+			app.logger.Error("Error updating validators", "r", r)
+		}
+	}
+	app.ValidatorSetUpdates.ThresholdPublicKey = req.ValidatorSet.ThresholdPublicKey
 	return types.ResponseInitChain{}
 }
 
 // Track the block hash and header information
 func (app *PersistentKVStoreApplication) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
 	// reset valset changes
-	app.ValUpdates = make([]types.ValidatorUpdate, 0)
+	app.ValidatorSetUpdates.ValidatorUpdates = make([]types.ValidatorUpdate, 0)
 
 	return types.ResponseBeginBlock{}
 }
 
 // Update the validator set
 func (app *PersistentKVStoreApplication) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
-	return types.ResponseEndBlock{ValidatorUpdates: app.ValUpdates, ThresholdPublicKey: &app.ThresholdPublicKey}
+	return types.ResponseEndBlock{ValidatorSetUpdate: app.ValidatorSetUpdates}
 }
 
 func (app *PersistentKVStoreApplication) ListSnapshots(
@@ -132,4 +168,183 @@ func (app *PersistentKVStoreApplication) OfferSnapshot(
 func (app *PersistentKVStoreApplication) ApplySnapshotChunk(
 	req types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk {
 	return types.ResponseApplySnapshotChunk{Result: types.ResponseApplySnapshotChunk_ABORT}
+}
+
+//---------------------------------------------
+// update validators
+
+func (app *PersistentKVStoreApplication) Validators() (validators []types.ValidatorUpdate, thresholdPublicKey crypto.PubKey) {
+	itr, err := app.app.state.db.Iterator(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	for ; itr.Valid(); itr.Next() {
+		if isValidatorTx(itr.Key()) {
+			validator := new(types.ValidatorUpdate)
+			err := types.ReadMessage(bytes.NewBuffer(itr.Value()), validator)
+			if err != nil {
+				panic(err)
+			}
+			validators = append(validators, *validator)
+		}
+		if isThresholdPublicKeyTx(itr.Key()) {
+			thresholdPublicKeyMessage := new(types.ThresholdPublicKeyUpdate)
+			err := types.ReadMessage(bytes.NewBuffer(itr.Value()), thresholdPublicKeyMessage)
+			if err != nil {
+				panic(err)
+			}
+			thresholdPublicKey, _ = cryptoenc.PubKeyFromProto(thresholdPublicKeyMessage.GetThresholdPublicKey())
+		}
+	}
+	if err = itr.Error(); err != nil {
+		panic(err)
+	}
+	return
+}
+
+func MakeValSetChangeTx(proTxHash []byte, pubkey pc.PublicKey, power int64) []byte {
+	pk, err := cryptoenc.PubKeyFromProto(pubkey)
+	if err != nil {
+		panic(err)
+	}
+	pubStr := base64.StdEncoding.EncodeToString(pk.Bytes())
+	proTxHashStr := base64.StdEncoding.EncodeToString(proTxHash)
+	return []byte(fmt.Sprintf("val:%s!%s!%d", proTxHashStr, pubStr, power))
+}
+
+func isValidatorTx(tx []byte) bool {
+	return strings.HasPrefix(string(tx), ValidatorSetChangePrefix)
+}
+
+func isThresholdPublicKeyTx(tx []byte) bool {
+	return strings.HasPrefix(string(tx), ValidatorThresholdPublicKeyChangePrefix)
+}
+
+// format is "val:proTxHash!pubkey!power"
+// pubkey is a base64-encoded 48-byte bls12381 key
+func (app *PersistentKVStoreApplication) execValidatorTx(tx []byte) types.ResponseDeliverTx {
+	tx = tx[len(ValidatorSetChangePrefix):]
+
+	//  get the pubkey and power
+	values := strings.Split(string(tx), "!")
+	if len(values) != 3 {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Expected 'proTxHash!pubkey!power'. Got %v", values)}
+	}
+	proTxHashS, pubkeyS, powerS := values[0], values[1], values[2]
+
+	// decode the proTxHash
+	proTxHash, err := base64.StdEncoding.DecodeString(proTxHashS)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("ProTxHash (%s) is invalid base64", proTxHash)}
+	}
+
+	// decode the pubkey
+	pubkey, err := base64.StdEncoding.DecodeString(pubkeyS)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Pubkey (%s) is invalid base64", pubkeyS)}
+	}
+
+	// decode the power
+	power, err := strconv.ParseInt(powerS, 10, 64)
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Power (%s) is not an int", powerS)}
+	}
+
+	return app.updateValidatorSet(types.UpdateValidator(proTxHash, pubkey, power))
+}
+
+// format is "tpk:pubkey"
+// pubkey is a base64-encoded 48-byte bls12381 key
+func (app *PersistentKVStoreApplication) execThresholdPublicKeyTx(tx []byte) types.ResponseDeliverTx {
+	tx = tx[len(ValidatorThresholdPublicKeyChangePrefix):]
+
+	// decode the pubkey
+	pubkey, err := base64.StdEncoding.DecodeString(string(tx))
+	if err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Threshold Pubkey (%s) is invalid base64", string(tx))}
+	}
+
+	return app.updateThresholdPublicKey(types.UpdateThresholdPublicKey(pubkey))
+}
+
+// add, update, or remove a validator
+func (app *PersistentKVStoreApplication) updateValidatorSet(v types.ValidatorUpdate) types.ResponseDeliverTx {
+	_, err := cryptoenc.PubKeyFromProto(v.PubKey)
+	if v.ProTxHash == nil {
+		panic(fmt.Errorf("proTxHash can not be nil: %w", err))
+	}
+	if err != nil {
+		panic(fmt.Errorf("can't decode public key: %w", err))
+	}
+	key := []byte("vals:" + string(v.ProTxHash))
+
+	if v.Power == 0 {
+		// remove validator
+		hasKey, err := app.app.state.db.Has(key)
+		if err != nil {
+			panic(err)
+		}
+		if !hasKey {
+			proTxHashString := base64.StdEncoding.EncodeToString(v.ProTxHash)
+			return types.ResponseDeliverTx{
+				Code: code.CodeTypeUnauthorized,
+				Log:  fmt.Sprintf("Cannot remove non-existent validator %s", proTxHashString)}
+		}
+		if err = app.app.state.db.Delete(key); err != nil {
+			panic(err)
+		}
+		delete(app.valProTxHashToPubKeyMap, string(v.ProTxHash))
+	} else {
+		// add or update validator
+		value := bytes.NewBuffer(make([]byte, 0))
+		if err := types.WriteMessage(&v, value); err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.CodeTypeEncodingError,
+				Log:  fmt.Sprintf("Error encoding validator: %v", err)}
+		}
+		if err = app.app.state.db.Set(key, value.Bytes()); err != nil {
+			panic(err)
+		}
+		app.valProTxHashToPubKeyMap[string(v.ProTxHash)] = v.PubKey
+	}
+
+	// we only update the changes array if we successfully updated the tree
+	app.ValidatorSetUpdates.ValidatorUpdates = append(app.ValidatorSetUpdates.ValidatorUpdates, v)
+
+	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
+}
+
+func (app *PersistentKVStoreApplication) updateThresholdPublicKey(thresholdPublicKeyUpdate types.ThresholdPublicKeyUpdate) types.ResponseDeliverTx {
+	_, err := cryptoenc.PubKeyFromProto(thresholdPublicKeyUpdate.ThresholdPublicKey)
+	if err != nil {
+		panic(fmt.Errorf("can't decode threshold public key: %w", err))
+	}
+	key := []byte("tpk:" + thresholdPublicKeyUpdate.ThresholdPublicKey.String())
+
+
+	// add or update thresholdPublicKey
+	value := bytes.NewBuffer(make([]byte, 0))
+	if err := types.WriteMessage(&thresholdPublicKeyUpdate, value); err != nil {
+		return types.ResponseDeliverTx{
+			Code: code.CodeTypeEncodingError,
+			Log:  fmt.Sprintf("Error encoding validator: %v", err)}
+	}
+	if err = app.app.state.db.Set(key, value.Bytes()); err != nil {
+		panic(err)
+	}
+
+	// we only update the changes array if we successfully updated the tree
+	app.ValidatorSetUpdates.ThresholdPublicKey = thresholdPublicKeyUpdate.GetThresholdPublicKey()
+
+	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
