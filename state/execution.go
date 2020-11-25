@@ -162,7 +162,10 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	abciValUpdates := abciResponses.EndBlock.ValidatorUpdates
 	abciThresholdPublicKeyUpdate := abciResponses.EndBlock.ThresholdPublicKey
 	if len(abciValUpdates) != 0 && abciThresholdPublicKeyUpdate == nil {
+		execBlockOnProxyApp(blockExec.logger, blockExec.proxyApp, block,
+			blockExec.store, state.InitialHeight)
 		return state, 0, fmt.Errorf("received validator updates without a threshold public key")
+
 	}
 	nextCoreChainLock, err := types.CoreChainLockFromProto(abciResponses.EndBlock.NextCoreChainLockUpdate)
 	if err != nil {

@@ -62,9 +62,10 @@ message RequestInitChain {
       [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   string                   chain_id         = 2;
   ConsensusParams          consensus_params = 3;
-  repeated ValidatorUpdate validators       = 4 [(gogoproto.nullable) = false];
+  //repeated ValidatorUpdate validators       = 4 [(gogoproto.nullable) = false];
   bytes                    app_state_bytes  = 5;
   int64                    initial_height   = 6;
+  ValidatorSetUpdate validator_set = 100 [(gogoproto.nullable) = false];
 }
 
 message RequestQuery {
@@ -180,9 +181,9 @@ message ResponseSetOption {
 
 message ResponseInitChain {
   ConsensusParams             consensus_params     = 1;
-  repeated ValidatorUpdate    validators           = 2 [(gogoproto.nullable) = false];
+  //repeated ValidatorUpdate    validators           = 2 [(gogoproto.nullable) = false];
   bytes                       app_hash             = 3;
-  tendermint.crypto.PublicKey threshold_public_key = 4 [(gogoproto.nullable) = false];
+  ValidatorSetUpdate          validator_set_update = 100 [(gogoproto.nullable) = false];
 }
 
 message ResponseQuery {
@@ -228,13 +229,12 @@ message ResponseDeliverTx {
 }
 
 message ResponseEndBlock {
-  repeated ValidatorUpdate validator_updates = 1
-      [(gogoproto.nullable) = false];
+  //repeated ValidatorUpdate validator_updates = 1 [(gogoproto.nullable) = false];
   ConsensusParams consensus_param_updates = 2;
   repeated Event  events                  = 3
       [(gogoproto.nullable) = false, (gogoproto.jsontag) = "events,omitempty"];
   tendermint.types.CoreChainLock  next_core_chain_lock_update  = 100;
-  tendermint.crypto.PublicKey threshold_public_key = 101 [(gogoproto.nullable) = true];
+  ValidatorSetUpdate validator_set_update = 101 [(gogoproto.nullable) = false];
 }
 
 message ResponseCommit {
@@ -348,6 +348,11 @@ message ValidatorUpdate {
   tendermint.crypto.PublicKey pub_key = 1 [(gogoproto.nullable) = false];
   int64                       power   = 2;
   bytes pro_tx_hash = 3;
+}
+
+message ValidatorSetUpdate {
+  repeated ValidatorUpdate validator_updates = 1 [(gogoproto.nullable) = false];
+  tendermint.crypto.PublicKey threshold_public_key = 2 [(gogoproto.nullable) = false];
 }
 
 // VoteInfo
