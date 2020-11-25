@@ -14,7 +14,7 @@ import (
 
 func TestABCIPubKey(t *testing.T) {
 	pkBLS := bls12381.GenPrivKey().PubKey()
-	err := testABCIPubKey(t, pkBLS, ABCIPubKeyTypeEd25519)
+	err := testABCIPubKey(t, pkBLS, ABCIPubKeyTypeBLS12381)
 	assert.NoError(t, err)
 }
 
@@ -42,7 +42,10 @@ func TestABCIValidators(t *testing.T) {
 	assert.Equal(t, tmValExpected, tmVals[0])
 
 	abciVals := TM2PB.ValidatorUpdates(NewValidatorSet(tmVals, tmVal.PubKey))
-	assert.Equal(t, []abci.ValidatorUpdate{abciVal}, abciVals)
+	assert.Equal(t, abci.ValidatorSetUpdate{
+		ValidatorUpdates: []abci.ValidatorUpdate{abciVal},
+		ThresholdPublicKey: abciVal.PubKey,
+	}, abciVals)
 
 	// val with address
 	tmVal.Address = pkBLS.Address()
