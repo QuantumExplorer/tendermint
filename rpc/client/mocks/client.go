@@ -761,7 +761,7 @@ func (_m *Client) Validators(ctx context.Context, height *int64, page *int, perP
 	ret := _m.Called(ctx, height, page, perPage, requestThresholdPublicKey)
 
 	var r0 *coretypes.ResultValidators
-	if rf, ok := ret.Get(0).(func(context.Context, *int64, *int, *int) *coretypes.ResultValidators); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *int64, *int, *int, *bool) *coretypes.ResultValidators); ok {
 		r0 = rf(ctx, height, page, perPage, requestThresholdPublicKey)
 	} else {
 		if ret.Get(0) != nil {
@@ -770,7 +770,7 @@ func (_m *Client) Validators(ctx context.Context, height *int64, page *int, perP
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *int64, *int, *int) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *int64, *int, *int, *bool) error); ok {
 		r1 = rf(ctx, height, page, perPage, requestThresholdPublicKey)
 	} else {
 		r1 = ret.Error(1)
