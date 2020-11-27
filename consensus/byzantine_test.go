@@ -199,7 +199,7 @@ func TestByzantinePrevoteEquivocation(t *testing.T) {
 				assert.Equal(t, prevoteHeight, ev.Height())
 			}
 		}
-	case <-time.After(10 * time.Second):
+	case <-time.After(100 * time.Second):
 		for i, reactor := range reactors {
 			t.Logf("Consensus Reactor %d\n%v", i, reactor)
 		}
