@@ -411,9 +411,9 @@ func validateValidatorUpdates(abciUpdates []abci.ValidatorUpdate,
 			return err
 		}
 
-		if !types.IsValidPubkeyType(params, pk.TypeIdentifier()) {
+		if !types.IsValidPubkeyType(params, pk.Type()) {
 			return fmt.Errorf("validator %v is using pubkey %s, which is unsupported for consensus",
-				valUpdate, pk.TypeIdentifier())
+				valUpdate, pk.Type())
 		}
 
 		if valUpdate.ProTxHash == nil {
