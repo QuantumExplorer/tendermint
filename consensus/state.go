@@ -1894,7 +1894,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			if voteErr.VoteA.Height == cs.state.InitialHeight {
 				timestamp = cs.state.LastBlockTime // genesis time
 			} else {
-				timestamp = cs.RoundState.Proposal.Timestamp
+				timestamp = cs.RoundState.ProposalBlock.Header.Time
 			}
 			// form duplicate vote evidence from the conflicting votes and send it across to the
 			// evidence pool
