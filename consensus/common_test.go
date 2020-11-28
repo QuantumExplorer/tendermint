@@ -704,9 +704,10 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	}
 }
 
-func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types.Validator, crypto.PubKey) {
+func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types.Validator, []crypto.ProTxHash, crypto.PubKey) {
 	currentValidatorCount := len(css[0].Validators.Validators)
 	currentValidators := css[0].Validators
+
 	for _, cssi := range css {
 		if len(cssi.Validators.Validators) != currentValidatorCount {
 			panic("they should all have the same initial validator count")
@@ -726,6 +727,7 @@ func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types
 		newValidatorProTxHashes[i] = proTxHash
 	}
 	validatorProTxHashes = append(validatorProTxHashes, newValidatorProTxHashes...)
+	sort.Sort(crypto.SortProTxHash(validatorProTxHashes))
 	//now that we have the list of all the protxhashes we need to regenerate the keys and the threshold public key
 	privKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(validatorProTxHashes)
 	//privKeys are returned in order
@@ -736,14 +738,22 @@ func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types
 	validatorProTxHashesAsByteArray := make([][]byte, len(validatorProTxHashes))
 	for i := 0; i<len(validatorProTxHashes);i++ {
 		privVal = css[i].privValidator
-		privVal.UpdatePrivateKey(privKeys[i], css[i].Height + 3)
-		updatedValidators[i] = privVal.ExtractIntoValidator(css[i].Height + 3)
-		updatedValidators[i].PubKey = privKeys[i].PubKey()
-		publicKeys[i] = privKeys[i].PubKey()
-		if !bytes.Equal(updatedValidators[i].PubKey.Bytes(), publicKeys[i].Bytes()) {
-			panic("the validator public key should match the public key")
+		privValProTxHash, err := privVal.GetProTxHash()
+		if err != nil {
+			panic(err)
 		}
-		validatorProTxHashesAsByteArray[i] = validatorProTxHashes[i].Bytes()
+		for j, proTxHash := range validatorProTxHashes {
+			if bytes.Equal(privValProTxHash.Bytes(),proTxHash.Bytes()) {
+				privVal.UpdatePrivateKey(privKeys[j], css[i].Height + 3)
+				updatedValidators[j] = privVal.ExtractIntoValidator(css[i].Height + 3)
+				publicKeys[j] = privKeys[j].PubKey()
+				if !bytes.Equal(updatedValidators[j].PubKey.Bytes(), publicKeys[j].Bytes()) {
+					panic("the validator public key should match the public key")
+				}
+				validatorProTxHashesAsByteArray[j] = validatorProTxHashes[j].Bytes()
+				break
+			}
+		}
 	}
 	//just do this for sanity testing
 	recoveredThresholdPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(publicKeys, validatorProTxHashesAsByteArray)
@@ -753,7 +763,71 @@ func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types
 	if !bytes.Equal(recoveredThresholdPublicKey.Bytes(), thresholdPublicKey.Bytes()) {
 		panic("the recovered public key should match the threshold public key")
 	}
-	return updatedValidators, thresholdPublicKey
+	return updatedValidators, newValidatorProTxHashes, thresholdPublicKey
+}
+
+func updateConsensusNetRemoveValidators(css []*State, removeValCount int) ([]*types.Validator, []*types.Validator, crypto.PubKey) {
+	currentValidatorCount := len(css[0].Validators.Validators)
+	currentValidators := css[0].Validators
+
+	if removeValCount >= currentValidatorCount {
+		panic("you can not remove all validators")
+	}
+	for _, cssi := range css {
+		if len(cssi.Validators.Validators) != currentValidatorCount {
+			panic("they should all have the same initial validator count")
+		}
+		if !currentValidators.Equals(cssi.Validators) {
+			panic("all validators should be the same")
+		}
+	}
+
+	validatorProTxHashes := currentValidators.GetProTxHashes()
+	removedValidatorProTxHashes := validatorProTxHashes[len(validatorProTxHashes) -removeValCount:]
+	validatorProTxHashes = validatorProTxHashes[:len(validatorProTxHashes) -removeValCount]
+	sort.Sort(crypto.SortProTxHash(validatorProTxHashes))
+	//now that we have the list of all the protxhashes we need to regenerate the keys and the threshold public key
+	privKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(validatorProTxHashes)
+	//privKeys are returned in order
+
+	var privVal types.PrivValidator
+	updatedValidators := make([]*types.Validator, len(validatorProTxHashes))
+	removedValidators := make([]*types.Validator, len(removedValidatorProTxHashes))
+	publicKeys := make([]crypto.PubKey, len(validatorProTxHashes))
+	validatorProTxHashesAsByteArray := make([][]byte, len(validatorProTxHashes))
+	for i, proTxHash := range validatorProTxHashes {
+		for _, state := range css {
+			stateProTxHash, err := state.privValidator.GetProTxHash()
+			if err != nil {
+				panic(err)
+			}
+			if bytes.Equal(stateProTxHash.Bytes(), proTxHash.Bytes()) {
+				//we found the prival
+				privVal = state.privValidator
+				privVal.UpdatePrivateKey(privKeys[i], state.Height + 3)
+				updatedValidators[i] = privVal.ExtractIntoValidator(state.Height + 3)
+				publicKeys[i] = privKeys[i].PubKey()
+				if !bytes.Equal(updatedValidators[i].PubKey.Bytes(), publicKeys[i].Bytes()) {
+					panic("the validator public key should match the public key")
+				}
+				validatorProTxHashesAsByteArray[i] = validatorProTxHashes[i].Bytes()
+				break
+			}
+		}
+	}
+	for i, proTxHash := range removedValidatorProTxHashes {
+		_, removedValidator := currentValidators.GetByProTxHash(proTxHash)
+		removedValidators[i] = removedValidator
+	}
+	//just do this for sanity testing
+	recoveredThresholdPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(publicKeys, validatorProTxHashesAsByteArray)
+	if err != nil {
+		panic(err)
+	}
+	if !bytes.Equal(recoveredThresholdPublicKey.Bytes(), thresholdPublicKey.Bytes()) {
+		panic("the recovered public key should match the threshold public key")
+	}
+	return updatedValidators, removedValidators, thresholdPublicKey
 }
 
 // nPeers = nValidators + nNotValidator

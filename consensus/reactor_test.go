@@ -333,7 +333,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	//css contains all peers, the first 4 here are validators, so we will take the 5th peer and add it as a validator
 
-	updatedValidators, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, 1)
+	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, 1)
 
 	updateTransactions := make([][]byte, len(updatedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
@@ -360,7 +360,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 
 	// the commits for block 4 should be with the updated validator set
-	activeVals[string(updatedValidators[nVals].ProTxHash)] = struct{}{}
+	activeVals[string(newValidatorProTxHashes[0])] = struct{}{}
 
 	// wait till everyone makes block 5
 	// it includes the commit for block 4, which should have the updated validator set
@@ -369,40 +369,53 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding two validators at once")
 
-	newValidatorProTxHash2, err := css[nVals+1].privValidator.GetProTxHash()
-	require.NoError(t, err)
-	newValidatorPubKey2, err := css[nVals+1].privValidator.GetPubKey()
-	require.NoError(t, err)
-	newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
-	require.NoError(t, err)
-	newValidatorTx2 := kvstore.MakeValSetChangeTx(newValidatorProTxHash2, newVal2ABCI, testMinPower)
+	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, 2)
 
-	newValidatorProTxHash3, err := css[nVals+2].privValidator.GetProTxHash()
+	updateTransactions2 := make([][]byte, len(updatedValidators) + 1)
+	for i:=0; i<len(updatedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions2[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
+	}
+	abciThresholdPubKey, err = cryptoenc.PubKeyToProto(newThresholdPublicKey)
 	require.NoError(t, err)
-	newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
-	require.NoError(t, err)
-	newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
-	require.NoError(t, err)
-	newValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, testMinPower)
+	updateTransactions2[len(updatedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
-	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, newValidatorTx2, newValidatorTx3)
-	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, newValidatorTx2, newValidatorTx3)
+	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateTransactions2...)
+	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateTransactions2...)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
-	activeVals[string(newValidatorProTxHash2)] = struct{}{}
-	activeVals[string(newValidatorProTxHash3)] = struct{}{}
+	activeVals[string(newValidatorProTxHashes[0])] = struct{}{}
+	activeVals[string(newValidatorProTxHashes[1])] = struct{}{}
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing removing two validators at once")
 
-	removeValidatorTx2 := kvstore.MakeValSetChangeTx(newValidatorProTxHash2, newVal2ABCI, 0)
-	removeValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, 0)
+	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, 2)
 
-	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, removeValidatorTx2, removeValidatorTx3)
-	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, removeValidatorTx2, removeValidatorTx3)
+	updateTransactions3 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
+	for i:=0; i<len(updatedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions3[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
+	}
+	for i:=0; i<len(removedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(removedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions3[len(updatedValidators) + i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
+	}
+	abciThresholdPubKey, err = cryptoenc.PubKeyToProto(newThresholdPublicKey)
+	require.NoError(t, err)
+	updateTransactions3[len(updatedValidators) + len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+
+	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateTransactions3...)
+	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateTransactions3...)
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
-	delete(activeVals, string(newValidatorProTxHash2))
-	delete(activeVals, string(newValidatorProTxHash3))
+	delete(activeVals, string(removedValidators[0].ProTxHash))
+	delete(activeVals, string(removedValidators[1].ProTxHash))
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 }
 
