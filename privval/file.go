@@ -45,10 +45,12 @@ func voteToStep(vote *tmproto.Vote) int8 {
 
 // FilePVKey stores the immutable part of PrivValidator.
 type FilePVKey struct {
-	Address   types.Address    `json:"address"`
-	PubKey    crypto.PubKey    `json:"pub_key"`
-	PrivKey   crypto.PrivKey   `json:"priv_key"`
-	ProTxHash crypto.ProTxHash `json:"pro_tx_hash"`
+	Address                types.Address    `json:"address"`
+	PubKey                 crypto.PubKey    `json:"pub_key"`
+	PrivKey                crypto.PrivKey   `json:"priv_key"`
+	NextPrivKey            crypto.PrivKey   `json:"next_priv_key"`
+	NextPrivKeyHeight      int64            `json:"next_priv_key_height"`
+	ProTxHash              crypto.ProTxHash `json:"pro_tx_hash"`
 
 	filePath string
 }
@@ -260,6 +262,19 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 	return pv.Key.PubKey, nil
 }
 
+func (pv *FilePV) ExtractIntoValidator() *types.Validator {
+	pubKey, _ := pv.GetPubKey()
+	if len(pv.Key.ProTxHash) != crypto.DefaultHashSize {
+		panic("proTxHash wrong length")
+	}
+	return &types.Validator{
+		Address:     pubKey.Address(),
+		PubKey:      pubKey,
+		VotingPower: types.DefaultDashVotingPower,
+		ProTxHash:   pv.Key.ProTxHash,
+	}
+}
+
 // GetProTxHash returns the pro tx hash of the validator.
 // Implements PrivValidator.
 func (pv *FilePV) GetProTxHash() (crypto.ProTxHash, error) {
@@ -316,12 +331,26 @@ func (pv *FilePV) String() string {
 	)
 }
 
+func (pv *FilePV) UpdatePrivateKey(key crypto.PrivKey, height int64) {
+	pv.Key.NextPrivKey = key
+	pv.Key.NextPrivKeyHeight = height
+}
+
+func (pv *FilePV)updateKeyIfNeeded(height int64) {
+	if pv.Key.NextPrivKey != nil && pv.Key.NextPrivKeyHeight >= height {
+		pv.Key.PrivKey = pv.Key.NextPrivKey
+		pv.Key.NextPrivKey = nil
+		pv.Key.NextPrivKeyHeight = 0
+	}
+}
+
 //------------------------------------------------------------------------------------
 
 // signVote checks if the vote is good to sign and sets the vote signature.
 // It may need to set the timestamp as well if the vote is otherwise the same as
 // a previously signed vote (ie. we crashed after signing but before the vote hit the WAL).
 func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
+	pv.updateKeyIfNeeded(vote.Height)
 	height, round, step := vote.Height, vote.Round, voteToStep(vote)
 
 	lss := pv.LastSignState
@@ -373,6 +402,7 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 // It may need to set the timestamp as well if the proposal is otherwise the same as
 // a previously signed proposal ie. we crashed after signing but before the proposal hit the WAL).
 func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error {
+	pv.updateKeyIfNeeded(proposal.Height)
 	height, round, step := proposal.Height, proposal.Round, stepPropose
 
 	lss := pv.LastSignState

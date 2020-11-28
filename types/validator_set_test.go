@@ -374,6 +374,7 @@ func (vals *ValidatorSet) toBytes() []byte {
 	return bz
 }
 
+
 func (vals *ValidatorSet) fromBytes(b []byte) *ValidatorSet {
 	pbvs := new(tmproto.ValidatorSet)
 	err := pbvs.Unmarshal(b)

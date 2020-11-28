@@ -331,57 +331,42 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding one validator")
 
-	newValidatorProTxHash, err := css[nVals].privValidator.GetProTxHash()
-	assert.NoError(t, err)
-	newValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
-	assert.NoError(t, err)
-	valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
-	assert.NoError(t, err)
-	newValidatorTx1 := kvstore.MakeValSetChangeTx(newValidatorProTxHash, valPubKey1ABCI, testMinPower)
+	//css contains all peers, the first 4 here are validators, so we will take the 5th peer and add it as a validator
+
+	updatedValidators, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, 1)
+
+	updateTransactions := make([][]byte, len(updatedValidators) + 1)
+	for i:=0; i<len(updatedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
+	}
+	abciThresholdPubKey, err := cryptoenc.PubKeyToProto(newThresholdPublicKey)
+	require.NoError(t, err)
+	updateTransactions[len(updatedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+
+	//kvstore.MakeThresholdPublicKeyChangeTx()
 
 	// wait till everyone makes block 2
 	// ensure the commit includes all validators
 	// send newValTx to change vals in block 3
-	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, newValidatorTx1)
+	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateTransactions...)
 
 	// wait till everyone makes block 3.
 	// it includes the commit for block 2, which is by the original validator set
-	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, newValidatorTx1)
+	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateTransactions...)
 
 	// wait till everyone makes block 4.
 	// it includes the commit for block 3, which is by the original validator set
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 
 	// the commits for block 4 should be with the updated validator set
-	activeVals[string(newValidatorProTxHash)] = struct{}{}
+	activeVals[string(updatedValidators[nVals].ProTxHash)] = struct{}{}
 
 	// wait till everyone makes block 5
 	// it includes the commit for block 4, which should have the updated validator set
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
-
-	//---------------------------------------------------------------------------
-	logger.Info("---------------------------- Testing changing the voting power of one validator")
-
-	updateValidatorProTxHash1, err := css[nVals].privValidator.GetProTxHash()
-	require.NoError(t, err)
-	updateValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
-	require.NoError(t, err)
-	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
-	require.NoError(t, err)
-	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updateValidatorProTxHash1, updatePubKey1ABCI, 25)
-	previousTotalVotingPower := css[nVals].GetRoundState().LastValidators.TotalVotingPower()
-
-	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
-	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateValidatorTx1)
-	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
-	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
-
-	if css[nVals].GetRoundState().LastValidators.TotalVotingPower() == previousTotalVotingPower {
-		t.Errorf(
-			"expected voting power to change (before: %d, after: %d)",
-			previousTotalVotingPower,
-			css[nVals].GetRoundState().LastValidators.TotalVotingPower())
-	}
 
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding two validators at once")

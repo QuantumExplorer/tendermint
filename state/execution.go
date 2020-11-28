@@ -242,6 +242,16 @@ func (blockExec *BlockExecutor) Commit(
 		)
 		return nil, 0, err
 	}
+
+	// we force the abci app to return only 32 byte app hashes
+	if res.Data != nil && len(res.Data) != crypto.DefaultHashSize {
+		blockExec.logger.Error(
+			"Client returned invalid app hash size (received %d bytes)",
+			len(res.Data),
+		)
+		return nil, 0, errors.New("invalid App Hash size")
+	}
+
 	// ResponseCommit has no error code - just data
 
 	blockExec.logger.Info(

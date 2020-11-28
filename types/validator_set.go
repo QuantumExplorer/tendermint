@@ -108,6 +108,22 @@ func (vals *ValidatorSet) ValidateBasic() error {
 	return nil
 }
 
+func (vals *ValidatorSet) Equals(other *ValidatorSet) bool {
+	if !vals.ThresholdPublicKey.Equals(other.ThresholdPublicKey) {
+		return false
+	}
+	if len(vals.Validators) != len(other.Validators) {
+		return false
+	}
+	for i, val := range vals.Validators {
+		if !bytes.Equal(val.Bytes(), other.Validators[i].Bytes()) {
+			return false
+		}
+	}
+	return true
+}
+
+
 // IsNilOrEmpty returns true if validator set is nil or empty.
 func (vals *ValidatorSet) IsNilOrEmpty() bool {
 	return vals == nil || len(vals.Validators) == 0

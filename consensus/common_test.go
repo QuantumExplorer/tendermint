@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
@@ -77,7 +78,7 @@ type validatorStub struct {
 	VotingPower int64
 }
 
-var testMinPower int64 = 10
+var testMinPower int64 = types.DefaultDashVotingPower
 
 func newValidatorStub(privValidator types.PrivValidator, valIndex int32) *validatorStub {
 	return &validatorStub{
@@ -701,6 +702,42 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 			os.RemoveAll(dir)
 		}
 	}
+}
+
+func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types.Validator, crypto.PubKey) {
+	currentValidatorCount := len(css[0].Validators.Validators)
+	currentValidators := css[0].Validators
+	for _, cssi := range css {
+		if len(cssi.Validators.Validators) != currentValidatorCount {
+			panic("they should all have the same initial validator count")
+		}
+		if !currentValidators.Equals(cssi.Validators) {
+			panic("all validators should be the same")
+		}
+	}
+
+	validatorProTxHashes := currentValidators.GetProTxHashes()
+	newValidatorProTxHashes := make([]crypto.ProTxHash, addValCount)
+	for i := 0; i< addValCount; i++ {
+		proTxHash, err := css[currentValidatorCount + i].privValidator.GetProTxHash()
+		if err != nil {
+			panic(err)
+		}
+		newValidatorProTxHashes[i] = proTxHash
+	}
+	validatorProTxHashes = append(validatorProTxHashes, newValidatorProTxHashes...)
+	//now that we have the list of all the protxhashes we need to regenerate the keys and the threshold public key
+	privKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(validatorProTxHashes)
+	//privKeys are returned in order
+
+	var mockPV types.PrivValidator
+	updatedValidators := make([]*types.Validator, len(validatorProTxHashes))
+	for i := 0; i<len(validatorProTxHashes);i++ {
+		mockPV = css[i].privValidator
+		mockPV.UpdatePrivateKey(privKeys[i], css[i].Height + 1)
+		updatedValidators[i] = mockPV.ExtractIntoValidator()
+	}
+	return updatedValidators, thresholdPublicKey
 }
 
 // nPeers = nValidators + nNotValidator
