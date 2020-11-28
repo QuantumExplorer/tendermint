@@ -183,7 +183,7 @@ func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, keyFilePath, stateFileP
 // GenFilePV generates a new validator with randomly generated private key
 // and sets the filePaths, but does not call Save().
 func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	return NewFilePV(bls12381.GenPrivKey(), crypto.CRandBytes(32), keyFilePath, stateFilePath)
+	return NewFilePV(bls12381.GenPrivKey(), crypto.RandProTxHash(), keyFilePath, stateFilePath)
 }
 
 // LoadFilePV loads a FilePV from the filePaths.  The FilePV handles double
@@ -262,8 +262,13 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 	return pv.Key.PubKey, nil
 }
 
-func (pv *FilePV) ExtractIntoValidator() *types.Validator {
-	pubKey, _ := pv.GetPubKey()
+func (pv *FilePV) ExtractIntoValidator(height int64) *types.Validator {
+	var pubKey crypto.PubKey
+	if height >= pv.Key.NextPrivKeyHeight && pv.Key.NextPrivKey != nil {
+		pubKey = pv.Key.NextPrivKey.PubKey()
+	} else {
+		pubKey, _ = pv.GetPubKey()
+	}
 	if len(pv.Key.ProTxHash) != crypto.DefaultHashSize {
 		panic("proTxHash wrong length")
 	}
@@ -331,13 +336,14 @@ func (pv *FilePV) String() string {
 	)
 }
 
-func (pv *FilePV) UpdatePrivateKey(key crypto.PrivKey, height int64) {
+func (pv *FilePV) UpdatePrivateKey(key crypto.PrivKey, height int64) error {
 	pv.Key.NextPrivKey = key
 	pv.Key.NextPrivKeyHeight = height
+	return nil
 }
 
 func (pv *FilePV)updateKeyIfNeeded(height int64) {
-	if pv.Key.NextPrivKey != nil && pv.Key.NextPrivKeyHeight >= height {
+	if pv.Key.NextPrivKey != nil && height >= pv.Key.NextPrivKeyHeight {
 		pv.Key.PrivKey = pv.Key.NextPrivKey
 		pv.Key.NextPrivKey = nil
 		pv.Key.NextPrivKeyHeight = 0

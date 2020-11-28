@@ -1312,10 +1312,10 @@ func GenerateTestValidatorSetWithAddressesDefaultPower(addresses []crypto.Addres
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }
 
-func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []MockPV) {
+func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []*MockPV) {
 	var (
 		valz           = make([]*Validator, numValidators)
-		privValidators = make([]MockPV, numValidators)
+		privValidators = make([]*MockPV, numValidators)
 	)
 	threshold := numValidators * 2 / 3 + 1
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQData(numValidators, threshold)
@@ -1352,10 +1352,10 @@ func GenerateGenesisValidators(numValidators int) ([]GenesisValidator, []PrivVal
 	return genesisValidators, privValidators, thresholdPublicKey
 }
 
-func GenerateMockGenesisValidators(numValidators int) ([]GenesisValidator, []MockPV, crypto.PubKey) {
+func GenerateMockGenesisValidators(numValidators int) ([]GenesisValidator, []*MockPV, crypto.PubKey) {
 	var (
 		genesisValidators = make([]GenesisValidator, numValidators)
-		privValidators = make([]MockPV, numValidators)
+		privValidators = make([]*MockPV, numValidators)
 	)
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
 
@@ -1395,14 +1395,14 @@ func GenerateValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*Vali
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators
 }
 
-func GenerateMockValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*ValidatorSet, []MockPV) {
+func GenerateMockValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*ValidatorSet, []*MockPV) {
 	numValidators := len(proTxHashes)
 	if numValidators < 2 {
 		panic("there should be at least 2 validators")
 	}
 	var (
 		valz           = make([]*Validator, numValidators)
-		privValidators = make([]MockPV, numValidators)
+		privValidators = make([]*MockPV, numValidators)
 	)
 	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 

@@ -346,8 +346,6 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	require.NoError(t, err)
 	updateTransactions[len(updatedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
-	//kvstore.MakeThresholdPublicKeyChangeTx()
-
 	// wait till everyone makes block 2
 	// ensure the commit includes all validators
 	// send newValTx to change vals in block 3

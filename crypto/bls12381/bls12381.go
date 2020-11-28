@@ -183,6 +183,8 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 	ids := make([]bls.Hash, members)
 	secrets := make([]*bls.PrivateKey, threshold)
 	skShares := make([]crypto.PrivKey, members)
+	testPubKey := make([]crypto.PubKey, members)
+	testProTxHashes := make([][]byte, members)
 
 	for i := 0; i < threshold; i++ {
 		seed := make([]byte, SeedSize)
@@ -204,8 +206,15 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 			panic(err)
 		}
 		skShares[i] = PrivKey(skShare.Serialize())
+		testPubKey[i] = skShares[i].PubKey()
+		testProTxHashes[i] = proTxHashes[i].Bytes()
 	}
 
+	//as this is not used in production, we can add this test
+	testKey, _ := RecoverThresholdPublicKeyFromPublicKeys(testPubKey,testProTxHashes)
+	if !testKey.Equals(PubKey(secrets[0].PublicKey().Serialize())) {
+		panic("these should be equal")
+	}
 	return skShares, PubKey(secrets[0].PublicKey().Serialize())
 }
 

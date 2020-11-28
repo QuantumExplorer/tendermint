@@ -37,7 +37,7 @@ func genPrivKeys(n int, keyType crypto.KeyType) privKeys {
 	return res
 }
 
-func exposeMockPVKeys(pvs []types.MockPV) privKeys {
+func exposeMockPVKeys(pvs []*types.MockPV) privKeys {
 	res := make(privKeys, len(pvs))
 	for i, pval := range pvs {
 		res[i] = pval.PrivKey

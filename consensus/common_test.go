@@ -730,12 +730,28 @@ func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types
 	privKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(validatorProTxHashes)
 	//privKeys are returned in order
 
-	var mockPV types.PrivValidator
+	var privVal types.PrivValidator
 	updatedValidators := make([]*types.Validator, len(validatorProTxHashes))
+	publicKeys := make([]crypto.PubKey, len(validatorProTxHashes))
+	validatorProTxHashesAsByteArray := make([][]byte, len(validatorProTxHashes))
 	for i := 0; i<len(validatorProTxHashes);i++ {
-		mockPV = css[i].privValidator
-		mockPV.UpdatePrivateKey(privKeys[i], css[i].Height + 1)
-		updatedValidators[i] = mockPV.ExtractIntoValidator()
+		privVal = css[i].privValidator
+		privVal.UpdatePrivateKey(privKeys[i], css[i].Height + 3)
+		updatedValidators[i] = privVal.ExtractIntoValidator(css[i].Height + 3)
+		updatedValidators[i].PubKey = privKeys[i].PubKey()
+		publicKeys[i] = privKeys[i].PubKey()
+		if !bytes.Equal(updatedValidators[i].PubKey.Bytes(), publicKeys[i].Bytes()) {
+			panic("the validator public key should match the public key")
+		}
+		validatorProTxHashesAsByteArray[i] = validatorProTxHashes[i].Bytes()
+	}
+	//just do this for sanity testing
+	recoveredThresholdPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(publicKeys, validatorProTxHashesAsByteArray)
+	if err != nil {
+		panic(err)
+	}
+	if !bytes.Equal(recoveredThresholdPublicKey.Bytes(), thresholdPublicKey.Bytes()) {
+		panic("the recovered public key should match the threshold public key")
 	}
 	return updatedValidators, thresholdPublicKey
 }

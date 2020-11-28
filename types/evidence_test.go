@@ -85,7 +85,7 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			vote1 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID, stateID)
 			vote2 := makeVote(t, val, chainID, math.MaxInt32, math.MaxInt64, math.MaxInt32, 0x02, blockID2, stateID)
-			valSet := NewValidatorSet([]*Validator{val.ExtractIntoValidator()}, val.PrivKey.PubKey())
+			valSet := NewValidatorSet([]*Validator{val.ExtractIntoValidator(0)}, val.PrivKey.PubKey())
 			ev := NewDuplicateVoteEvidence(vote1, vote2, defaultVoteTime, valSet)
 			tc.malleateEvidence(ev)
 			assert.Equal(t, tc.expectErr, ev.ValidateBasic() != nil, "Validate Basic had an unexpected result")

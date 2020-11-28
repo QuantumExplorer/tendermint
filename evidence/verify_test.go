@@ -299,7 +299,7 @@ type voteData struct {
 func TestVerifyDuplicateVoteEvidence(t *testing.T) {
 	val := types.NewMockPV()
 	val2 := types.NewMockPV()
-	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator()}, val.PrivKey.PubKey())
+	valSet := types.NewValidatorSet([]*types.Validator{val.ExtractIntoValidator(0)}, val.PrivKey.PubKey())
 
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
 	blockID2 := makeBlockID([]byte("blockhash2"), 1000, []byte("partshash"))

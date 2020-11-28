@@ -66,6 +66,20 @@ func (sc *SignerClient) Ping() error {
 	return nil
 }
 
+func (sc *SignerClient) ExtractIntoValidator(height int64) *types.Validator {
+	pubKey, _ := sc.GetPubKey()
+	proTxHash, _ := sc.GetProTxHash()
+	if len(proTxHash) != crypto.DefaultHashSize {
+		panic("proTxHash wrong length")
+	}
+	return &types.Validator{
+		Address:     pubKey.Address(),
+		PubKey:      pubKey,
+		VotingPower: types.DefaultDashVotingPower,
+		ProTxHash:   proTxHash,
+	}
+}
+
 // GetPubKey retrieves a public key from a remote signer
 // returns an error if client is not able to provide the key
 func (sc *SignerClient) GetPubKey() (crypto.PubKey, error) {
@@ -150,5 +164,10 @@ func (sc *SignerClient) SignProposal(chainID string, proposal *tmproto.Proposal)
 
 	*proposal = resp.Proposal
 
+	return nil
+}
+
+func (sc *SignerClient) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error {
+	//the private key is dealt with on the abci client
 	return nil
 }

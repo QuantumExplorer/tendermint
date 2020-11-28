@@ -44,6 +44,20 @@ func (sc *RetrySignerClient) Ping() error {
 	return sc.next.Ping()
 }
 
+func (sc *RetrySignerClient) ExtractIntoValidator(height int64) *types.Validator {
+	pubKey, _ := sc.GetPubKey()
+	proTxHash, _ := sc.GetProTxHash()
+	if len(proTxHash) != crypto.DefaultHashSize {
+		panic("proTxHash wrong length")
+	}
+	return &types.Validator{
+		Address:     pubKey.Address(),
+		PubKey:      pubKey,
+		VotingPower: types.DefaultDashVotingPower,
+		ProTxHash:   proTxHash,
+	}
+}
+
 func (sc *RetrySignerClient) GetPubKey() (crypto.PubKey, error) {
 	var (
 		pk  crypto.PubKey
@@ -112,4 +126,9 @@ func (sc *RetrySignerClient) SignProposal(chainID string, proposal *tmproto.Prop
 		time.Sleep(sc.timeout)
 	}
 	return fmt.Errorf("exhausted all attempts to sign proposal: %w", err)
+}
+
+func (sc *RetrySignerClient) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error {
+	//the private key is dealt with on the abci client
+	return nil
 }
