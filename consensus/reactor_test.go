@@ -333,7 +333,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	//css contains all peers, the first 4 here are validators, so we will take the 5th peer and add it as a validator
 
-	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, 1)
+	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, css[0].Height, 1, true)
 
 	updateTransactions := make([][]byte, len(updatedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
@@ -369,7 +369,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding two validators at once")
 
-	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, 2)
+	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, css[0].Height, 2, true)
 
 	updateTransactions2 := make([][]byte, len(updatedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
@@ -392,7 +392,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing removing two validators at once")
 
-	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, 2)
+	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, css[0].Height, 2, true)
 
 	updateTransactions3 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {

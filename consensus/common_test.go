@@ -91,6 +91,7 @@ func newValidatorStub(privValidator types.PrivValidator, valIndex int32) *valida
 func (vs *validatorStub) signVote(
 	voteType tmproto.SignedMsgType,
 	hash []byte,
+	lastAppHash []byte,
 	header types.PartSetHeader) (*types.Vote, error) {
 
 	proTxHash, err := vs.PrivValidator.GetProTxHash()
@@ -105,6 +106,7 @@ func (vs *validatorStub) signVote(
 		Round:              vs.Round,
 		Type:               voteType,
 		BlockID:            types.BlockID{Hash: hash, PartSetHeader: header},
+		StateID:            types.StateID{LastAppHash: lastAppHash},
 	}
 	v := vote.ToProto()
 	err = vs.PrivValidator.SignVote(config.ChainID(), v)
@@ -115,8 +117,8 @@ func (vs *validatorStub) signVote(
 }
 
 // Sign vote for type/hash/header
-func signVote(vs *validatorStub, voteType tmproto.SignedMsgType, hash []byte, header types.PartSetHeader) *types.Vote {
-	v, err := vs.signVote(voteType, hash, header)
+func signVote(vs *validatorStub, voteType tmproto.SignedMsgType, hash []byte, lastAppHash []byte, header types.PartSetHeader) *types.Vote {
+	v, err := vs.signVote(voteType, hash, lastAppHash, header)
 	if err != nil {
 		panic(fmt.Errorf("failed to sign vote: %v", err))
 	}
@@ -126,11 +128,12 @@ func signVote(vs *validatorStub, voteType tmproto.SignedMsgType, hash []byte, he
 func signVotes(
 	voteType tmproto.SignedMsgType,
 	hash []byte,
+	lastAppHash []byte,
 	header types.PartSetHeader,
 	vss ...*validatorStub) []*types.Vote {
 	votes := make([]*types.Vote, len(vss))
 	for i, vs := range vss {
-		votes[i] = signVote(vs, voteType, hash, header)
+		votes[i] = signVote(vs, voteType, hash, lastAppHash, header)
 	}
 	return votes
 }
@@ -227,7 +230,7 @@ func signAddVotes(
 	header types.PartSetHeader,
 	vss ...*validatorStub,
 ) {
-	votes := signVotes(voteType, hash, header, vss...)
+	votes := signVotes(voteType, hash, to.state.AppHash, header, vss...)
 	addVotes(to, votes...)
 }
 
@@ -704,16 +707,18 @@ func randConsensusNet(nValidators int, testName string, tickerFunc func() Timeou
 	}
 }
 
-func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types.Validator, []crypto.ProTxHash, crypto.PubKey) {
+func updateConsensusNetAddNewValidators(css []*State, height int64, addValCount int, validate bool) ([]*types.Validator, []crypto.ProTxHash, crypto.PubKey) {
 	currentValidatorCount := len(css[0].Validators.Validators)
 	currentValidators := css[0].Validators
 
-	for _, cssi := range css {
-		if len(cssi.Validators.Validators) != currentValidatorCount {
-			panic("they should all have the same initial validator count")
-		}
-		if !currentValidators.Equals(cssi.Validators) {
-			panic("all validators should be the same")
+	if validate {
+		for _, cssi := range css {
+			if len(cssi.Validators.Validators) != currentValidatorCount {
+				panic("they should all have the same initial validator count")
+			}
+			if !currentValidators.Equals(cssi.Validators) {
+				panic("all validators should be the same")
+			}
 		}
 	}
 
@@ -744,8 +749,8 @@ func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types
 		}
 		for j, proTxHash := range validatorProTxHashes {
 			if bytes.Equal(privValProTxHash.Bytes(),proTxHash.Bytes()) {
-				privVal.UpdatePrivateKey(privKeys[j], css[i].Height + 3)
-				updatedValidators[j] = privVal.ExtractIntoValidator(css[i].Height + 3)
+				privVal.UpdatePrivateKey(privKeys[j], height + 3)
+				updatedValidators[j] = privVal.ExtractIntoValidator(height + 3)
 				publicKeys[j] = privKeys[j].PubKey()
 				if !bytes.Equal(updatedValidators[j].PubKey.Bytes(), publicKeys[j].Bytes()) {
 					panic("the validator public key should match the public key")
@@ -766,19 +771,21 @@ func updateConsensusNetAddNewValidators(css []*State, addValCount int) ([]*types
 	return updatedValidators, newValidatorProTxHashes, thresholdPublicKey
 }
 
-func updateConsensusNetRemoveValidators(css []*State, removeValCount int) ([]*types.Validator, []*types.Validator, crypto.PubKey) {
+func updateConsensusNetRemoveValidators(css []*State, height int64, removeValCount int, validate bool) ([]*types.Validator, []*types.Validator, crypto.PubKey) {
 	currentValidatorCount := len(css[0].Validators.Validators)
 	currentValidators := css[0].Validators
 
 	if removeValCount >= currentValidatorCount {
 		panic("you can not remove all validators")
 	}
-	for _, cssi := range css {
-		if len(cssi.Validators.Validators) != currentValidatorCount {
-			panic("they should all have the same initial validator count")
-		}
-		if !currentValidators.Equals(cssi.Validators) {
-			panic("all validators should be the same")
+	if validate {
+		for _, cssi := range css {
+			if len(cssi.Validators.Validators) != currentValidatorCount {
+				panic("they should all have the same initial validator count")
+			}
+			if !currentValidators.Equals(cssi.Validators) {
+				panic("all validators should be the same")
+			}
 		}
 	}
 

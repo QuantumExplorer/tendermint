@@ -48,8 +48,8 @@ type FilePVKey struct {
 	Address                types.Address    `json:"address"`
 	PubKey                 crypto.PubKey    `json:"pub_key"`
 	PrivKey                crypto.PrivKey   `json:"priv_key"`
-	NextPrivKey            crypto.PrivKey   `json:"next_priv_key"`
-	NextPrivKeyHeight      int64            `json:"next_priv_key_height"`
+	NextPrivKeys           []crypto.PrivKey `json:"next_priv_key"`
+	NextPrivKeyHeights     []int64          `json:"next_priv_key_height"`
 	ProTxHash              crypto.ProTxHash `json:"pro_tx_hash"`
 
 	filePath string
@@ -264,8 +264,12 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 
 func (pv *FilePV) ExtractIntoValidator(height int64) *types.Validator {
 	var pubKey crypto.PubKey
-	if height >= pv.Key.NextPrivKeyHeight && pv.Key.NextPrivKey != nil {
-		pubKey = pv.Key.NextPrivKey.PubKey()
+	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && height >= pv.Key.NextPrivKeyHeights[0]  {
+		for i, nextPrivKeyHeight := range pv.Key.NextPrivKeyHeights {
+			if height >= nextPrivKeyHeight {
+				pubKey = pv.Key.NextPrivKeys[i].PubKey()
+			}
+		}
 	} else {
 		pubKey, _ = pv.GetPubKey()
 	}
@@ -336,17 +340,22 @@ func (pv *FilePV) String() string {
 	)
 }
 
-func (pv *FilePV) UpdatePrivateKey(key crypto.PrivKey, height int64) error {
-	pv.Key.NextPrivKey = key
-	pv.Key.NextPrivKeyHeight = height
+func (pv *FilePV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error {
+	pv.Key.NextPrivKeys = append(pv.Key.NextPrivKeys, privateKey)
+	pv.Key.NextPrivKeyHeights = append(pv.Key.NextPrivKeyHeights, height)
 	return nil
 }
 
 func (pv *FilePV)updateKeyIfNeeded(height int64) {
-	if pv.Key.NextPrivKey != nil && height >= pv.Key.NextPrivKeyHeight {
-		pv.Key.PrivKey = pv.Key.NextPrivKey
-		pv.Key.NextPrivKey = nil
-		pv.Key.NextPrivKeyHeight = 0
+	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && pv.Key.NextPrivKeyHeights != nil && len(pv.Key.NextPrivKeyHeights) > 0 && height >= pv.Key.NextPrivKeyHeights[0] {
+		pv.Key.PrivKey = pv.Key.NextPrivKeys[0]
+		if len(pv.Key.NextPrivKeys) > 1 {
+			pv.Key.NextPrivKeys = pv.Key.NextPrivKeys[1:]
+			pv.Key.NextPrivKeyHeights = pv.Key.NextPrivKeyHeights[1:]
+		} else {
+			pv.Key.NextPrivKeys = nil
+			pv.Key.NextPrivKeyHeights = nil
+		}
 	}
 }
 

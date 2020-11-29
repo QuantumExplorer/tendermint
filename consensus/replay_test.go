@@ -356,20 +356,31 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	// HEIGHT 2
+	updatedValidators, _, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, height, 1, false)
 	height++
 	incrementHeight(vss...)
-	newValidatorProTxHash1, err := css[nVals].privValidator.GetProTxHash()
+	for i := 0; i < nPeers; i++ {
+		vss[i].PrivValidator = css[i].privValidator
+	}
+	updateTransactions := make([][]byte, len(updatedValidators) + 1)
+	for i:=0; i<len(updatedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
+	}
+	abciThresholdPubKey, err := cryptoenc.PubKeyToProto(newThresholdPublicKey)
 	require.NoError(t, err)
-	newValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
-	require.NoError(t, err)
-	valPubKey1ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey1)
-	require.NoError(t, err)
-	newValidatorTx1 := kvstore.MakeValSetChangeTx(newValidatorProTxHash1, valPubKey1ABCI, testMinPower)
-	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx1, nil, mempl.TxInfo{})
-	assert.Nil(t, err)
+	updateTransactions[len(updatedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+	for _, updateTransaction := range updateTransactions {
+		err = assertMempool(css[0].txNotifier).CheckTx(updateTransaction, nil, mempl.TxInfo{})
+		assert.Nil(t, err)
+	}
+
 	propBlock, _ := css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
 	propBlockParts := propBlock.MakePartSet(partSize)
 	blockID := types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
+	//stateID := types.StateID{LastAppHash: css[0].state.AppHash}
 
 	proposal := types.NewProposal(vss[1].Height, 1, round, -1, blockID)
 	p := proposal.ToProto()
@@ -390,15 +401,6 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	// HEIGHT 3
 	height++
 	incrementHeight(vss...)
-	updateValidatorProTxHash1, err := css[nVals].privValidator.GetProTxHash()
-	require.NoError(t, err)
-	updateValidatorPubKey1, err := css[nVals].privValidator.GetPubKey()
-	require.NoError(t, err)
-	updatePubKey1ABCI, err := cryptoenc.PubKeyToProto(updateValidatorPubKey1)
-	require.NoError(t, err)
-	updateValidatorTx1 := kvstore.MakeValSetChangeTx(updateValidatorProTxHash1, updatePubKey1ABCI, 25)
-	err = assertMempool(css[0].txNotifier).CheckTx(updateValidatorTx1, nil, mempl.TxInfo{})
-	assert.Nil(t, err)
 	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
 	propBlockParts = propBlock.MakePartSet(partSize)
 	blockID = types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
@@ -420,26 +422,26 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	// HEIGHT 4
+	updatedValidators, _, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, height, 2, false)
 	height++
 	incrementHeight(vss...)
-	newValidatorProTxHash2, err := css[nVals+1].privValidator.GetProTxHash()
+	for i := 0; i < nPeers; i++ {
+		vss[i].PrivValidator = css[i].privValidator
+	}
+	updateTransactions2 := make([][]byte, len(updatedValidators) + 1)
+	for i:=0; i<len(updatedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions2[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
+	}
+	abciThresholdPubKey2, err := cryptoenc.PubKeyToProto(newThresholdPublicKey)
 	require.NoError(t, err)
-	newValidatorPubKey2, err := css[nVals+1].privValidator.GetPubKey()
-	require.NoError(t, err)
-	newVal2ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey2)
-	require.NoError(t, err)
-	newValidatorTx2 := kvstore.MakeValSetChangeTx(newValidatorProTxHash2, newVal2ABCI, testMinPower)
-	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx2, nil, mempl.TxInfo{})
-	assert.Nil(t, err)
-	newValidatorProTxHash3, err := css[nVals+2].privValidator.GetProTxHash()
-	require.NoError(t, err)
-	newValidatorPubKey3, err := css[nVals+2].privValidator.GetPubKey()
-	require.NoError(t, err)
-	newVal3ABCI, err := cryptoenc.PubKeyToProto(newValidatorPubKey3)
-	require.NoError(t, err)
-	newValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, testMinPower)
-	err = assertMempool(css[0].txNotifier).CheckTx(newValidatorTx3, nil, mempl.TxInfo{})
-	assert.Nil(t, err)
+	updateTransactions2[len(updatedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey2)
+	for _, updateTransaction := range updateTransactions2 {
+		err = assertMempool(css[0].txNotifier).CheckTx(updateTransaction, nil, mempl.TxInfo{})
+		assert.Nil(t, err)
+	}
 	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
 	propBlockParts = propBlock.MakePartSet(partSize)
 	blockID = types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
@@ -477,9 +479,29 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 
-	removeValidatorTx2 := kvstore.MakeValSetChangeTx(newValidatorProTxHash2, newVal2ABCI, 0)
-	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx2, nil, mempl.TxInfo{})
-	assert.Nil(t, err)
+	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, height, 1, false)
+
+	updateTransactions3 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
+	for i:=0; i<len(updatedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions3[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
+	}
+	for i:=0; i<len(removedValidators); i++ {
+		//start by adding all validator transactions
+		abciPubKey, err := cryptoenc.PubKeyToProto(removedValidators[i].PubKey)
+		require.NoError(t, err)
+		updateTransactions3[len(updatedValidators) + i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
+	}
+	abciThresholdPubKey, err = cryptoenc.PubKeyToProto(newThresholdPublicKey)
+	require.NoError(t, err)
+	updateTransactions3[len(updatedValidators) + len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+
+	for _, updateTransaction := range updateTransactions3 {
+		err = assertMempool(css[0].txNotifier).CheckTx(updateTransaction, nil, mempl.TxInfo{})
+		assert.Nil(t, err)
+	}
 
 	rs = css[0].GetRoundState()
 	for i := 0; i < nVals+1; i++ {
@@ -496,7 +518,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	incrementHeight(vss...)
 	// Reflect the changes to vss[nVals] at height 3 and resort newVss.
 	newVssIdx := valIndexFn(nVals)
-	newVss[newVssIdx].VotingPower = 25
+	newVss[newVssIdx].VotingPower = 100
 	sort.Sort(ValidatorStubsByPower(newVss))
 	selfIndex = valIndexFn(0)
 	ensureNewProposal(proposalCh, height, round)
@@ -509,47 +531,47 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewRound(newRoundCh, height+1, 0)
 
-	// HEIGHT 6
-	height++
-	incrementHeight(vss...)
-	removeValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, 0)
-	err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
-	assert.Nil(t, err)
-	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
-	propBlockParts = propBlock.MakePartSet(partSize)
-	blockID = types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
-	newVss = make([]*validatorStub, nVals+3)
-	copy(newVss, vss[:nVals+3])
-	sort.Sort(ValidatorStubsByPower(newVss))
-
-	selfIndex = valIndexFn(0)
-	proposal = types.NewProposal(vss[1].Height, 1, round, -1, blockID)
-	p = proposal.ToProto()
-	if err := vss[1].SignProposal(config.ChainID(), p); err != nil {
-		t.Fatal("failed to sign bad proposal", err)
-	}
-	proposal.Signature = p.Signature
-
-	// set the proposal block
-	if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
-		t.Fatal(err)
-	}
-	ensureNewProposal(proposalCh, height, round)
-	rs = css[0].GetRoundState()
-	for i := 0; i < nVals+3; i++ {
-		if i == selfIndex {
-			continue
-		}
-		signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), newVss[i])
-	}
-	ensureNewRound(newRoundCh, height+1, 0)
-
-	sim.Chain = make([]*types.Block, 0)
-	sim.Commits = make([]*types.Commit, 0)
-	for i := 1; i <= numBlocks; i++ {
-		sim.Chain = append(sim.Chain, css[0].blockStore.LoadBlock(int64(i)))
-		sim.Commits = append(sim.Commits, css[0].blockStore.LoadBlockCommit(int64(i)))
-	}
+	//// HEIGHT 6
+	//height++
+	//incrementHeight(vss...)
+	//removeValidatorTx3 := kvstore.MakeValSetChangeTx(newValidatorProTxHash3, newVal3ABCI, 0)
+	//err = assertMempool(css[0].txNotifier).CheckTx(removeValidatorTx3, nil, mempl.TxInfo{})
+	//assert.Nil(t, err)
+	//propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
+	//propBlockParts = propBlock.MakePartSet(partSize)
+	//blockID = types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
+	//newVss = make([]*validatorStub, nVals+3)
+	//copy(newVss, vss[:nVals+3])
+	//sort.Sort(ValidatorStubsByPower(newVss))
+	//
+	//selfIndex = valIndexFn(0)
+	//proposal = types.NewProposal(vss[1].Height, 1, round, -1, blockID)
+	//p = proposal.ToProto()
+	//if err := vss[1].SignProposal(config.ChainID(), p); err != nil {
+	//	t.Fatal("failed to sign bad proposal", err)
+	//}
+	//proposal.Signature = p.Signature
+	//
+	//// set the proposal block
+	//if err := css[0].SetProposalAndBlock(proposal, propBlock, propBlockParts, "some peer"); err != nil {
+	//	t.Fatal(err)
+	//}
+	//ensureNewProposal(proposalCh, height, round)
+	//rs = css[0].GetRoundState()
+	//for i := 0; i < nVals+3; i++ {
+	//	if i == selfIndex {
+	//		continue
+	//	}
+	//	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), newVss[i])
+	//}
+	//ensureNewRound(newRoundCh, height+1, 0)
+	//
+	//sim.Chain = make([]*types.Block, 0)
+	//sim.Commits = make([]*types.Commit, 0)
+	//for i := 1; i <= numBlocks; i++ {
+	//	sim.Chain = append(sim.Chain, css[0].blockStore.LoadBlock(int64(i)))
+	//	sim.Commits = append(sim.Commits, css[0].blockStore.LoadBlockCommit(int64(i)))
+	//}
 }
 
 // Sync from scratch
