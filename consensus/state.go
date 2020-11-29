@@ -1970,11 +1970,14 @@ func (cs *State) addVote(
 	// Height mismatch is ignored.
 	// Not necessarily a bad peer, but not favourable behaviour.
 	if vote.Height != cs.Height {
+		added = false
 		cs.Logger.Info("Vote ignored and not added", "voteHeight", vote.Height, "csHeight", cs.Height, "peerID", peerID)
 		return
 	}
 
 	if !bytes.Equal(vote.StateID.LastAppHash, cs.state.AppHash) {
+		added = false
+		err = errors.New("vote state last app hash does not match the known state app hash")
 		cs.Logger.Info("Vote ignored because sending wrong app hash", "voteHeight", vote.Height, "csHeight", cs.Height, "peerID", peerID)
 		return
 	}
@@ -2114,9 +2117,6 @@ func (cs *State) signVote(
 
 	//Since the block has already been validated the block.lastAppHash must be the state.AppHash
 
-	if cs.Height > 1 && cs.state.AppHash == nil {
-		panic("state app hash can not be nil for height greater than 1")
-	}
 	var lastAppHash = cs.state.AppHash
 
 	vote := &types.Vote{
