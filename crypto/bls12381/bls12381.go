@@ -211,7 +211,10 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 	}
 
 	//as this is not used in production, we can add this test
-	testKey, _ := RecoverThresholdPublicKeyFromPublicKeys(testPubKey,testProTxHashes)
+	testKey, err := RecoverThresholdPublicKeyFromPublicKeys(testPubKey, testProTxHashes)
+	if err != nil {
+		panic(err)
+	}
 	if !testKey.Equals(PubKey(secrets[0].PublicKey().Serialize())) {
 		panic("these should be equal")
 	}

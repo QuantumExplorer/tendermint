@@ -157,17 +157,17 @@ func (vss ValidatorStubsByPower) Len() int {
 }
 
 func (vss ValidatorStubsByPower) Less(i, j int) bool {
-	vssi, err := vss[i].GetPubKey()
+	vssi, err := vss[i].GetProTxHash()
 	if err != nil {
 		panic(err)
 	}
-	vssj, err := vss[j].GetPubKey()
+	vssj, err := vss[j].GetProTxHash()
 	if err != nil {
 		panic(err)
 	}
 
 	if vss[i].VotingPower == vss[j].VotingPower {
-		return bytes.Compare(vssi.Address(), vssj.Address()) == -1
+		return bytes.Compare(vssi.Bytes(), vssj.Bytes()) == -1
 	}
 	return vss[i].VotingPower > vss[j].VotingPower
 }
@@ -811,8 +811,8 @@ func updateConsensusNetRemoveValidators(css []*State, height int64, removeValCou
 			if bytes.Equal(stateProTxHash.Bytes(), proTxHash.Bytes()) {
 				//we found the prival
 				privVal = state.privValidator
-				privVal.UpdatePrivateKey(privKeys[i], state.Height + 3)
-				updatedValidators[i] = privVal.ExtractIntoValidator(state.Height + 3)
+				privVal.UpdatePrivateKey(privKeys[i], height + 3)
+				updatedValidators[i] = privVal.ExtractIntoValidator(height + 3)
 				publicKeys[i] = privKeys[i].PubKey()
 				if !bytes.Equal(updatedValidators[i].PubKey.Bytes(), publicKeys[i].Bytes()) {
 					panic("the validator public key should match the public key")

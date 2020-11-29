@@ -2114,12 +2114,10 @@ func (cs *State) signVote(
 
 	//Since the block has already been validated the block.lastAppHash must be the state.AppHash
 
-	var lastAppHash []byte
-	if hash == nil {
-		lastAppHash = nil
-	} else {
-		lastAppHash = cs.state.AppHash
+	if cs.Height > 1 && cs.state.AppHash == nil {
+		panic("state app hash can not be nil for height greater than 1")
 	}
+	var lastAppHash = cs.state.AppHash
 
 	vote := &types.Vote{
 		ValidatorProTxHash: proTxHash,
