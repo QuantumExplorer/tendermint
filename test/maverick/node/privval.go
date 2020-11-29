@@ -47,6 +47,8 @@ type FilePVKey struct {
 	Address types.Address  `json:"address"`
 	PubKey  crypto.PubKey  `json:"pub_key"`
 	PrivKey crypto.PrivKey `json:"priv_key"`
+	NextPrivKeys           []crypto.PrivKey `json:"next_priv_key,omitempty"`
+	NextPrivKeyHeights     []int64          `json:"next_priv_key_height,omitempty"`
 	ProTxHash []byte       `json:"pro_tx_hash"`
 
 	filePath string
@@ -79,8 +81,8 @@ type FilePVLastSignState struct {
 	Step      int8             `json:"step"`
 	BlockSignature []byte           `json:"block_signature,omitempty"`
 	BlockSignBytes tmbytes.HexBytes `json:"block_sign_bytes,omitempty"`
-	StateSignature []byte           `json:"block_signature,omitempty"`
-	StateSignBytes tmbytes.HexBytes `json:"block_sign_bytes,omitempty"`
+	StateSignature []byte           `json:"state_signature,omitempty"`
+	StateSignBytes tmbytes.HexBytes `json:"state_sign_bytes,omitempty"`
 
 	filePath string
 }
@@ -311,12 +313,55 @@ func (pv *FilePV) String() string {
 	)
 }
 
+func (pv *FilePV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error {
+	pv.Key.NextPrivKeys = append(pv.Key.NextPrivKeys, privateKey)
+	pv.Key.NextPrivKeyHeights = append(pv.Key.NextPrivKeyHeights, height)
+	return nil
+}
+
+func (pv *FilePV)updateKeyIfNeeded(height int64) {
+	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && pv.Key.NextPrivKeyHeights != nil && len(pv.Key.NextPrivKeyHeights) > 0 && height >= pv.Key.NextPrivKeyHeights[0] {
+		pv.Key.PrivKey = pv.Key.NextPrivKeys[0]
+		if len(pv.Key.NextPrivKeys) > 1 {
+			pv.Key.NextPrivKeys = pv.Key.NextPrivKeys[1:]
+			pv.Key.NextPrivKeyHeights = pv.Key.NextPrivKeyHeights[1:]
+		} else {
+			pv.Key.NextPrivKeys = nil
+			pv.Key.NextPrivKeyHeights = nil
+		}
+	}
+}
+
+
+func (pv *FilePV) ExtractIntoValidator(height int64) *types.Validator {
+	var pubKey crypto.PubKey
+	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && height >= pv.Key.NextPrivKeyHeights[0]  {
+		for i, nextPrivKeyHeight := range pv.Key.NextPrivKeyHeights {
+			if height >= nextPrivKeyHeight {
+				pubKey = pv.Key.NextPrivKeys[i].PubKey()
+			}
+		}
+	} else {
+		pubKey, _ = pv.GetPubKey()
+	}
+	if len(pv.Key.ProTxHash) != crypto.DefaultHashSize {
+		panic("proTxHash wrong length")
+	}
+	return &types.Validator{
+		Address:     pubKey.Address(),
+		PubKey:      pubKey,
+		VotingPower: types.DefaultDashVotingPower,
+		ProTxHash:   pv.Key.ProTxHash,
+	}
+}
+
 //------------------------------------------------------------------------------------
 
 // signVote checks if the vote is good to sign and sets the vote signature.
 // It may need to set the timestamp as well if the vote is otherwise the same as
 // a previously signed vote (ie. we crashed after signing but before the vote hit the WAL).
 func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
+	pv.updateKeyIfNeeded(vote.Height)
 	height, round, step := vote.Height, vote.Round, voteToStep(vote)
 
 	lss := pv.LastSignState
@@ -352,6 +397,7 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 // It may need to set the timestamp as well if the proposal is otherwise the same as
 // a previously signed proposal ie. we crashed after signing but before the proposal hit the WAL).
 func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error {
+	pv.updateKeyIfNeeded(proposal.Height)
 	height, round, step := proposal.Height, proposal.Round, stepPropose
 
 	lss := pv.LastSignState

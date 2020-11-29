@@ -3,6 +3,7 @@ package client_test
 import (
 	"bytes"
 	"context"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
@@ -140,9 +140,10 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 		err = client.WaitForHeight(c, status.SyncInfo.LatestBlockHeight+2, nil)
 		require.NoError(t, err)
 
+		proTxHash := pv.Key.ProTxHash
 		bls12381pub := pv.Key.PubKey.(bls12381.PubKey)
 		rawpub := bls12381pub.Bytes()
-		result2, err := c.ABCIQuery(context.Background(), "/val", rawpub)
+		result2, err := c.ABCIQuery(context.Background(), "/val", proTxHash.Bytes())
 		require.NoError(t, err)
 		qres := result2.Response
 		require.True(t, qres.IsOK())
@@ -155,7 +156,7 @@ func TestBroadcastEvidence_DuplicateVoteEvidence(t *testing.T) {
 		require.NoError(t, err)
 
 		require.EqualValues(t, rawpub, pk, "Stored PubKey not equal with expected, value %v", string(qres.Value))
-		require.Equal(t, int64(9), v.Power, "Stored Power not equal with expected, value %v", string(qres.Value))
+		require.Equal(t, types.DefaultDashVotingPower, v.Power, "Stored Power not equal with expected, value %v", string(qres.Value))
 
 		for _, fake := range fakes {
 			_, err := c.BroadcastEvidence(context.Background(), fake)

@@ -48,8 +48,8 @@ type FilePVKey struct {
 	Address                types.Address    `json:"address"`
 	PubKey                 crypto.PubKey    `json:"pub_key"`
 	PrivKey                crypto.PrivKey   `json:"priv_key"`
-	NextPrivKeys           []crypto.PrivKey `json:"next_priv_key"`
-	NextPrivKeyHeights     []int64          `json:"next_priv_key_height"`
+	NextPrivKeys           []crypto.PrivKey `json:"next_priv_key,omitempty"`
+	NextPrivKeyHeights     []int64          `json:"next_priv_key_height,omitempty"`
 	ProTxHash              crypto.ProTxHash `json:"pro_tx_hash"`
 
 	filePath string
