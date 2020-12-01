@@ -340,41 +340,25 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	newRoundCh := subscribe(css[0].eventBus, types.EventQueryNewRound)
 	proposalCh := subscribe(css[0].eventBus, types.EventQueryCompleteProposal)
 
-	vss1 := make([]*validatorStub, nVals)
-	for i, val := range css[0].Validators.Validators {
-		for _, state := range css {
-			stateProTxHash, err := state.privValidator.GetProTxHash()
-			require.NoError(t, err)
-			if bytes.Equal(val.ProTxHash, stateProTxHash) {
-				vss1[i] = newValidatorStubAtHeight(state.privValidator, int32(i), 0)
-			}
-		}
+	vss := make([]*validatorStub, nPeers)
+	for i := 0; i < nPeers; i++ {
+		vss[i] = newValidatorStub(css[i].privValidator, int32(i))
 	}
 	height, round := css[0].Height, css[0].Round
 
 	// start the machine
 	startTestRound(css[0], height, round)
-	incrementHeight(vss1...)
+	incrementHeight(vss...)
 	ensureNewRound(newRoundCh, height, 0)
 	ensureNewProposal(proposalCh, height, round)
 	rs := css[0].GetRoundState()
-	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss1[1:nVals]...)
+	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[1:nVals]...)
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	// HEIGHT 2
 	updatedValidators, _, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, height, 1, false)
 	height++
-	incrementHeight(vss1...)
-	vss2 := make([]*validatorStub, nVals + 1)
-	for i, val := range updatedValidators {
-		for _, state := range css {
-			stateProTxHash, err := state.privValidator.GetProTxHash()
-			require.NoError(t, err)
-			if bytes.Equal(val.ProTxHash, stateProTxHash) {
-				vss2[i] = newValidatorStubAtHeight(state.privValidator, int32(i), 1)
-			}
-		}
-	}
+	incrementHeight(vss...)
 	updateTransactions := make([][]byte, len(updatedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
 		//start by adding all validator transactions
@@ -395,9 +379,9 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	blockID := types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
 	//stateID := types.StateID{LastAppHash: css[0].state.AppHash}
 
-	proposal := types.NewProposal(vss1[1].Height, 1, round, -1, blockID)
+	proposal := types.NewProposal(vss[1].Height, 1, round, -1, blockID)
 	p := proposal.ToProto()
-	if err := vss1[1].SignProposal(config.ChainID(), p); err != nil {
+	if err := vss[1].SignProposal(config.ChainID(), p); err != nil {
 		t.Fatal("failed to sign bad proposal", err)
 	}
 	proposal.Signature = p.Signature
@@ -408,20 +392,19 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 	rs = css[0].GetRoundState()
-	votersVss := append(vss1[:1], vss1[2:4]...)
-	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), votersVss...)
+	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[1:]...)
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	// HEIGHT 3
 	height++
-	incrementHeight(vss2...)
+	incrementHeight(vss...)
 	propBlock, _ = css[0].createProposalBlock() // changeProposer(t, cs1, vs2)
 	propBlockParts = propBlock.MakePartSet(partSize)
 	blockID = types.BlockID{Hash: propBlock.Hash(), PartSetHeader: propBlockParts.Header()}
 
-	proposal = types.NewProposal(vss2[2].Height, 1, round, -1, blockID)
+	proposal = types.NewProposal(vss[2].Height, 1, round, -1, blockID)
 	p = proposal.ToProto()
-	if err := vss2[2].SignProposal(config.ChainID(), p); err != nil {
+	if err := vss[2].SignProposal(config.ChainID(), p); err != nil {
 		t.Fatal("failed to sign bad proposal", err)
 	}
 	proposal.Signature = p.Signature
@@ -432,13 +415,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 	rs = css[0].GetRoundState()
-	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss2[1:nVals]...)
+	signAddVotes(css[0], tmproto.PrecommitType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vss[1:nVals]...)
 	ensureNewRound(newRoundCh, height+1, 0)
 
 	// HEIGHT 4
 	updatedValidators, _, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, height, 2, false)
 	height++
-	incrementHeight(vss2...)
+	incrementHeight(vss...)
 	vss3 := make([]*validatorStub, nPeers)
 	for i := 0; i < nPeers; i++ {
 		vss3[i].PrivValidator = newValidatorStub(css[i].privValidator, int32(i))
