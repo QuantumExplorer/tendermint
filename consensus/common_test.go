@@ -88,6 +88,15 @@ func newValidatorStub(privValidator types.PrivValidator, valIndex int32) *valida
 	}
 }
 
+func newValidatorStubAtHeight(privValidator types.PrivValidator, valIndex int32, height int64) *validatorStub {
+	return &validatorStub{
+		Index:         valIndex,
+		Height:        height,
+		PrivValidator: privValidator,
+		VotingPower:   testMinPower,
+	}
+}
+
 func (vs *validatorStub) signVote(
 	voteType tmproto.SignedMsgType,
 	hash []byte,
