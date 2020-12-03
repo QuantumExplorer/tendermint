@@ -221,14 +221,14 @@ func genMockNodeWithKeys(
 	map[int64]privKeys) {
 
 	var (
-		headers           = make(map[int64]*types.SignedHeader, blockSize)
-		valsets           = make(map[int64]*types.ValidatorSet, blockSize+1)
-		keymap            = make(map[int64]privKeys, blockSize+1)
+		headers            = make(map[int64]*types.SignedHeader, blockSize)
+		valsets            = make(map[int64]*types.ValidatorSet, blockSize+1)
+		keymap             = make(map[int64]privKeys, blockSize+1)
 		valset0, privVals0 = types.GenerateMockValidatorSet(valSize)
-		keys              = exposeMockPVKeys(privVals0)
-		totalVariation    = valVariation
-		valVariationInt   int
-		newKeys           privKeys
+		keys               = exposeMockPVKeys(privVals0)
+		totalVariation     = valVariation
+		valVariationInt    int
+		newKeys            privKeys
 	)
 
 	valVariationInt = int(totalVariation)

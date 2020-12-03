@@ -870,17 +870,36 @@ func (commit *Commit) GetVote(valIdx int32) *Vote {
 	}
 }
 
+func (commit *Commit) GetCanonicalVote() *Vote {
+	return &Vote{
+		Type:             tmproto.PrecommitType,
+		Height:           commit.Height,
+		Round:            commit.Round,
+		BlockID:          commit.BlockID,
+		StateID: 		  commit.StateID,
+	}
+}
+
+
 // VoteBlockSignBytes returns the bytes of the Vote corresponding to valIdx for
 // signing.
 //
 // Panics if valIdx >= commit.Size().
 //
-// See VoteSignBytes
 func (commit *Commit) VoteBlockSignBytes(chainID string, valIdx int32) []byte {
 	vote := commit.GetVote(valIdx)
 	v := vote.ToProto()
 	return VoteBlockSignBytes(chainID, v)
 }
+
+// CanonicalVoteVerifySignBytes returns the bytes of the Canonical Vote that is threshold signed.
+//
+func (commit *Commit) CanonicalVoteVerifySignBytes(chainID string) []byte {
+	voteCanonical := commit.GetCanonicalVote()
+	vCanonical := voteCanonical.ToProto()
+	return VoteBlockSignBytes(chainID, vCanonical)
+}
+
 
 // VoteStateSignBytes returns the bytes of the State corresponding to valIdx for
 // signing.
@@ -888,8 +907,8 @@ func (commit *Commit) VoteBlockSignBytes(chainID string, valIdx int32) []byte {
 // Panics if valIdx >= commit.Size().
 //
 // See VoteSignBytes
-func (commit *Commit) VoteStateSignBytes(chainID string, valIdx int32) []byte {
-	v := commit.GetVote(valIdx).ToProto()
+func (commit *Commit) VoteStateSignBytes(chainID string) []byte {
+	v := commit.GetCanonicalVote().ToProto()
 	return VoteStateSignBytes(chainID, v)
 }
 
