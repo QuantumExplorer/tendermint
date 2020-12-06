@@ -534,7 +534,7 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	}{
 		{"good", chainID, vote.BlockID, vote.StateID, vote.Height, commit, false},
 
-		{"wrong block signature", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
+		{"incorrect threshold block signature", "EpsilonEridani", vote.BlockID, vote.StateID, vote.Height, commit, true},
 		{"wrong block ID", chainID, makeBlockIDRandom(), vote.StateID, vote.Height, commit, true},
 		{"wrong height", chainID, vote.BlockID, vote.StateID, vote.Height - 1, commit, true},
 
@@ -546,9 +546,9 @@ func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 				[]CommitSig{vote.CommitSig(), {BlockIDFlag: BlockIDFlagAbsent}}, nil, nil), true},
 
 		{"insufficient voting power: got 0, needed more than 66", chainID, vote.BlockID, vote.StateID, vote.Height,
-			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}, nil, nil), true},
+			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{{BlockIDFlag: BlockIDFlagAbsent}}, vote.BlockSignature, vote.StateSignature), true},
 
-		{"wrong block signature", chainID, vote.BlockID, vote.StateID, vote.Height,
+		{"incorrect threshold block signature", chainID, vote.BlockID, vote.StateID, vote.Height,
 			NewCommit(vote.Height, vote.Round, vote.BlockID, vote.StateID, []CommitSig{vote2.CommitSig()}, vote2.BlockSignature, vote2.StateSignature), true},
 	}
 

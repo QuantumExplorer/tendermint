@@ -907,9 +907,23 @@ func (commit *Commit) CanonicalVoteVerifySignBytes(chainID string) []byte {
 // Panics if valIdx >= commit.Size().
 //
 // See VoteSignBytes
-func (commit *Commit) VoteStateSignBytes(chainID string) []byte {
-	v := commit.GetCanonicalVote().ToProto()
-	return VoteStateSignBytes(chainID, v)
+func (commit *Commit) VoteStateSignBytes(chainID string, valIdx int32) []byte {
+	v := commit.GetCanonicalVote()
+	//if the block id is absent or nil the state id should be empty
+	commitSig := commit.Signatures[valIdx]
+	v.StateID = commitSig.StateID(commit.StateID)
+	return VoteStateSignBytes(chainID, v.ToProto())
+}
+
+// VoteStateSignBytes returns the bytes of the State corresponding to valIdx for
+// signing.
+//
+// Panics if valIdx >= commit.Size().
+//
+// See VoteSignBytes
+func (commit *Commit) CanonicalVoteStateSignBytes(chainID string) []byte {
+	v := commit.GetCanonicalVote()
+	return VoteStateSignBytes(chainID, v.ToProto())
 }
 
 // Type returns the vote type of the commit, which is always VoteTypePrecommit

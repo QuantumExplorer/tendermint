@@ -54,7 +54,7 @@ type cleanupFunc func()
 var (
 	config                *cfg.Config // NOTE: must be reset for each _test.go file
 	consensusReplayConfig *cfg.Config
-	ensureTimeout         = time.Millisecond * 200000
+	ensureTimeout         = time.Millisecond * 200
 )
 
 func ensureDir(dir string, mode os.FileMode) {
@@ -799,8 +799,39 @@ func updateConsensusNetRemoveValidators(css []*State, height int64, removeValCou
 	}
 
 	validatorProTxHashes := currentValidators.GetProTxHashes()
-	removedValidatorProTxHashes := validatorProTxHashes[len(validatorProTxHashes) -removeValCount:]
-	validatorProTxHashes = validatorProTxHashes[:len(validatorProTxHashes) -removeValCount]
+	removedValidatorProTxHashes := validatorProTxHashes[len(validatorProTxHashes)-removeValCount:]
+	return updateConsensusNetRemoveValidatorsWithProTxHashes(css, height, removedValidatorProTxHashes, validate)
+}
+
+func updateConsensusNetRemoveValidatorsWithProTxHashes(css []*State, height int64, removalProTxHashes []crypto.ProTxHash, validate bool) ([]*types.Validator, []*types.Validator, crypto.PubKey) {
+	currentValidatorCount := len(css[0].Validators.Validators)
+	currentValidators := css[0].Validators
+
+	if validate {
+		for _, cssi := range css {
+			if len(cssi.Validators.Validators) != currentValidatorCount {
+				panic("they should all have the same initial validator count")
+			}
+			if !currentValidators.Equals(cssi.Validators) {
+				panic("all validators should be the same")
+			}
+		}
+	}
+
+	validatorProTxHashes := currentValidators.GetProTxHashes()
+	var newValidatorProTxHashes []crypto.ProTxHash
+	for _, validatorProTxHash := range validatorProTxHashes {
+		found := false
+		for _, removalProTxHash := range removalProTxHashes {
+			if bytes.Equal(validatorProTxHash,removalProTxHash) {
+				found = true
+			}
+		}
+		if !found {
+			newValidatorProTxHashes = append(newValidatorProTxHashes, validatorProTxHash)
+		}
+	}
+	validatorProTxHashes = newValidatorProTxHashes
 	sort.Sort(crypto.SortProTxHash(validatorProTxHashes))
 	//now that we have the list of all the protxhashes we need to regenerate the keys and the threshold public key
 	privKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(validatorProTxHashes)
@@ -808,7 +839,7 @@ func updateConsensusNetRemoveValidators(css []*State, height int64, removeValCou
 
 	var privVal types.PrivValidator
 	updatedValidators := make([]*types.Validator, len(validatorProTxHashes))
-	removedValidators := make([]*types.Validator, len(removedValidatorProTxHashes))
+	removedValidators := make([]*types.Validator, len(removalProTxHashes))
 	publicKeys := make([]crypto.PubKey, len(validatorProTxHashes))
 	validatorProTxHashesAsByteArray := make([][]byte, len(validatorProTxHashes))
 	for i, proTxHash := range validatorProTxHashes {
@@ -831,7 +862,7 @@ func updateConsensusNetRemoveValidators(css []*State, height int64, removeValCou
 			}
 		}
 	}
-	for i, proTxHash := range removedValidatorProTxHashes {
+	for i, proTxHash := range removalProTxHashes {
 		_, removedValidator := currentValidators.GetByProTxHash(proTxHash)
 		removedValidators[i] = removedValidator
 	}
