@@ -92,6 +92,7 @@ func (pv *MockPV) SignVote(chainID string, vote *tmproto.Vote) error {
 	blockSignBytes := VoteBlockSignBytes(useChainID, vote)
 	stateSignBytes := VoteStateSignBytes(useChainID, vote)
 	blockSignature, err := pv.PrivKey.Sign(blockSignBytes)
+	fmt.Printf("validator %X signing vote of type %d at height %d with key %X blockSignBytes %X\n", pv.ProTxHash, vote.Type, vote.Height, pv.PrivKey.PubKey().Bytes(), blockSignBytes)
 	//fmt.Printf("block sign bytes are %X by %X using key %X resulting in sig %X\n", blockSignBytes, pv.ProTxHash, pv.PrivKey.PubKey().Bytes(), blockSignature)
 	if err != nil {
 		return err
@@ -118,6 +119,7 @@ func (pv *MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 	}
 
 	signBytes := ProposalBlockSignBytes(useChainID, proposal)
+	fmt.Printf("proposer %X signing proposal at height %d with key %X proposalSignBytes %X\n", pv.ProTxHash, proposal.Height, pv.PrivKey.PubKey().Bytes(), signBytes)
 	sig, err := pv.PrivKey.Sign(signBytes)
 	if err != nil {
 		return err

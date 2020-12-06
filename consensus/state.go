@@ -1754,9 +1754,10 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 
 	p := proposal.ToProto()
 	// Verify signature
-	if !cs.Validators.GetProposer().PubKey.VerifySignature(
-		types.ProposalBlockSignBytes(cs.state.ChainID, p), proposal.Signature,
-	) {
+	proposalBlockSignBytes := types.ProposalBlockSignBytes(cs.state.ChainID, p)
+	proposer := cs.Validators.GetProposer()
+	fmt.Printf("validator %X verifying proposal signature %X at height %d with key %X blockSignBytes %X\n", proposer.ProTxHash, proposal.Signature, proposal.Height, proposer.PubKey.Bytes(), proposalBlockSignBytes)
+	if !proposer.PubKey.VerifySignature(proposalBlockSignBytes, proposal.Signature) {
 		return ErrInvalidProposalSignature
 	}
 
