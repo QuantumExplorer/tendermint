@@ -348,6 +348,7 @@ func (pv *FilePV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) erro
 
 func (pv *FilePV)updateKeyIfNeeded(height int64) {
 	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && pv.Key.NextPrivKeyHeights != nil && len(pv.Key.NextPrivKeyHeights) > 0 && height >= pv.Key.NextPrivKeyHeights[0] {
+		//fmt.Printf("privval file node %X at height %d updating key %X with new key %X\n", pv.Key.ProTxHash, height, pv.Key.PrivKey.PubKey().Bytes(), pv.Key.NextPrivKeys[0].PubKey().Bytes())
 		pv.Key.PrivKey = pv.Key.NextPrivKeys[0]
 		if len(pv.Key.NextPrivKeys) > 1 {
 			pv.Key.NextPrivKeys = pv.Key.NextPrivKeys[1:]
@@ -357,6 +358,9 @@ func (pv *FilePV)updateKeyIfNeeded(height int64) {
 			pv.Key.NextPrivKeyHeights = nil
 		}
 	}
+	//else {
+		//fmt.Printf("privval file node %X at height %d did not update key %X with next keys %v\n", pv.Key.ProTxHash, height, pv.Key.PrivKey.PubKey().Bytes(), pv.Key.NextPrivKeyHeights)
+	//}
 }
 
 //------------------------------------------------------------------------------------
@@ -451,7 +455,7 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	if err != nil {
 		return err
 	}
-	fmt.Printf("proposer %X signing proposal at height %d with key %X proposalSignBytes %X\n", pv.Key.ProTxHash, proposal.Height, pv.Key.PrivKey.PubKey().Bytes(), blockSig)
+	//fmt.Printf("proposer %X signing proposal at height %d with key %X proposalSignBytes %X\n", pv.Key.ProTxHash, proposal.Height, pv.Key.PrivKey.PubKey().Bytes(), blockSig)
 
 	pv.saveSigned(height, round, step, blockSignBytes, blockSig, nil, nil)
 	proposal.Signature = blockSig

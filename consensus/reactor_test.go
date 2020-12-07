@@ -333,7 +333,7 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	//css contains all peers, the first 4 here are validators, so we will take the 5th peer and add it as a validator
 
-	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, css[0].Height, 1, true)
+	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, 2, 1, true)
 
 	updateTransactions := make([][]byte, len(updatedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
@@ -362,14 +362,14 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	// the commits for block 4 should be with the updated validator set
 	activeVals[string(newValidatorProTxHashes[0])] = struct{}{}
 
-	// wait till everyone makes block 5
+	// wait till everyone makes block 6
 	// it includes the commit for block 4, which should have the updated validator set
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing adding two validators at once")
 
-	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, css[0].Height, 2, true)
+	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, 7, 2, true)
 
 	updateTransactions2 := make([][]byte, len(updatedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
@@ -382,17 +382,21 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	require.NoError(t, err)
 	updateTransactions2[len(updatedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
+	//block 7
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateTransactions2...)
+	//block 8
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateTransactions2...)
+	//block 9
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	activeVals[string(newValidatorProTxHashes[0])] = struct{}{}
 	activeVals[string(newValidatorProTxHashes[1])] = struct{}{}
+	// block 11
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 
 	//---------------------------------------------------------------------------
 	logger.Info("---------------------------- Testing removing two validators at once")
 
-	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, css[0].Height, 2, true)
+	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, 12, 2, true)
 
 	updateTransactions3 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
 	for i:=0; i<len(updatedValidators); i++ {
@@ -411,11 +415,15 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 	require.NoError(t, err)
 	updateTransactions3[len(updatedValidators) + len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
+	// block 12
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateTransactions3...)
+	// block 13
 	waitForAndValidateBlockWithTx(t, nPeers, activeVals, blocksSubs, css, updateTransactions3...)
+	// block 14
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css)
 	delete(activeVals, string(removedValidators[0].ProTxHash))
 	delete(activeVals, string(removedValidators[1].ProTxHash))
+	// block 16
 	waitForBlockWithUpdatedValsAndValidateIt(t, nPeers, activeVals, blocksSubs, css)
 }
 

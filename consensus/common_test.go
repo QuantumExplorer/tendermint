@@ -757,7 +757,7 @@ func updateConsensusNetAddNewValidators(css []*State, height int64, addValCount 
 			panic(err)
 		}
 		for j, proTxHash := range validatorProTxHashes {
-			if bytes.Equal(privValProTxHash.Bytes(),proTxHash.Bytes()) {
+			if bytes.Equal(privValProTxHash.Bytes(), proTxHash.Bytes()) {
 				privVal.UpdatePrivateKey(privKeys[j], height + 3)
 				updatedValidators[j] = privVal.ExtractIntoValidator(height + 3)
 				publicKeys[j] = privKeys[j].PubKey()
