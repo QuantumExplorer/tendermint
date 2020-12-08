@@ -1194,12 +1194,12 @@ func randTestVSetCfg(t *testing.T, nBase, nAddMax int) testVSetCfg {
 	cfg.expectedVals = make([]testVal, nBase-nDel+nAdd)
 
 	for i := 0; i < nBase; i++ {
-		cfg.startVals[i] = testVal{fmt.Sprintf("v%d", i), int64(tmrand.Uint()%maxPower + 1)}
+		cfg.startVals[i] = testVal{fmt.Sprintf("v%d", i), DefaultDashVotingPower}
 		if i < nOld {
 			cfg.expectedVals[i] = cfg.startVals[i]
 		}
 		if i >= nOld && i < nOld+nChanged {
-			cfg.updatedVals[i-nOld] = testVal{fmt.Sprintf("v%d", i), int64(tmrand.Uint()%maxPower + 1)}
+			cfg.updatedVals[i-nOld] = testVal{fmt.Sprintf("v%d", i), DefaultDashVotingPower}
 			cfg.expectedVals[i] = cfg.updatedVals[i-nOld]
 		}
 		if i >= nOld+nChanged {
@@ -1208,7 +1208,7 @@ func randTestVSetCfg(t *testing.T, nBase, nAddMax int) testVSetCfg {
 	}
 
 	for i := nBase; i < nBase+nAdd; i++ {
-		cfg.addedVals[i-nBase] = testVal{fmt.Sprintf("v%d", i), int64(tmrand.Uint()%maxPower + 1)}
+		cfg.addedVals[i-nBase] = testVal{fmt.Sprintf("v%d", i), DefaultDashVotingPower}
 		cfg.expectedVals[i-nDel] = cfg.addedVals[i-nBase]
 	}
 
@@ -1265,15 +1265,15 @@ func TestValSetUpdatePriorityOrderTests(t *testing.T) {
 		// generate a configuration with 100 validators,
 		// randomly select validators for updates and deletes, and
 		// generate 10 new validators to be added
-		//3: randTestVSetCfg(t, 100, 10),
+		3: randTestVSetCfg(t, 100, 10),
 		//
-		//4: randTestVSetCfg(t, 1000, 100),
+		4: randTestVSetCfg(t, 1000, 100),
 		//
-		//5: randTestVSetCfg(t, 10, 100),
+		5: randTestVSetCfg(t, 10, 100),
 		//
-		//6: randTestVSetCfg(t, 100, 1000),
+		6: randTestVSetCfg(t, 100, 1000),
 		//
-		//7: randTestVSetCfg(t, 1000, 1000),
+		7: randTestVSetCfg(t, 1000, 1000),
 	}
 
 	for i, cfg := range testCases {
