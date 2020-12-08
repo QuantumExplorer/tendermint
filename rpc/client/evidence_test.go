@@ -3,9 +3,10 @@ package client_test
 import (
 	"bytes"
 	"context"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,10 +62,10 @@ func makeEvidences(
 ) (correct *types.DuplicateVoteEvidence, fakes []*types.DuplicateVoteEvidence) {
 	vote := types.Vote{
 		ValidatorProTxHash: val.Key.ProTxHash,
-		ValidatorIndex:   0,
-		Height:           1,
-		Round:            0,
-		Type:             tmproto.PrevoteType,
+		ValidatorIndex:     0,
+		Height:             1,
+		Round:              0,
+		Type:               tmproto.PrevoteType,
 		BlockID: types.BlockID{
 			Hash: tmhash.Sum(tmrand.Bytes(tmhash.Size)),
 			PartSetHeader: types.PartSetHeader{

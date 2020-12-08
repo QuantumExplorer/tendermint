@@ -1,10 +1,11 @@
 package state_test
 
 import (
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/tmhash"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -190,12 +191,12 @@ func TestValidateBlockCommit(t *testing.T) {
 
 		badVote := &types.Vote{
 			ValidatorProTxHash: bpvProTxHash,
-			ValidatorIndex:   0,
-			Height:           height,
-			Round:            0,
-			Type:             tmproto.PrecommitType,
-			BlockID:          blockID,
-			StateID:          stateID,
+			ValidatorIndex:     0,
+			Height:             height,
+			Round:              0,
+			Type:               tmproto.PrecommitType,
+			BlockID:            blockID,
+			StateID:            stateID,
 		}
 
 		g := goodVote.ToProto()

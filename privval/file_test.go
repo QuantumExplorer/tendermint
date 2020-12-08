@@ -3,12 +3,13 @@ package privval
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -310,21 +311,21 @@ func newVote(proTxHash types.ProTxHash, idx int32, height int64, round int32,
 	typ tmproto.SignedMsgType, blockID types.BlockID, stateID types.StateID) *types.Vote {
 	return &types.Vote{
 		ValidatorProTxHash: proTxHash,
-		ValidatorIndex:   idx,
-		Height:           height,
-		Round:            round,
-		Type:             typ,
-		BlockID:          blockID,
-		StateID:		  stateID,
+		ValidatorIndex:     idx,
+		Height:             height,
+		Round:              round,
+		Type:               typ,
+		BlockID:            blockID,
+		StateID:            stateID,
 	}
 }
 
 func newProposal(height int64, coreChainLockedHeight uint32, round int32, blockID types.BlockID) *types.Proposal {
 	return &types.Proposal{
-		Height:    height,
+		Height:                height,
 		CoreChainLockedHeight: coreChainLockedHeight,
-		Round:     round,
-		BlockID:   blockID,
-		Timestamp: tmtime.Now(),
+		Round:                 round,
+		BlockID:               blockID,
+		Timestamp:             tmtime.Now(),
 	}
 }

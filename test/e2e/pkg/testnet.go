@@ -4,7 +4,6 @@ package e2e
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io"
 	"math/rand"
 	"net"
@@ -12,6 +11,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"

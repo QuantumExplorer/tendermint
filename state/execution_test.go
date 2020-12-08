@@ -3,10 +3,11 @@ package state_test
 import (
 	"bytes"
 	"context"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -156,10 +157,10 @@ func TestBeginBlockByzantineValidators(t *testing.T) {
 	dve := types.NewMockDuplicateVoteEvidenceWithValidator(3, defaultEvidenceTime, privVal, state.ChainID)
 	dve.ValidatorPower = types.DefaultDashVotingPower
 	commitSig := []types.CommitSig{{
-		BlockIDFlag:      types.BlockIDFlagNil,
+		BlockIDFlag:        types.BlockIDFlagNil,
 		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_address")),
-		BlockSignature:        crypto.CRandBytes(types.MaxSignatureSize),
-		StateSignature:        crypto.CRandBytes(types.MaxSignatureSize),
+		BlockSignature:     crypto.CRandBytes(types.MaxSignatureSize),
+		StateSignature:     crypto.CRandBytes(types.MaxSignatureSize),
 	}}
 	lcae := &types.LightClientAttackEvidence{
 		ConflictingBlock: &types.LightBlock{
@@ -282,14 +283,14 @@ func TestUpdateValidators(t *testing.T) {
 	validatorSet, _ := types.GenerateValidatorSet(4)
 	originalProTxHashes := validatorSet.GetProTxHashes()
 	addedProTxHashes := bls12381.CreateProTxHashes(4)
-	combinedProTxHashes := append(originalProTxHashes,addedProTxHashes...)
+	combinedProTxHashes := append(originalProTxHashes, addedProTxHashes...)
 	combinedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(combinedProTxHashes)
 	regeneratedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(combinedProTxHashes)
 	abciRegeneratedValidatorUpdates := regeneratedValidatorSet.ABCIEquivalentValidatorUpdates()
-	removedProTxHashes := combinedValidatorSet.GetProTxHashes()[0:len(combinedProTxHashes)-2] //these are sorted
-	removedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(removedProTxHashes) //size 6
+	removedProTxHashes := combinedValidatorSet.GetProTxHashes()[0 : len(combinedProTxHashes)-2] //these are sorted
+	removedValidatorSet, _ := types.GenerateValidatorSetUsingProTxHashes(removedProTxHashes)    //size 6
 	abciRemovalValidatorUpdates := removedValidatorSet.ABCIEquivalentValidatorUpdates()
-	abciRemovalValidatorUpdates.ValidatorUpdates = append(abciRemovalValidatorUpdates.ValidatorUpdates,abciRegeneratedValidatorUpdates.ValidatorUpdates[6:]...)
+	abciRemovalValidatorUpdates.ValidatorUpdates = append(abciRemovalValidatorUpdates.ValidatorUpdates, abciRegeneratedValidatorUpdates.ValidatorUpdates[6:]...)
 	abciRemovalValidatorUpdates.ValidatorUpdates[6].Power = 0
 	abciRemovalValidatorUpdates.ValidatorUpdates[7].Power = 0
 
@@ -300,8 +301,8 @@ func TestUpdateValidators(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		currentSet  *types.ValidatorSet
-		abciUpdates *abci.ValidatorSetUpdate
+		currentSet               *types.ValidatorSet
+		abciUpdates              *abci.ValidatorSetUpdate
 		thresholdPublicKeyUpdate crypto.PubKey
 
 		resultingSet *types.ValidatorSet
@@ -335,7 +336,7 @@ func TestUpdateValidators(t *testing.T) {
 			"removing a non-existing validator results in error",
 			removedValidatorSet,
 			&abci.ValidatorSetUpdate{
-				ValidatorUpdates: []abci.ValidatorUpdate{{ProTxHash: crypto.RandProTxHash(), PubKey: pk, Power: 0}},
+				ValidatorUpdates:   []abci.ValidatorUpdate{{ProTxHash: crypto.RandProTxHash(), PubKey: pk, Power: 0}},
 				ThresholdPublicKey: pk,
 			},
 			removedValidatorSet.ThresholdPublicKey,
@@ -412,7 +413,7 @@ func TestEndBlockValidatorUpdates(t *testing.T) {
 	newVals, _ := types.GenerateValidatorSetUsingProTxHashes(proTxHashes)
 	var pos int
 	for i, proTxHash := range newVals.GetProTxHashes() {
-		if bytes.Equal(proTxHash.Bytes(),addProTxHash.Bytes()) {
+		if bytes.Equal(proTxHash.Bytes(), addProTxHash.Bytes()) {
 			pos = i
 		}
 	}
@@ -475,10 +476,10 @@ func TestEndBlockValidatorUpdatesResultingInEmptySet(t *testing.T) {
 	require.NoError(t, err)
 	// Remove the only validator
 	validatorUpdates := []abci.ValidatorUpdate{
-		{PubKey:publicKey, ProTxHash: proTxHash, Power: 0},
+		{PubKey: publicKey, ProTxHash: proTxHash, Power: 0},
 	}
 	app.ValidatorSetUpdate = &abci.ValidatorSetUpdate{
-		ValidatorUpdates: validatorUpdates,
+		ValidatorUpdates:   validatorUpdates,
 		ThresholdPublicKey: publicKey,
 	}
 
@@ -505,7 +506,7 @@ func makeBlockID(hash []byte, partSetSize uint32, partSetHash []byte) types.Bloc
 
 func makeStateID(lastAppHash []byte) types.StateID {
 	var (
-		h   = make([]byte, tmhash.Size)
+		h = make([]byte, tmhash.Size)
 	)
 	copy(h, lastAppHash)
 	return types.StateID{

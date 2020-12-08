@@ -15,7 +15,7 @@ import (
 var (
 	valEd25519   = []string{ABCIPubKeyTypeEd25519}
 	valSecp256k1 = []string{ABCIPubKeyTypeSecp256k1}
-	valBLS12381 = []string{ABCIPubKeyTypeBLS12381}
+	valBLS12381  = []string{ABCIPubKeyTypeBLS12381}
 )
 
 func TestConsensusParamsValidation(t *testing.T) {

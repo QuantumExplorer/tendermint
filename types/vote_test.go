@@ -1,11 +1,12 @@
 package types
 
 import (
+	"testing"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/bls12381"
-	"testing"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -23,9 +24,9 @@ func examplePrecommit() *Vote {
 
 func exampleVote(t byte) *Vote {
 	return &Vote{
-		Type:      tmproto.SignedMsgType(t),
-		Height:    12345,
-		Round:     2,
+		Type:   tmproto.SignedMsgType(t),
+		Height: 12345,
+		Round:  2,
 		BlockID: BlockID{
 			Hash: tmhash.Sum([]byte("blockID_hash")),
 			PartSetHeader: PartSetHeader{
@@ -37,7 +38,7 @@ func exampleVote(t byte) *Vote {
 			LastAppHash: tmhash.Sum([]byte("lastAppState_hash")),
 		},
 		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
-		ValidatorIndex:   56789,
+		ValidatorIndex:     56789,
 	}
 }
 
@@ -75,7 +76,7 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // height
 				0x19,                                   // (field_number << 3) | wire_type
 				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // round
-				},
+			},
 		},
 		// with proper (fixed size) height and round (PreVote):
 		2: {
@@ -88,7 +89,7 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // height
 				0x19,                                   // (field_number << 3) | wire_type
 				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // round
-				},
+			},
 		},
 		3: {
 			"", &Vote{Height: 1, Round: 1},
@@ -98,7 +99,7 @@ func TestVoteSignBytesTestVectors(t *testing.T) {
 				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // height
 				0x19,                                   // (field_number << 3) | wire_type
 				0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, // round
-				},
+			},
 		},
 		// containing non-empty chain_id:
 		4: {
@@ -214,7 +215,6 @@ func TestVoteVerify(t *testing.T) {
 		assert.Equal(t, ErrVoteInvalidSignature, err)
 	}
 }
-
 
 func TestVoteString(t *testing.T) {
 	str := examplePrecommit().String()

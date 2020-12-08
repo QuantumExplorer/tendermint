@@ -7,6 +7,7 @@ import (
 const (
 	maxClockDrift = 10 * time.Second
 )
+
 //
 //func TestVerifyAdjacentHeaders(t *testing.T) {
 //	const (

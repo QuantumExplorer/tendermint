@@ -33,10 +33,10 @@ type cleanupFunc func()
 // make a Commit with a single vote containing just the height and a timestamp
 func makeTestCommit(height int64, timestamp time.Time) *types.Commit {
 	commitSigs := []types.CommitSig{{
-		BlockIDFlag:      types.BlockIDFlagCommit,
+		BlockIDFlag:        types.BlockIDFlagCommit,
 		ValidatorProTxHash: tmrand.Bytes(crypto.DefaultHashSize),
-		BlockSignature:        []byte("BlockSignature"),
-		StateSignature:        []byte("StateSignature"),
+		BlockSignature:     []byte("BlockSignature"),
+		StateSignature:     []byte("StateSignature"),
 	}}
 	return types.NewCommit(height, 0,
 		types.BlockID{Hash: []byte(""), PartSetHeader: types.PartSetHeader{Hash: []byte(""), Total: 2}}, types.StateID{LastAppHash: make([]byte, 32)}, commitSigs, commitSigs[0].BlockSignature, commitSigs[0].StateSignature)
@@ -185,10 +185,10 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 	require.Error(t, err)
 
 	header1 := types.Header{
-		Version:         tmversion.Consensus{Block: version.BlockProtocol},
-		Height:          1,
-		ChainID:         "block_test",
-		Time:            tmtime.Now(),
+		Version:           tmversion.Consensus{Block: version.BlockProtocol},
+		Height:            1,
+		ChainID:           "block_test",
+		Time:              tmtime.Now(),
 		ProposerProTxHash: tmrand.Bytes(crypto.DefaultHashSize),
 	}
 
@@ -222,10 +222,10 @@ func TestBlockStoreSaveLoadBlock(t *testing.T) {
 		{
 			block: newBlock( // New block at height 5 in empty block store is fine
 				types.Header{
-					Version:         tmversion.Consensus{Block: version.BlockProtocol},
-					Height:          5,
-					ChainID:         "block_test",
-					Time:            tmtime.Now(),
+					Version:           tmversion.Consensus{Block: version.BlockProtocol},
+					Height:            5,
+					ChainID:           "block_test",
+					Time:              tmtime.Now(),
 					ProposerProTxHash: tmrand.Bytes(crypto.DefaultHashSize)},
 				makeTestCommit(5, tmtime.Now()),
 			),

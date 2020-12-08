@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,6 +11,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/go-kit/kit/log/term"
 	"github.com/stretchr/testify/require"
@@ -733,8 +734,8 @@ func updateConsensusNetAddNewValidators(css []*State, height int64, addValCount 
 
 	validatorProTxHashes := currentValidators.GetProTxHashes()
 	newValidatorProTxHashes := make([]crypto.ProTxHash, addValCount)
-	for i := 0; i< addValCount; i++ {
-		proTxHash, err := css[currentValidatorCount + i].privValidator.GetProTxHash()
+	for i := 0; i < addValCount; i++ {
+		proTxHash, err := css[currentValidatorCount+i].privValidator.GetProTxHash()
 		if err != nil {
 			panic(err)
 		}
@@ -750,7 +751,7 @@ func updateConsensusNetAddNewValidators(css []*State, height int64, addValCount 
 	updatedValidators := make([]*types.Validator, len(validatorProTxHashes))
 	publicKeys := make([]crypto.PubKey, len(validatorProTxHashes))
 	validatorProTxHashesAsByteArray := make([][]byte, len(validatorProTxHashes))
-	for i := 0; i<len(validatorProTxHashes);i++ {
+	for i := 0; i < len(validatorProTxHashes); i++ {
 		privVal = css[i].privValidator
 		privValProTxHash, err := privVal.GetProTxHash()
 		if err != nil {
@@ -758,7 +759,7 @@ func updateConsensusNetAddNewValidators(css []*State, height int64, addValCount 
 		}
 		for j, proTxHash := range validatorProTxHashes {
 			if bytes.Equal(privValProTxHash.Bytes(), proTxHash.Bytes()) {
-				privVal.UpdatePrivateKey(privKeys[j], height + 3)
+				privVal.UpdatePrivateKey(privKeys[j], height+3)
 				updatedValidators[j] = privVal.ExtractIntoValidator(height + 3)
 				publicKeys[j] = privKeys[j].PubKey()
 				if !bytes.Equal(updatedValidators[j].PubKey.Bytes(), publicKeys[j].Bytes()) {
@@ -823,7 +824,7 @@ func updateConsensusNetRemoveValidatorsWithProTxHashes(css []*State, height int6
 	for _, validatorProTxHash := range validatorProTxHashes {
 		found := false
 		for _, removalProTxHash := range removalProTxHashes {
-			if bytes.Equal(validatorProTxHash,removalProTxHash) {
+			if bytes.Equal(validatorProTxHash, removalProTxHash) {
 				found = true
 			}
 		}
@@ -851,7 +852,7 @@ func updateConsensusNetRemoveValidatorsWithProTxHashes(css []*State, height int6
 			if bytes.Equal(stateProTxHash.Bytes(), proTxHash.Bytes()) {
 				//we found the prival
 				privVal = state.privValidator
-				privVal.UpdatePrivateKey(privKeys[i], height + 3)
+				privVal.UpdatePrivateKey(privKeys[i], height+3)
 				updatedValidators[i] = privVal.ExtractIntoValidator(height + 3)
 				publicKeys[i] = privKeys[i].PubKey()
 				if !bytes.Equal(updatedValidators[i].PubKey.Bytes(), publicKeys[i].Bytes()) {
@@ -957,8 +958,8 @@ func randGenesisDoc(numValidators int, randPower bool, minPower int64) (*types.G
 	for i := 0; i < numValidators; i++ {
 		val := types.NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
 		validators[i] = types.GenesisValidator{
-			PubKey: val.PubKey,
-			Power:  val.VotingPower,
+			PubKey:    val.PubKey,
+			Power:     val.VotingPower,
 			ProTxHash: val.ProTxHash,
 		}
 		privValidators[i] = types.NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)

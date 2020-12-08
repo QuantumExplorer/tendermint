@@ -2,8 +2,9 @@ package e2e_test
 
 import (
 	"bytes"
-	"github.com/tendermint/tendermint/crypto"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto"
 
 	"github.com/stretchr/testify/require"
 
@@ -138,7 +139,7 @@ type validatorSchedule struct {
 }
 
 func newValidatorSchedule(testnet e2e.Testnet) *validatorSchedule {
-	valMap := testnet.Validators                  // genesis validators
+	valMap := testnet.Validators // genesis validators
 	thresholdPublicKey := testnet.ThresholdPublicKey
 	if thresholdPublicKey == nil {
 		panic("threshold public key must be set")
@@ -171,7 +172,7 @@ func (s *validatorSchedule) Increment(heights int64) {
 
 func makeVals(valMap map[*e2e.Node]int64) []*types.Validator {
 	vals := make([]*types.Validator, 0, len(valMap))
-	for node, _ := range valMap {
+	for node := range valMap {
 		vals = append(vals, types.NewValidatorDefaultVotingPower(node.PrivvalKey.PubKey(), node.ProTxHash))
 	}
 	return vals

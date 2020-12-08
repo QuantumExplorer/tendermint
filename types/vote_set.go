@@ -3,8 +3,9 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"strings"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/libs/bits"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -60,11 +61,11 @@ type P2PID string
 	NOTE: Assumes that the sum total of voting power does not exceed MaxUInt64.
 */
 type VoteSet struct {
-	chainID           string
-	height            int64
-	round             int32
-	signedMsgType     tmproto.SignedMsgType
-	valSet            *ValidatorSet
+	chainID       string
+	height        int64
+	round         int32
+	signedMsgType tmproto.SignedMsgType
+	valSet        *ValidatorSet
 
 	mtx               tmsync.Mutex
 	votesBitArray     *bits.BitArray
@@ -72,7 +73,7 @@ type VoteSet struct {
 	sum               int64                  // Sum of voting power for seen votes, discounting conflicts
 	maj23             *BlockID               // First 2/3 majority seen
 	stateMaj23        *StateID               // If a 2/3 majority is seen, this is the stateID
-	thresholdBlockSig []byte				 // If a 2/3 majority is seen, recover the block sig
+	thresholdBlockSig []byte                 // If a 2/3 majority is seen, recover the block sig
 	thresholdStateSig []byte                 // If a 2/3 majority is seen, recover the state sig
 	votesByBlock      map[string]*blockVotes // string(blockHash|blockParts) -> blockVotes
 	peerMaj23s        map[P2PID]BlockID      // Maj23 for each peer

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmversion "github.com/tendermint/tendermint/proto/tendermint/version"
 	"github.com/tendermint/tendermint/version"
@@ -69,7 +70,7 @@ func MakeVote(
 		Round:              0,
 		Type:               tmproto.PrecommitType,
 		BlockID:            blockID,
-		StateID:		    stateID,
+		StateID:            stateID,
 	}
 	v := vote.ToProto()
 
@@ -89,8 +90,8 @@ func MakeVote(
 func MakeBlock(height int64, coreChainLockedHeight uint32, coreChainLock *CoreChainLock, txs []Tx, lastCommit *Commit, evidence []Evidence) *Block {
 	block := &Block{
 		Header: Header{
-			Version: tmversion.Consensus{Block: version.BlockProtocol, App: 0},
-			Height: height,
+			Version:               tmversion.Consensus{Block: version.BlockProtocol, App: 0},
+			Height:                height,
 			CoreChainLockedHeight: coreChainLockedHeight,
 		},
 		CoreChainLock: coreChainLock,

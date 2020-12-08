@@ -27,12 +27,12 @@ func TestVoteSet_AddVote_Good(t *testing.T) {
 
 	vote := &Vote{
 		ValidatorProTxHash: val0ProTxHash,
-		ValidatorIndex:   0, // since privValidators are in order
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrevoteType,
-		BlockID:          BlockID{nil, PartSetHeader{}},
-		StateID:          StateID{ LastAppHash: nil},
+		ValidatorIndex:     0, // since privValidators are in order
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrevoteType,
+		BlockID:            BlockID{nil, PartSetHeader{}},
+		StateID:            StateID{LastAppHash: nil},
 	}
 	_, err = signAddVote(val0, vote, voteSet)
 	require.NoError(t, err)
@@ -49,12 +49,12 @@ func TestVoteSet_AddVote_Bad(t *testing.T) {
 
 	voteProto := &Vote{
 		ValidatorProTxHash: nil,
-		ValidatorIndex:   -1,
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrevoteType,
-		BlockID:          BlockID{nil, PartSetHeader{}},
-		StateID:          StateID{ LastAppHash: nil},
+		ValidatorIndex:     -1,
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrevoteType,
+		BlockID:            BlockID{nil, PartSetHeader{}},
+		StateID:            StateID{LastAppHash: nil},
 	}
 
 	// val0 votes for nil.
@@ -119,12 +119,12 @@ func TestVoteSet_2_3Majority(t *testing.T) {
 
 	voteProto := &Vote{
 		ValidatorProTxHash: nil, // NOTE: must fill in
-		ValidatorIndex:   -1,  // NOTE: must fill in
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrevoteType,
-		BlockID:          BlockID{nil, PartSetHeader{}},
-		StateID:          StateID{ LastAppHash: nil},
+		ValidatorIndex:     -1,  // NOTE: must fill in
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrevoteType,
+		BlockID:            BlockID{nil, PartSetHeader{}},
+		StateID:            StateID{LastAppHash: nil},
 	}
 	// 6 out of 10 voted for nil.
 	for i := int32(0); i < 6; i++ {
@@ -171,12 +171,12 @@ func TestVoteSet_2_3MajorityRedux(t *testing.T) {
 
 	voteProto := &Vote{
 		ValidatorProTxHash: nil, // NOTE: must fill in
-		ValidatorIndex:   -1,  // NOTE: must fill in
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrevoteType,
-		BlockID:          BlockID{blockHash, blockPartSetHeader},
-		StateID:          StateID{ stateHash},
+		ValidatorIndex:     -1,  // NOTE: must fill in
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrevoteType,
+		BlockID:            BlockID{blockHash, blockPartSetHeader},
+		StateID:            StateID{stateHash},
 	}
 
 	// 66 out of 100 voted for nil.
@@ -262,12 +262,12 @@ func TestVoteSet_Conflicts(t *testing.T) {
 
 	voteProto := &Vote{
 		ValidatorProTxHash: nil,
-		ValidatorIndex:   -1,
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrevoteType,
-		BlockID:          BlockID{nil, PartSetHeader{}},
-		StateID:          StateID{nil},
+		ValidatorIndex:     -1,
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrevoteType,
+		BlockID:            BlockID{nil, PartSetHeader{}},
+		StateID:            StateID{nil},
 	}
 
 	val0ProTxHash, err := privValidators[0].GetProTxHash()
@@ -387,12 +387,12 @@ func TestVoteSet_MakeCommit(t *testing.T) {
 
 	voteProto := &Vote{
 		ValidatorProTxHash: nil,
-		ValidatorIndex:   -1,
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrecommitType,
-		BlockID:          BlockID{blockHash, blockPartSetHeader},
-		StateID:          StateID{stateHash},
+		ValidatorIndex:     -1,
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrecommitType,
+		BlockID:            BlockID{blockHash, blockPartSetHeader},
+		StateID:            StateID{stateHash},
 	}
 
 	// 6 out of 10 voted for some block.

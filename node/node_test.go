@@ -3,12 +3,13 @@ package node
 import (
 	"context"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"net"
 	"os"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -417,10 +418,10 @@ func state(nVals int, height int64) (sm.State, dbm.DB, []types.PrivValidator) {
 		vals[i].Name = fmt.Sprintf("test%d", i)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
-		ChainID:    "test-chain",
-		Validators: vals,
+		ChainID:            "test-chain",
+		Validators:         vals,
 		ThresholdPublicKey: thresholdPublicKey,
-		AppHash:    nil,
+		AppHash:            nil,
 	})
 
 	// save validators to db for 2 heights

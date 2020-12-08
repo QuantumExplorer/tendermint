@@ -244,7 +244,7 @@ func TestEvidencePoolUpdate(t *testing.T) {
 		coreChainLockHeight = coreChainLock.CoreBlockHeight
 	}
 
-	block := types.MakeBlock(height + 1, coreChainLockHeight, coreChainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
+	block := types.MakeBlock(height+1, coreChainLockHeight, coreChainLock, []types.Tx{}, lastCommit, []types.Evidence{ev})
 	// update state (partially)
 	state.LastBlockHeight = height + 1
 	state.LastBlockTime = defaultEvidenceTime.Add(22 * time.Minute)
@@ -453,16 +453,16 @@ func initializeStateFromValidatorSet(valSet *types.ValidatorSet, height int64) s
 
 func initializeValidatorState(privVal types.PrivValidator, height int64) sm.Store {
 	pubKey, _ := privVal.GetPubKey()
-    proTxHash, _ := privVal.GetProTxHash()
-    if len(proTxHash) != 32 {
-    	panic("proTxHash len not correct")
+	proTxHash, _ := privVal.GetProTxHash()
+	if len(proTxHash) != 32 {
+		panic("proTxHash len not correct")
 	}
 	validator := &types.Validator{Address: pubKey.Address(), VotingPower: types.DefaultDashVotingPower, PubKey: pubKey, ProTxHash: proTxHash}
 
 	// create validator set and state
 	valSet := &types.ValidatorSet{
-		Validators: []*types.Validator{validator},
-		Proposer:   validator,
+		Validators:         []*types.Validator{validator},
+		Proposer:           validator,
 		ThresholdPublicKey: validator.PubKey,
 	}
 
@@ -492,10 +492,10 @@ func initializeBlockStore(db dbm.DB, state sm.State, valProTxHash []byte) *store
 
 func makeCommit(height int64, valProTxHash []byte) *types.Commit {
 	commitSigs := []types.CommitSig{{
-		BlockIDFlag:      types.BlockIDFlagCommit,
+		BlockIDFlag:        types.BlockIDFlagCommit,
 		ValidatorProTxHash: valProTxHash,
-		BlockSignature:   []byte("BlockSignature"),
-		StateSignature:   []byte("StateSignature"),
+		BlockSignature:     []byte("BlockSignature"),
+		StateSignature:     []byte("StateSignature"),
 	}}
 	return types.NewCommit(height, 0, types.BlockID{}, types.StateID{}, commitSigs, commitSigs[0].BlockSignature, commitSigs[0].StateSignature)
 }

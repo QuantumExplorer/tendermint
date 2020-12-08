@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	ValidatorSetChangePrefix string = "val:"
+	ValidatorSetChangePrefix                string = "val:"
 	ValidatorThresholdPublicKeyChangePrefix string = "tpk:"
-	ValidatorThresholdPublicKeyPrefix string = "tpk"
+	ValidatorThresholdPublicKeyPrefix       string = "tpk"
 )
 
 //-----------------------------------------
@@ -46,9 +46,9 @@ func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication
 	state := loadState(db)
 
 	return &PersistentKVStoreApplication{
-		app:                &Application{state: state},
+		app:                     &Application{state: state},
 		valProTxHashToPubKeyMap: make(map[string]pc.PublicKey),
-		logger:             log.NewNopLogger(),
+		logger:                  log.NewNopLogger(),
 	}
 }
 

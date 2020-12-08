@@ -335,8 +335,8 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, 2, 1, true)
 
-	updateTransactions := make([][]byte, len(updatedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions := make([][]byte, len(updatedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
@@ -371,8 +371,8 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	updatedValidators, newValidatorProTxHashes, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, 7, 2, true)
 
-	updateTransactions2 := make([][]byte, len(updatedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions2 := make([][]byte, len(updatedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
@@ -398,22 +398,22 @@ func TestReactorValidatorSetChanges(t *testing.T) {
 
 	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, 12, 2, true)
 
-	updateTransactions3 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions3 := make([][]byte, len(updatedValidators)+len(removedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
 		updateTransactions3[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
 	}
-	for i:=0; i<len(removedValidators); i++ {
+	for i := 0; i < len(removedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(removedValidators[i].PubKey)
 		require.NoError(t, err)
-		updateTransactions3[len(updatedValidators) + i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
+		updateTransactions3[len(updatedValidators)+i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
 	}
 	abciThresholdPubKey, err = cryptoenc.PubKeyToProto(newThresholdPublicKey)
 	require.NoError(t, err)
-	updateTransactions3[len(updatedValidators) + len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+	updateTransactions3[len(updatedValidators)+len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
 	// block 12
 	waitForAndValidateBlock(t, nPeers, activeVals, blocksSubs, css, updateTransactions3...)

@@ -79,8 +79,8 @@ func (sc *RetrySignerClient) GetPubKey() (crypto.PubKey, error) {
 
 func (sc *RetrySignerClient) GetProTxHash() (crypto.ProTxHash, error) {
 	var (
-		proTxHash  crypto.ProTxHash
-		err error
+		proTxHash crypto.ProTxHash
+		err       error
 	)
 	for i := 0; i < sc.retries || sc.retries == 0; i++ {
 		proTxHash, err = sc.next.GetProTxHash()

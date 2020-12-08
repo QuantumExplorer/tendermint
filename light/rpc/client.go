@@ -5,8 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -474,11 +475,11 @@ func (c *Client) Validators(ctx context.Context, height *int64, pagePtr, perPage
 	}
 
 	return &ctypes.ResultValidators{
-		BlockHeight: *height,
-		Validators:  v,
+		BlockHeight:        *height,
+		Validators:         v,
 		ThresholdPublicKey: &thresholdPublicKey,
-		Count:       len(v),
-		Total:       totalCount}, nil
+		Count:              len(v),
+		Total:              totalCount}, nil
 
 }
 

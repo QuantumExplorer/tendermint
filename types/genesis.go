@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/crypto"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -30,11 +31,11 @@ const (
 
 // GenesisValidator is an initial validator.
 type GenesisValidator struct {
-	Address   Address       `json:"address"`
-	PubKey    crypto.PubKey `json:"pub_key"`
-	Power     int64         `json:"power"`
-	Name      string        `json:"name"`
-	ProTxHash crypto.ProTxHash        `json:"pro_tx_hash"`
+	Address   Address          `json:"address"`
+	PubKey    crypto.PubKey    `json:"pub_key"`
+	Power     int64            `json:"power"`
+	Name      string           `json:"name"`
+	ProTxHash crypto.ProTxHash `json:"pro_tx_hash"`
 }
 
 // GenesisDoc defines the initial conditions for a tendermint blockchain, in particular its validator set.

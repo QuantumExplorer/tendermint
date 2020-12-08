@@ -16,9 +16,9 @@ import (
 // Use strings to distinguish types in ABCI messages
 
 const (
-	ABCIPubKeyTypeEd25519   = ed25519.KeyType
-	ABCIPubKeyTypeSecp256k1 = secp256k1.KeyType
-	ABCIPubKeyTypeBLS12381 = bls12381.KeyType
+	ABCIPubKeyTypeEd25519            = ed25519.KeyType
+	ABCIPubKeyTypeSecp256k1          = secp256k1.KeyType
+	ABCIPubKeyTypeBLS12381           = bls12381.KeyType
 	ABCIEvidenceTypeDuplicateVote    = "duplicate/vote"
 	ABCIEvidenceTypePhantom          = "phantom"
 	ABCIEvidenceTypeLunatic          = "lunatic"
@@ -31,7 +31,7 @@ const (
 var ABCIPubKeyTypesToNames = map[string]string{
 	ABCIPubKeyTypeEd25519:   ed25519.PubKeyName,
 	ABCIPubKeyTypeSecp256k1: secp256k1.PubKeyName,
-	ABCIPubKeyTypeBLS12381: bls12381.PubKeyName,
+	ABCIPubKeyTypeBLS12381:  bls12381.PubKeyName,
 }
 
 //-------------------------------------------------------
@@ -67,7 +67,7 @@ func (tm2pb) Header(header *Header) tmproto.Header {
 
 func (tm2pb) Validator(val *Validator) abci.Validator {
 	return abci.Validator{
-		Power:   val.VotingPower,
+		Power:     val.VotingPower,
 		ProTxHash: val.ProTxHash,
 	}
 }
@@ -93,8 +93,8 @@ func (tm2pb) ValidatorUpdate(val *Validator) abci.ValidatorUpdate {
 		panic(err)
 	}
 	return abci.ValidatorUpdate{
-		PubKey: pk,
-		Power:  val.VotingPower,
+		PubKey:    pk,
+		Power:     val.VotingPower,
 		ProTxHash: val.ProTxHash,
 	}
 }
@@ -130,8 +130,8 @@ func (tm2pb) NewValidatorUpdate(pubkey crypto.PubKey, power int64, proTxHash []b
 		panic(err)
 	}
 	return abci.ValidatorUpdate{
-		PubKey: pubkeyABCI,
-		Power:  power,
+		PubKey:    pubkeyABCI,
+		Power:     power,
 		ProTxHash: proTxHash,
 	}
 }

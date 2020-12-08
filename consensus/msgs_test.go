@@ -351,25 +351,25 @@ func TestConsMsgsVectors(t *testing.T) {
 	require.NoError(t, err)
 
 	proposal := types.Proposal{
-		Type:      tmproto.ProposalType,
-		Height:    1,
+		Type:                  tmproto.ProposalType,
+		Height:                1,
 		CoreChainLockedHeight: 1,
-		Round:     1,
-		POLRound:  1,
-		BlockID:   bi,
-		Timestamp: date,
-		Signature: []byte("add_more_exclamation"),
+		Round:                 1,
+		POLRound:              1,
+		BlockID:               bi,
+		Timestamp:             date,
+		Signature:             []byte("add_more_exclamation"),
 	}
 	pbProposal := proposal.ToProto()
 
 	v := &types.Vote{
 		ValidatorProTxHash: []byte("add_more_exclamation"),
-		ValidatorIndex:   1,
-		Height:           1,
-		Round:            0,
-		Type:             tmproto.PrecommitType,
-		BlockID:          bi,
-		StateID:          si,
+		ValidatorIndex:     1,
+		Height:             1,
+		Round:              0,
+		Type:               tmproto.PrecommitType,
+		BlockID:            bi,
+		StateID:            si,
 	}
 	vpb := v.ToProto()
 

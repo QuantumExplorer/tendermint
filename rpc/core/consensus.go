@@ -46,11 +46,11 @@ func Validators(ctx *rpctypes.Context, heightPtr *int64, pagePtr, perPagePtr *in
 	}
 
 	return &ctypes.ResultValidators{
-		BlockHeight: height,
-		Validators:  v,
+		BlockHeight:        height,
+		Validators:         v,
 		ThresholdPublicKey: &thresholdPublicKey,
-		Count:       len(v),
-		Total:       totalCount}, nil
+		Count:              len(v),
+		Total:              totalCount}, nil
 }
 
 // DumpConsensusState dumps consensus state.

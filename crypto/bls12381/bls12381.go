@@ -6,12 +6,13 @@ import (
 	"errors"
 	"fmt"
 
+	"io"
+	"sort"
+
 	bls "github.com/dashpay/bls-signatures/go-bindings"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	tmjson "github.com/tendermint/tendermint/libs/json"
-	"io"
-	"sort"
 )
 
 //-------------------------------------
@@ -140,7 +141,7 @@ func GenPrivKeyFromSecret(secret []byte) PrivKey {
 }
 
 func CreatePrivLLMQDataDefaultThreshold(members int) ([]crypto.PrivKey, []crypto.ProTxHash, crypto.PubKey) {
-	return CreatePrivLLMQData(members, members * 2 / 3 + 1)
+	return CreatePrivLLMQData(members, members*2/3+1)
 }
 
 func CreateProTxHashes(members int) []crypto.ProTxHash {
@@ -158,7 +159,7 @@ func CreatePrivLLMQData(members int, threshold int) ([]crypto.PrivKey, []crypto.
 }
 
 func CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes []crypto.ProTxHash) ([]crypto.PrivKey, crypto.PubKey) {
-	return CreatePrivLLMQDataOnProTxHashes(proTxHashes, len(proTxHashes) * 2 / 3 + 1)
+	return CreatePrivLLMQDataOnProTxHashes(proTxHashes, len(proTxHashes)*2/3+1)
 }
 
 func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold int) ([]crypto.PrivKey, crypto.PubKey) {
@@ -245,7 +246,7 @@ func RecoverThresholdPublicKeyFromPublicKeys(publicKeys []crypto.PubKey, blsIds 
 			return nil, errors.New("blsId incorrect size, expected 32 bytes")
 		}
 		var hash bls.Hash
-		copy(hash[:],blsId)
+		copy(hash[:], blsId)
 		hashes[i] = hash
 	}
 
@@ -364,7 +365,6 @@ func (pubKey PubKey) AggregateSignatures(sigSharesData [][]byte, messages [][]by
 //	aggregatedSignature, error := bls.SignatureAggregate(sigShares)
 //	return aggregatedSignature, error
 //}
-
 
 func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign

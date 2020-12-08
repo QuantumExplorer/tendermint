@@ -1,9 +1,10 @@
 package light_test
 
 import (
+	"time"
+
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"time"
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/tmhash"
@@ -107,7 +108,7 @@ func (pkz privKeys) signHeader(header *types.Header, valSet *types.ValidatorSet,
 
 	// Fill in the votes we want.
 	for i := first; i < last && i < len(pkz); i++ {
-		vote := makeVote(header, valSet, valSet.GetProTxHashes()[i], pkz[i],  blockID, stateID)
+		vote := makeVote(header, valSet, valSet.GetProTxHashes()[i], pkz[i], blockID, stateID)
 		commitSigs[vote.ValidatorIndex] = vote.CommitSig()
 		blockSigs = append(blockSigs, vote.BlockSignature)
 		stateSigs = append(stateSigs, vote.StateSignature)
@@ -174,7 +175,7 @@ func genHeader(chainID string, height int64, bTime time.Time, txs types.Txs,
 		AppHash:            appHash,
 		ConsensusHash:      consHash,
 		LastResultsHash:    resHash,
-		ProposerProTxHash:    valset.Validators[0].ProTxHash,
+		ProposerProTxHash:  valset.Validators[0].ProTxHash,
 	}
 }
 

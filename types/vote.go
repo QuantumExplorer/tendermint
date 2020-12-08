@@ -14,8 +14,8 @@ import (
 const (
 	nilVoteStr string = "nil-Vote"
 	// MaxVoteBytes is a maximum vote size (including amino overhead).
-	MaxVoteBytesBLS12381 int64  = 241
-	MaxVoteBytesEd25519 int64 = 209
+	MaxVoteBytesBLS12381 int64 = 241
+	MaxVoteBytesEd25519  int64 = 209
 )
 
 func MaxVoteBytesForKeyType(keyType crypto.KeyType) int64 {
@@ -66,7 +66,7 @@ type Vote struct {
 	Height             int64                 `json:"height"`
 	Round              int32                 `json:"round"`    // assume there will not be greater than 2_147_483_647 rounds
 	BlockID            BlockID               `json:"block_id"` // zero if vote is nil.
-	StateID			   StateID			     `json:"state_id"`
+	StateID            StateID               `json:"state_id"`
 	ValidatorProTxHash ProTxHash             `json:"validator_pro_tx_hash"`
 	ValidatorIndex     int32                 `json:"validator_index"`
 	BlockSignature     []byte                `json:"block_signature"`
@@ -90,10 +90,10 @@ func (vote *Vote) CommitSig() CommitSig {
 	}
 
 	return CommitSig{
-		BlockIDFlag:           blockIDFlag,
-		ValidatorProTxHash:    vote.ValidatorProTxHash,
-		BlockSignature:        vote.BlockSignature,
-		StateSignature:        vote.StateSignature,
+		BlockIDFlag:        blockIDFlag,
+		ValidatorProTxHash: vote.ValidatorProTxHash,
+		BlockSignature:     vote.BlockSignature,
+		StateSignature:     vote.StateSignature,
 	}
 }
 

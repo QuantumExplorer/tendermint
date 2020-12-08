@@ -2,9 +2,10 @@ package state_test
 
 import (
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"os"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -113,8 +114,8 @@ func TestPruneStates(t *testing.T) {
 			// parameters when ending with 5.
 			validator := &types.Validator{Address: tmrand.Bytes(crypto.AddressSize), VotingPower: types.DefaultDashVotingPower, PubKey: pk, ProTxHash: proTxHash}
 			validatorSet := &types.ValidatorSet{
-				Validators: []*types.Validator{validator},
-				Proposer:   validator,
+				Validators:         []*types.Validator{validator},
+				Proposer:           validator,
 				ThresholdPublicKey: validator.PubKey,
 			}
 			valsChanged := int64(0)

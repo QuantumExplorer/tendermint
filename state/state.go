@@ -53,12 +53,12 @@ type State struct {
 	InitialHeight int64 // should be 1, not 0, when starting from height 1
 
 	// LastBlockHeight=0 at genesis (ie. block(H=0) does not exist)
-	LastBlockHeight     int64
-	LastBlockID         types.BlockID
-	LastBlockTime       time.Time
+	LastBlockHeight int64
+	LastBlockID     types.BlockID
+	LastBlockTime   time.Time
 
 	//The Last StateID is actually the previous App Hash
-	LastStateID         types.StateID
+	LastStateID types.StateID
 
 	//Last Chain Lock is the last known chain lock in consensus, and does not go to nil if a block had no chain lock
 	//Next Chain Lock is a chain lock being proposed by the abci application
@@ -291,7 +291,6 @@ func (state State) MakeBlock(
 		timestamp = tmtime.Now() //proposer proposes time
 	}
 
-
 	// Fill rest of header with state data.
 	block.Header.Populate(
 		state.Version.Consensus, state.ChainID,
@@ -300,8 +299,6 @@ func (state State) MakeBlock(
 		types.HashConsensusParams(state.ConsensusParams), state.AppHash, state.LastResultsHash,
 		proposerProTxHash,
 	)
-
-
 
 	return block, block.MakePartSet(types.BlockPartSizeBytes)
 }

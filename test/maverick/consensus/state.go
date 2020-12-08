@@ -66,7 +66,7 @@ type State struct {
 	timeoutTicker    TimeoutTicker
 	// privValidator pubkey, memoized for the duration of one block
 	// to avoid extra requests to HSM
-	privValidatorPubKey crypto.PubKey
+	privValidatorPubKey    crypto.PubKey
 	privValidatorProTxHash crypto.ProTxHash
 
 	// information about about added votes and block parts are written on this channel
@@ -432,7 +432,7 @@ var (
 	ErrAddingVote                 = errors.New("error adding vote")
 	ErrSignatureFoundInPastBlocks = errors.New("found signature from the same key")
 
-	errPubKeyIsNotSet = errors.New("pubkey is not set. Look for \"Can't get private validator pubkey\" errors")
+	errPubKeyIsNotSet    = errors.New("pubkey is not set. Look for \"Can't get private validator pubkey\" errors")
 	errProTxHashIsNotSet = errors.New("proTxHash is not set. Look for \"Can't get private validator proTxHash\" errors")
 )
 
@@ -1592,7 +1592,7 @@ func (cs *State) recordMetrics(height int64, block *types.Block) {
 		var (
 			commitSize = block.LastCommit.Size()
 			valSetLen  = len(cs.LastValidators.Validators)
-			proTxHash    types.ProTxHash
+			proTxHash  types.ProTxHash
 		)
 		if commitSize != valSetLen {
 			panic(fmt.Sprintf("commit size (%d) doesn't match valset length (%d) at height %d\n\n%v\n\n%v",
@@ -1825,12 +1825,12 @@ func (cs *State) signVote(
 
 	vote := &types.Vote{
 		ValidatorProTxHash: proTxHash,
-		ValidatorIndex:   valIdx,
-		Height:           cs.Height,
-		Round:            cs.Round,
-		Type:             msgType,
-		BlockID:          types.BlockID{Hash: hash, PartSetHeader: header},
-		StateID:          types.StateID{LastAppHash: cs.state.AppHash},
+		ValidatorIndex:     valIdx,
+		Height:             cs.Height,
+		Round:              cs.Round,
+		Type:               msgType,
+		BlockID:            types.BlockID{Hash: hash, PartSetHeader: header},
+		StateID:            types.StateID{LastAppHash: cs.state.AppHash},
 	}
 	v := vote.ToProto()
 	err := cs.privValidator.SignVote(cs.state.ChainID, v)

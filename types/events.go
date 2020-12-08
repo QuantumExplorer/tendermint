@@ -96,7 +96,7 @@ type EventDataRoundState struct {
 
 type ValidatorInfo struct {
 	ProTxHash ProTxHash `json:"pro_tx_hash"`
-	Index   int32   `json:"index"`
+	Index     int32     `json:"index"`
 }
 
 type EventDataNewRound struct {

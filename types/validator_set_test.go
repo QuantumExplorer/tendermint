@@ -3,14 +3,15 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"math"
 	"sort"
 	"strings"
 	"testing"
 	"testing/quick"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/crypto"
 	tmmath "github.com/tendermint/tendermint/libs/math"
@@ -103,7 +104,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{},
+				Validators:         []*Validator{},
 				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
 			},
 			err: true,
@@ -118,7 +119,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{val},
+				Validators:         []*Validator{val},
 				ThresholdPublicKey: val.PubKey,
 			},
 			err: true,
@@ -126,7 +127,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{val},
+				Validators:         []*Validator{val},
 				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
 			},
 			err: true,
@@ -134,7 +135,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{badValNoPublicKey},
+				Validators:         []*Validator{badValNoPublicKey},
 				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
 			},
 			err: true,
@@ -142,7 +143,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{badValNoProTxHash},
+				Validators:         []*Validator{badValNoProTxHash},
 				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
 			},
 			err: true,
@@ -150,8 +151,8 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: ValidatorSet{
-				Validators: []*Validator{val},
-				Proposer:   val,
+				Validators:         []*Validator{val},
+				Proposer:           val,
 				ThresholdPublicKey: val.PubKey,
 			},
 			err: false,
@@ -167,13 +168,13 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 		},
 		{
 			vals: *badValSet,
-			err: true,
-			msg: "incorrect recovered threshold public key",
+			err:  true,
+			msg:  "incorrect recovered threshold public key",
 		},
 		{
 			vals: *goodValSet,
-			err: false,
-			msg: "",
+			err:  false,
+			msg:  "",
 		},
 	}
 
@@ -374,7 +375,6 @@ func (vals *ValidatorSet) toBytes() []byte {
 	return bz
 }
 
-
 func (vals *ValidatorSet) fromBytes(b []byte) *ValidatorSet {
 	pbvs := new(tmproto.ValidatorSet)
 	err := pbvs.Unmarshal(b)
@@ -495,10 +495,10 @@ func TestSafeSubClip(t *testing.T) {
 func TestValidatorSet_VerifyCommit_All(t *testing.T) {
 	var (
 		proTxHash = crypto.RandProTxHash()
-		privKey = bls12381.GenPrivKey()
-		pubKey  = privKey.PubKey()
-		v1      = NewValidatorDefaultVotingPower(pubKey, proTxHash)
-		vset    = NewValidatorSet([]*Validator{v1}, v1.PubKey)
+		privKey   = bls12381.GenPrivKey()
+		pubKey    = privKey.PubKey()
+		v1        = NewValidatorDefaultVotingPower(pubKey, proTxHash)
+		vset      = NewValidatorSet([]*Validator{v1}, v1.PubKey)
 
 		chainID = "Lalande21185"
 	)
@@ -664,7 +664,7 @@ func TestEmptySet(t *testing.T) {
 	valSet.GetProposer()
 
 	// Add to empty set
-	addresses := []crypto.Address{[]byte("v1"),[]byte("v2")}
+	addresses := []crypto.Address{[]byte("v1"), []byte("v2")}
 	valSetAdd, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses)
 	assert.NoError(t, valSet.UpdateWithChangeSet(valSetAdd.Validators, valSetAdd.ThresholdPublicKey))
 	verifyValidatorSet(t, valSet)
@@ -756,7 +756,7 @@ func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) ([]*
 	addedAddresses := make([]Address, 0, len(testValList))
 	removedAddresses := make([]Address, 0, len(testValList))
 	removedVals := make([]*Validator, 0, len(testValList))
-	combinedAddresses := make([]Address, 0, len(testValList) + len(vals.Validators))
+	combinedAddresses := make([]Address, 0, len(testValList)+len(vals.Validators))
 	for _, val := range testValList {
 		if val.power != 0 {
 			_, value := vals.GetByAddress([]byte(val.name))
@@ -775,7 +775,7 @@ func addValidatorsToValidatorSet(vals *ValidatorSet, testValList []testVal) ([]*
 	for _, oAddress := range originalAddresses {
 		found := false
 		for _, removedAddresses := range removedAddresses {
-			if bytes.Equal(oAddress.Bytes(),removedAddresses.Bytes()) {
+			if bytes.Equal(oAddress.Bytes(), removedAddresses.Bytes()) {
 				found = true
 			}
 		}
@@ -855,7 +855,7 @@ type valSetErrTestCase struct {
 type valSetErrTestCaseWithErr struct {
 	startVals  []testVal
 	updateVals []testVal
-	errString string
+	errString  string
 }
 
 func executeValSetErrTestCaseIgnoreThresholdPublicKey(t *testing.T, idx int, tt valSetErrTestCaseWithErr) {
@@ -1119,7 +1119,7 @@ func TestValSetApplyUpdatesTestsExecute(t *testing.T) {
 		3: { // insert multi
 			[]testVal{{"v4", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}, {"v9", DefaultDashVotingPower}},
 			[]testVal{{"v5", DefaultDashVotingPower}, {"v7", DefaultDashVotingPower}, {"v8", DefaultDashVotingPower}},
-			[]testVal{{"v8", DefaultDashVotingPower},  {"v7", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}, {"v9", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}}},
+			[]testVal{{"v8", DefaultDashVotingPower}, {"v7", DefaultDashVotingPower}, {"v6", DefaultDashVotingPower}, {"v9", DefaultDashVotingPower}, {"v4", DefaultDashVotingPower}, {"v5", DefaultDashVotingPower}}},
 		// changes
 		4: { // head
 			[]testVal{{"v1", DefaultDashVotingPower}, {"v2", DefaultDashVotingPower}},
@@ -1375,7 +1375,7 @@ func TestValidatorSet_VerifyCommitLightTrusting(t *testing.T) {
 		if tc.err {
 			assert.Error(t, err, "#%d", i)
 		} else {
-			assert.NoError(t, err,"#%d", i)
+			assert.NoError(t, err, "#%d", i)
 		}
 	}
 }
@@ -1506,12 +1506,12 @@ func BenchmarkUpdates(b *testing.B) {
 	}
 	valSet, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses0)
 
-	addresses1 := make([]crypto.Address, n + m)
+	addresses1 := make([]crypto.Address, n+m)
 	newValList := make([]*Validator, m)
-	for j := 0; j < n + m; j++ {
+	for j := 0; j < n+m; j++ {
 		addresses1[j] = []byte(fmt.Sprintf("v%d", j))
 		if j >= n {
-			newValList[j - n] = NewTestValidatorGeneratedFromAddress([]byte(fmt.Sprintf("v%d", j)))
+			newValList[j-n] = NewTestValidatorGeneratedFromAddress([]byte(fmt.Sprintf("v%d", j)))
 		}
 	}
 	valSet2, _ := GenerateTestValidatorSetWithAddressesDefaultPower(addresses1)

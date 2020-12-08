@@ -2,10 +2,11 @@ package consensus
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/tendermint/tendermint/abci/example/counter"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/types"
-	"testing"
 )
 
 func newCounterWithCoreChainLocks() abci.Application {
@@ -122,7 +123,7 @@ func invalidProposeCoreChainLockFunc(t *testing.T, height int64, round int32, cs
 
 	// Make proposal
 	propBlockID := types.BlockID{Hash: block.Hash(), PartSetHeader: blockParts.Header()}
-	proposal := types.NewProposal(height, cs.state.NextCoreChainLock.CoreBlockHeight- 1, round, cs.ValidRound, propBlockID)
+	proposal := types.NewProposal(height, cs.state.NextCoreChainLock.CoreBlockHeight-1, round, cs.ValidRound, propBlockID)
 	p := proposal.ToProto()
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, p); err == nil {
 		proposal.Signature = p.Signature

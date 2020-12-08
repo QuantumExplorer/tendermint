@@ -43,7 +43,7 @@ func CanonicalizeStateID(sid tmproto.StateID) *tmproto.CanonicalStateID {
 		csid = nil
 	} else {
 		csid = &tmproto.CanonicalStateID{
-			LastAppHash:          sid.LastAppHash,
+			LastAppHash: sid.LastAppHash,
 		}
 	}
 
@@ -73,12 +73,12 @@ func CanonicalizeProposal(chainID string, proposal *tmproto.Proposal) tmproto.Ca
 // not contain ValidatorIndex and ValidatorProTxHash fields.
 func CanonicalizeVote(chainID string, vote *tmproto.Vote) tmproto.CanonicalVote {
 	return tmproto.CanonicalVote{
-		Type:      vote.Type,
-		Height:    vote.Height,       // encoded as sfixed64
-		Round:     int64(vote.Round), // encoded as sfixed64
-		BlockID:   CanonicalizeBlockID(vote.BlockID),
-		StateID:   CanonicalizeStateID(vote.StateID),
-		ChainID:   chainID,
+		Type:    vote.Type,
+		Height:  vote.Height,       // encoded as sfixed64
+		Round:   int64(vote.Round), // encoded as sfixed64
+		BlockID: CanonicalizeBlockID(vote.BlockID),
+		StateID: CanonicalizeStateID(vote.StateID),
+		ChainID: chainID,
 	}
 }
 
@@ -86,8 +86,8 @@ func CanonicalizeVote(chainID string, vote *tmproto.Vote) tmproto.CanonicalVote 
 // not contain ValidatorIndex and ValidatorProTxHash fields.
 func CanonicalizeStateVote(vote *tmproto.Vote) tmproto.CanonicalStateVote {
 	return tmproto.CanonicalStateVote{
-		Height:    vote.Height,       // encoded as sfixed64
-		StateID:   CanonicalizeStateID(vote.StateID),
+		Height:  vote.Height, // encoded as sfixed64
+		StateID: CanonicalizeStateID(vote.StateID),
 	}
 }
 

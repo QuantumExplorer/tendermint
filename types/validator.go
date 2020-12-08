@@ -19,7 +19,7 @@ type Validator struct {
 	Address     Address       `json:"address"`
 	PubKey      crypto.PubKey `json:"pub_key"`
 	VotingPower int64         `json:"voting_power"`
-	ProTxHash   ProTxHash        `json:"pro_tx_hash"`
+	ProTxHash   ProTxHash     `json:"pro_tx_hash"`
 
 	ProposerPriority int64 `json:"proposer_priority"`
 }
@@ -47,7 +47,7 @@ func NewValidatorDefaultVotingPower(pubKey crypto.PubKey, proTxHash []byte) *Val
 }
 
 // NewValidator returns a new validator with the given pubkey and voting power.
-func NewValidator(pubKey crypto.PubKey, votingPower int64,  proTxHash []byte) *Validator {
+func NewValidator(pubKey crypto.PubKey, votingPower int64, proTxHash []byte) *Validator {
 	return &Validator{
 		Address:          pubKey.Address(),
 		PubKey:           pubKey,
@@ -181,7 +181,7 @@ func (v *Validator) ToProto() (*tmproto.Validator, error) {
 		PubKey:           pk,
 		VotingPower:      v.VotingPower,
 		ProposerPriority: v.ProposerPriority,
-		ProTxHash: 		  v.ProTxHash,
+		ProTxHash:        v.ProTxHash,
 	}
 
 	return &vp, nil

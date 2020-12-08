@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"testing"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestABCIValidators(t *testing.T) {
 
 	abciVals := TM2PB.ValidatorUpdates(NewValidatorSet(tmVals, tmVal.PubKey))
 	assert.Equal(t, abci.ValidatorSetUpdate{
-		ValidatorUpdates: []abci.ValidatorUpdate{abciVal},
+		ValidatorUpdates:   []abci.ValidatorUpdate{abciVal},
 		ThresholdPublicKey: abciVal.PubKey,
 	}, abciVals)
 
@@ -64,18 +65,19 @@ func TestABCIConsensusParams(t *testing.T) {
 	assert.Equal(t, *cp, cp2)
 }
 
-
 type pubKeyBLS struct{}
 
-func (pubKeyBLS) Address() Address                        { return []byte{} }
-func (pubKeyBLS) Bytes() []byte                           { return []byte{} }
+func (pubKeyBLS) Address() Address                            { return []byte{} }
+func (pubKeyBLS) Bytes() []byte                               { return []byte{} }
 func (pubKeyBLS) VerifySignature(msg []byte, sig []byte) bool { return false }
-func (pubKeyBLS) AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error) { return []byte{}, nil }
+func (pubKeyBLS) AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error) {
+	return []byte{}, nil
+}
 func (pubKeyBLS) VerifyAggregateSignature(msgs [][]byte, sig []byte) bool { return false }
-func (pubKeyBLS) Equals(crypto.PubKey) bool               { return false }
-func (pubKeyBLS) String() string                          { return "" }
-func (pubKeyBLS) Type() string                            { return "pubKeyBLS12381" }
-func (pubKeyBLS) TypeValue() crypto.KeyType               { return crypto.BLS12381 }
+func (pubKeyBLS) Equals(crypto.PubKey) bool                               { return false }
+func (pubKeyBLS) String() string                                          { return "" }
+func (pubKeyBLS) Type() string                                            { return "pubKeyBLS12381" }
+func (pubKeyBLS) TypeValue() crypto.KeyType                               { return crypto.BLS12381 }
 
 func TestABCIValidatorFromPubKeyAndPower(t *testing.T) {
 	pubkey := bls12381.GenPrivKey().PubKey()
@@ -95,7 +97,7 @@ func TestABCIValidatorWithoutPubKey(t *testing.T) {
 
 	// pubkey must be nil
 	tmValExpected := abci.Validator{
-		Power:   DefaultDashVotingPower,
+		Power:     DefaultDashVotingPower,
 		ProTxHash: proTxHash,
 	}
 

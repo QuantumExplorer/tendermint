@@ -140,7 +140,7 @@ func TestValUpdates(t *testing.T) {
 	valSetEqualTest(t, kvVals, initVals)
 
 	// change the validator set to the full validator set
-	txs := make ([][]byte, 16)
+	txs := make([][]byte, 16)
 	removalUpdates := make([]types.ValidatorUpdate, 5)
 	for i, val := range initVals.ValidatorUpdates {
 		//remove old validators

@@ -2,13 +2,14 @@ package crypto
 
 import (
 	bytes2 "bytes"
+
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/bytes"
 )
 
 const (
 	// AddressSize is the size of a pubkey address.
-	AddressSize = tmhash.TruncatedSize
+	AddressSize     = tmhash.TruncatedSize
 	DefaultHashSize = 32
 )
 
@@ -59,7 +60,7 @@ type PubKey interface {
 	Address() Address
 	Bytes() []byte
 	VerifySignature(msg []byte, sig []byte) bool
-    AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error)
+	AggregateSignatures(sigSharesData [][]byte, messages [][]byte) ([]byte, error)
 	VerifyAggregateSignature(msgs [][]byte, sig []byte) bool
 	Equals(PubKey) bool
 	Type() string

@@ -99,7 +99,7 @@ func TestBlockValidateBasic(t *testing.T) {
 		tc := tc
 		i := i
 		t.Run(tc.testName, func(t *testing.T) {
-			block := MakeBlock(h,0, nil, txs, commit, evList)
+			block := MakeBlock(h, 0, nil, txs, commit, evList)
 			block.ProposerProTxHash = valSet.GetProposer().ProTxHash
 			tc.malleateBlock(block)
 			err = block.ValidateBasic()
@@ -116,7 +116,7 @@ func TestBlockHash(t *testing.T) {
 func TestBlockMakePartSet(t *testing.T) {
 	assert.Nil(t, (*Block)(nil).MakePartSet(2))
 
-	partSet := MakeBlock(int64(3), 0,nil, []Tx{Tx("Hello World")}, nil, nil).MakePartSet(1024)
+	partSet := MakeBlock(int64(3), 0, nil, []Tx{Tx("Hello World")}, nil, nil).MakePartSet(1024)
 	assert.NotNil(t, partSet)
 	assert.EqualValues(t, 1, partSet.Total())
 }
@@ -151,7 +151,6 @@ func TestBlockHashesTo(t *testing.T) {
 	lastStateID := makeStateIDRandom()
 	h := int64(3)
 
-
 	voteSet, valSet, vals := randVoteSet(h-1, 1, tmproto.PrecommitType, 10, 1)
 	commit, err := MakeCommit(lastID, lastStateID, h-1, 1, voteSet, vals)
 	require.NoError(t, err)
@@ -167,7 +166,7 @@ func TestBlockHashesTo(t *testing.T) {
 }
 
 func TestBlockSize(t *testing.T) {
-	size := MakeBlock(int64(3),0, nil, []Tx{Tx("Hello World")}, nil, nil).Size()
+	size := MakeBlock(int64(3), 0, nil, []Tx{Tx("Hello World")}, nil, nil).Size()
 	if size <= 0 {
 		t.Fatal("Size of the block is zero or negative")
 	}
@@ -178,7 +177,7 @@ func TestBlockString(t *testing.T) {
 	assert.Equal(t, "nil-Block", (*Block)(nil).StringIndented(""))
 	assert.Equal(t, "nil-Block", (*Block)(nil).StringShort())
 
-	block := MakeBlock(int64(3),0, nil, []Tx{Tx("Hello World")}, nil, nil)
+	block := MakeBlock(int64(3), 0, nil, []Tx{Tx("Hello World")}, nil, nil)
 	assert.NotEqual(t, "nil-Block", block.String())
 	assert.NotEqual(t, "nil-Block", block.StringIndented(""))
 	assert.NotEqual(t, "nil-Block", block.StringShort())
@@ -212,22 +211,21 @@ func makeBlockID(hash []byte, partSetSize uint32, partSetHash []byte) BlockID {
 
 func makeStateIDRandom() StateID {
 	var (
-		lastAppHash   = make([]byte, tmhash.Size)
+		lastAppHash = make([]byte, tmhash.Size)
 	)
-	rand.Read(lastAppHash)   //nolint: errcheck // ignore errcheck for read
+	rand.Read(lastAppHash) //nolint: errcheck // ignore errcheck for read
 	return StateID{lastAppHash}
 }
 
 func makeStateID(lastAppHash []byte) StateID {
 	var (
-		lap   = make([]byte, tmhash.Size)
+		lap = make([]byte, tmhash.Size)
 	)
 	copy(lap, lastAppHash)
 	return StateID{
 		LastAppHash: lap,
 	}
 }
-
 
 var nilBytes []byte
 
@@ -292,10 +290,10 @@ func TestCommitValidateBasic(t *testing.T) {
 
 func TestMaxCommitBytes(t *testing.T) {
 	cs := CommitSig{
-		BlockIDFlag:      BlockIDFlagNil,
+		BlockIDFlag:        BlockIDFlagNil,
 		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
-		BlockSignature:   crypto.CRandBytes(MaxSignatureSize),
-		StateSignature:   crypto.CRandBytes(MaxSignatureSize),
+		BlockSignature:     crypto.CRandBytes(MaxSignatureSize),
+		StateSignature:     crypto.CRandBytes(MaxSignatureSize),
 	}
 
 	pbSig := cs.ToProto()
@@ -342,39 +340,39 @@ func TestHeaderHash(t *testing.T) {
 		expectHash bytes.HexBytes
 	}{
 		{"Generates expected hash", &Header{
-			Version:            tmversion.Consensus{Block: 1, App: 2},
-			ChainID:            "chainId",
-			Height:             3,
+			Version:               tmversion.Consensus{Block: 1, App: 2},
+			ChainID:               "chainId",
+			Height:                3,
 			CoreChainLockedHeight: 1,
-			Time:               time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
-			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
-			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
-			DataHash:           tmhash.Sum([]byte("data_hash")),
-			ValidatorsHash:     tmhash.Sum([]byte("validators_hash")),
-			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
-			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
-			AppHash:            tmhash.Sum([]byte("app_hash")),
-			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
-			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
-			ProposerProTxHash:  crypto.ProTxHashFromSeedBytes([]byte("proposer_pro_tx_hash")),
+			Time:                  time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
+			LastBlockID:           makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
+			LastCommitHash:        tmhash.Sum([]byte("last_commit_hash")),
+			DataHash:              tmhash.Sum([]byte("data_hash")),
+			ValidatorsHash:        tmhash.Sum([]byte("validators_hash")),
+			NextValidatorsHash:    tmhash.Sum([]byte("next_validators_hash")),
+			ConsensusHash:         tmhash.Sum([]byte("consensus_hash")),
+			AppHash:               tmhash.Sum([]byte("app_hash")),
+			LastResultsHash:       tmhash.Sum([]byte("last_results_hash")),
+			EvidenceHash:          tmhash.Sum([]byte("evidence_hash")),
+			ProposerProTxHash:     crypto.ProTxHashFromSeedBytes([]byte("proposer_pro_tx_hash")),
 		}, hexBytesFromString("786FFBA7845BC39A1C3BB3216288CA157D82FEED634E74A1F151476CF66E4EFB")},
 		{"nil header yields nil", nil, nil},
 		{"nil ValidatorsHash yields nil", &Header{
-			Version:            tmversion.Consensus{Block: 1, App: 2},
-			ChainID:            "chainId",
-			Height:             3,
+			Version:               tmversion.Consensus{Block: 1, App: 2},
+			ChainID:               "chainId",
+			Height:                3,
 			CoreChainLockedHeight: 1,
-			Time:               time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
-			LastBlockID:        makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
-			LastCommitHash:     tmhash.Sum([]byte("last_commit_hash")),
-			DataHash:           tmhash.Sum([]byte("data_hash")),
-			ValidatorsHash:     nil,
-			NextValidatorsHash: tmhash.Sum([]byte("next_validators_hash")),
-			ConsensusHash:      tmhash.Sum([]byte("consensus_hash")),
-			AppHash:            tmhash.Sum([]byte("app_hash")),
-			LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
-			EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
-			ProposerProTxHash:  crypto.ProTxHashFromSeedBytes([]byte("proposer_pro_tx_hash")),
+			Time:                  time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC),
+			LastBlockID:           makeBlockID(make([]byte, tmhash.Size), 6, make([]byte, tmhash.Size)),
+			LastCommitHash:        tmhash.Sum([]byte("last_commit_hash")),
+			DataHash:              tmhash.Sum([]byte("data_hash")),
+			ValidatorsHash:        nil,
+			NextValidatorsHash:    tmhash.Sum([]byte("next_validators_hash")),
+			ConsensusHash:         tmhash.Sum([]byte("consensus_hash")),
+			AppHash:               tmhash.Sum([]byte("app_hash")),
+			LastResultsHash:       tmhash.Sum([]byte("last_results_hash")),
+			EvidenceHash:          tmhash.Sum([]byte("evidence_hash")),
+			ProposerProTxHash:     crypto.ProTxHashFromSeedBytes([]byte("proposer_pro_tx_hash")),
 		}, nil},
 	}
 	for _, tc := range testCases {
@@ -522,11 +520,11 @@ func TestBlockMaxDataBytesNoEvidence(t *testing.T) {
 		panics      bool
 		result      int64
 	}{
-		0: {-10, 1, crypto.BLS12381,1, true, 0},
-		1: {10, 1, crypto.BLS12381,1, true, 0},
-		2: {1153, 1, crypto.BLS12381,1, true, 0},
-		3: {1154, 1, crypto.BLS12381,1, false, 0},
-		4: {1155, 1, crypto.BLS12381,1, false, 1},
+		0: {-10, 1, crypto.BLS12381, 1, true, 0},
+		1: {10, 1, crypto.BLS12381, 1, true, 0},
+		2: {1153, 1, crypto.BLS12381, 1, true, 0},
+		3: {1154, 1, crypto.BLS12381, 1, false, 0},
+		4: {1155, 1, crypto.BLS12381, 1, false, 1},
 	}
 
 	for i, tc := range testCases {
@@ -590,7 +588,7 @@ func TestCommitToVoteSetWithVotesForNilBlock(t *testing.T) {
 	}
 
 	testCases := []commitVoteTest{
-		{[]BlockID{blockID, {}}, []StateID{stateID, {}},[]int{67, 33}, 100, true},
+		{[]BlockID{blockID, {}}, []StateID{stateID, {}}, []int{67, 33}, 100, true},
 	}
 
 	for _, tc := range testCases {
@@ -673,17 +671,17 @@ func TestBlockIDValidateBasic(t *testing.T) {
 func TestBlockProtoBuf(t *testing.T) {
 	h := tmrand.Int63()
 	c1 := randCommit()
-	b1 := MakeBlock(h,0, nil, []Tx{Tx([]byte{1})}, &Commit{Signatures: []CommitSig{}}, []Evidence{})
+	b1 := MakeBlock(h, 0, nil, []Tx{Tx([]byte{1})}, &Commit{Signatures: []CommitSig{}}, []Evidence{})
 	b1.ProposerProTxHash = tmrand.Bytes(crypto.DefaultHashSize)
 
-	b2 := MakeBlock(h,0, nil, []Tx{Tx([]byte{1})}, c1, []Evidence{})
+	b2 := MakeBlock(h, 0, nil, []Tx{Tx([]byte{1})}, c1, []Evidence{})
 	b2.ProposerProTxHash = tmrand.Bytes(crypto.DefaultHashSize)
 	evidenceTime := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	evi := NewMockDuplicateVoteEvidence(h, evidenceTime, "block-test-chain")
 	b2.Evidence = EvidenceData{Evidence: EvidenceList{evi}}
 	b2.EvidenceHash = b2.Evidence.Hash()
 
-	b3 := MakeBlock(h,0, nil, []Tx{}, c1, []Evidence{})
+	b3 := MakeBlock(h, 0, nil, []Tx{}, c1, []Evidence{})
 	b3.ProposerProTxHash = tmrand.Bytes(crypto.DefaultHashSize)
 	testCases := []struct {
 		msg      string
@@ -797,7 +795,7 @@ func makeRandHeader() Header {
 
 		LastResultsHash: randBytes,
 
-		EvidenceHash:    randBytes,
+		EvidenceHash:      randBytes,
 		ProposerProTxHash: randProTxHash,
 	}
 

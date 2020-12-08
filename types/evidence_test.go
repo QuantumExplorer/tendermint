@@ -27,7 +27,6 @@ func TestEvidenceList(t *testing.T) {
 	assert.False(t, evl.Has(&DuplicateVoteEvidence{}))
 }
 
-
 func randomDuplicateVoteEvidence(t *testing.T) *DuplicateVoteEvidence {
 	val := NewMockPV()
 	blockID := makeBlockID([]byte("blockhash"), 1000, []byte("partshash"))
@@ -38,7 +37,7 @@ func randomDuplicateVoteEvidence(t *testing.T) *DuplicateVoteEvidence {
 
 		VoteA:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID, stateID),
 		VoteB:            makeVote(t, val, chainID, 0, 10, 2, 1, blockID2, stateID),
-		TotalVotingPower: 3*DefaultDashVotingPower,
+		TotalVotingPower: 3 * DefaultDashVotingPower,
 		ValidatorPower:   DefaultDashVotingPower,
 		Timestamp:        defaultVoteTime,
 	}
@@ -92,7 +91,6 @@ func TestDuplicateVoteEvidenceValidation(t *testing.T) {
 		})
 	}
 }
-
 
 func TestLightClientAttackEvidence(t *testing.T) {
 	height := int64(5)
@@ -236,7 +234,7 @@ func makeVote(
 		Round:              round,
 		Type:               tmproto.SignedMsgType(step),
 		BlockID:            blockID,
-		StateID:		    stateID,
+		StateID:            stateID,
 	}
 
 	vpb := v.ToProto()

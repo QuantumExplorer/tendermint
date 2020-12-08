@@ -28,9 +28,9 @@ var config *cfg.Config
 func randGenesisDoc(numValidators int) (*types.GenesisDoc, []types.PrivValidator) {
 	validators, privValidators, thresholdPublicKey := types.GenerateGenesisValidators(numValidators)
 	return &types.GenesisDoc{
-		GenesisTime: tmtime.Now(),
-		ChainID:     config.ChainID(),
-		Validators:  validators,
+		GenesisTime:        tmtime.Now(),
+		ChainID:            config.ChainID(),
+		Validators:         validators,
 		ThresholdPublicKey: thresholdPublicKey,
 	}, privValidators
 }

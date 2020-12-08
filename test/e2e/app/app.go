@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"os"
 	"path/filepath"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 
 	"github.com/tendermint/tendermint/abci/example/code"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -208,7 +209,6 @@ func (app *Application) validatorSetUpdates(height uint64) (*abci.ValidatorSetUp
 	if err != nil {
 		panic(err)
 	}
-
 
 	valSetUpdates := abci.ValidatorSetUpdate{}
 

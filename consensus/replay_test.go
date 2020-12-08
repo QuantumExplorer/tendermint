@@ -360,8 +360,8 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	updatedValidators, _, newThresholdPublicKey := updateConsensusNetAddNewValidators(css, height, 1, false)
 	height++
 	incrementHeight(vss...)
-	updateTransactions := make([][]byte, len(updatedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions := make([][]byte, len(updatedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
@@ -427,8 +427,8 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	updatedValidators, _, newThresholdPublicKey = updateConsensusNetAddNewValidators(css, height, 2, false)
 	height++
 	incrementHeight(vss...)
-	updateTransactions2 := make([][]byte, len(updatedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions2 := make([][]byte, len(updatedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
@@ -458,7 +458,7 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 	rs = css[0].GetRoundState()
-	vssForSigning := vss[0:nVals+1]
+	vssForSigning := vss[0 : nVals+1]
 	sort.Sort(ValidatorStubsByPower(vssForSigning))
 
 	valIndexFn := func(cssIdx int) int {
@@ -480,13 +480,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 
 	//A new validator should come in
 	rs = css[0].GetRoundState()
-	for i := 0; i < nVals + 1; i++ {
+	for i := 0; i < nVals+1; i++ {
 		if i == selfIndex {
 			continue
 		}
 		signAddVotes(css[0], tmproto.PrevoteType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vssForSigning[i])
 	}
-	for i := 0; i < nVals + 1; i++ {
+	for i := 0; i < nVals+1; i++ {
 		if i == selfIndex {
 			continue
 		}
@@ -527,13 +527,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 	rs = css[0].GetRoundState()
-	for i := 0; i < nVals + 1; i++ {
+	for i := 0; i < nVals+1; i++ {
 		if i == selfIndex {
 			continue
 		}
 		signAddVotes(css[0], tmproto.PrevoteType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vssForSigning[i])
 	}
-	for i := 0; i < nVals + 1; i++ {
+	for i := 0; i < nVals+1; i++ {
 		if i == selfIndex {
 			continue
 		}
@@ -545,22 +545,22 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	//
 	updatedValidators, removedValidators, newThresholdPublicKey := updateConsensusNetRemoveValidators(css, height, 1, false)
 	height++
-	updateTransactions3 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions3 := make([][]byte, len(updatedValidators)+len(removedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
 		updateTransactions3[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
 	}
-	for i:=0; i<len(removedValidators); i++ {
+	for i := 0; i < len(removedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(removedValidators[i].PubKey)
 		require.NoError(t, err)
-		updateTransactions3[len(updatedValidators) + i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
+		updateTransactions3[len(updatedValidators)+i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
 	}
 	abciThresholdPubKey, err = cryptoenc.PubKeyToProto(newThresholdPublicKey)
 	require.NoError(t, err)
-	updateTransactions3[len(updatedValidators) + len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+	updateTransactions3[len(updatedValidators)+len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
 	for _, updateTransaction := range updateTransactions3 {
 		err = assertMempool(css[0].txNotifier).CheckTx(updateTransaction, nil, mempl.TxInfo{})
@@ -597,20 +597,20 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	}
 	ensureNewProposal(proposalCh, height, round)
 
-	vssForSigning = vss[0:nVals+3]
+	vssForSigning = vss[0 : nVals+3]
 	sort.Sort(ValidatorStubsByPower(vssForSigning))
 
 	selfIndex = valIndexFn(0)
 
 	//All validators should be in now
 	rs = css[0].GetRoundState()
-	for i := 0; i < nVals + 3; i++ {
+	for i := 0; i < nVals+3; i++ {
 		if i == selfIndex {
 			continue
 		}
 		signAddVotes(css[0], tmproto.PrevoteType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vssForSigning[i])
 	}
-	for i := 0; i < nVals + 3; i++ {
+	for i := 0; i < nVals+3; i++ {
 		if i == selfIndex {
 			continue
 		}
@@ -644,13 +644,13 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	rs = css[0].GetRoundState()
 
 	//Still have 7 validators
-	for i := 0; i < nVals + 3; i++ {
+	for i := 0; i < nVals+3; i++ {
 		if i == selfIndex {
 			continue
 		}
 		signAddVotes(css[0], tmproto.PrevoteType, rs.ProposalBlock.Hash(), rs.ProposalBlockParts.Header(), vssForSigning[i])
 	}
-	for i := 0; i < nVals + 3; i++ {
+	for i := 0; i < nVals+3; i++ {
 		if i == selfIndex {
 			continue
 		}
@@ -660,27 +660,27 @@ func TestSimulateValidatorsChange(t *testing.T) {
 
 	// HEIGHT 8
 
-	proTxHashToRemove := updatedValidators[len(updatedValidators) -1].ProTxHash
+	proTxHashToRemove := updatedValidators[len(updatedValidators)-1].ProTxHash
 	updatedValidators, removedValidators, newThresholdPublicKey = updateConsensusNetRemoveValidatorsWithProTxHashes(css, height, []crypto.ProTxHash{proTxHashToRemove}, false)
 	height++
 	incrementHeight(vss...)
 
-	updateTransactions4 := make([][]byte, len(updatedValidators) + len(removedValidators) + 1)
-	for i:=0; i<len(updatedValidators); i++ {
+	updateTransactions4 := make([][]byte, len(updatedValidators)+len(removedValidators)+1)
+	for i := 0; i < len(updatedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(updatedValidators[i].PubKey)
 		require.NoError(t, err)
 		updateTransactions4[i] = kvstore.MakeValSetChangeTx(updatedValidators[i].ProTxHash, abciPubKey, testMinPower)
 	}
-	for i:=0; i<len(removedValidators); i++ {
+	for i := 0; i < len(removedValidators); i++ {
 		//start by adding all validator transactions
 		abciPubKey, err := cryptoenc.PubKeyToProto(removedValidators[i].PubKey)
 		require.NoError(t, err)
-		updateTransactions4[len(updatedValidators) + i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
+		updateTransactions4[len(updatedValidators)+i] = kvstore.MakeValSetChangeTx(removedValidators[i].ProTxHash, abciPubKey, 0)
 	}
 	abciThresholdPubKey, err = cryptoenc.PubKeyToProto(newThresholdPublicKey)
 	require.NoError(t, err)
-	updateTransactions4[len(updatedValidators) + len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
+	updateTransactions4[len(updatedValidators)+len(removedValidators)] = kvstore.MakeThresholdPublicKeyChangeTx(abciThresholdPubKey)
 
 	for _, updateTransaction := range updateTransactions4 {
 		err = assertMempool(css[0].txNotifier).CheckTx(updateTransaction, nil, mempl.TxInfo{})
@@ -707,9 +707,9 @@ func TestSimulateValidatorsChange(t *testing.T) {
 	ensureNewProposal(proposalCh, height, round)
 	rs = css[0].GetRoundState()
 	// Reflect the changes to vss[nVals] at height 3 and resort newVss.
-	vssForSigning = vss[0:nVals+3]
+	vssForSigning = vss[0 : nVals+3]
 	sort.Sort(ValidatorStubsByPower(vssForSigning))
-	vssForSigning = vssForSigning[0:nVals+2]
+	vssForSigning = vssForSigning[0 : nVals+2]
 	selfIndex = valIndexFn(0)
 	for i := 0; i < nVals+2; i++ {
 		if i == selfIndex {

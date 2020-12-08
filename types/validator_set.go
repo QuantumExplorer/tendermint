@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/bls12381"
-	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 	"math"
 	"math/big"
 	"sort"
 	"strings"
+
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
+	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
 
 	"github.com/tendermint/tendermint/crypto/merkle"
 	tmmath "github.com/tendermint/tendermint/libs/math"
@@ -123,7 +124,6 @@ func (vals *ValidatorSet) Equals(other *ValidatorSet) bool {
 	return true
 }
 
-
 // IsNilOrEmpty returns true if validator set is nil or empty.
 func (vals *ValidatorSet) IsNilOrEmpty() bool {
 	return vals == nil || len(vals.Validators) == 0
@@ -151,7 +151,6 @@ func (vals *ValidatorSet) ThresholdPublicKeyValid() error {
 	}
 	return nil
 }
-
 
 // CopyIncrementProposerPriority increments ProposerPriority and updates the
 // proposer on a copy, and returns it.
@@ -299,9 +298,9 @@ func validatorListCopy(valsList []*Validator) []*Validator {
 // Copy each validator into a new ValidatorSet.
 func (vals *ValidatorSet) Copy() *ValidatorSet {
 	return &ValidatorSet{
-		Validators:       validatorListCopy(vals.Validators),
-		Proposer:         vals.Proposer,
-		totalVotingPower: vals.totalVotingPower,
+		Validators:         validatorListCopy(vals.Validators),
+		Proposer:           vals.Proposer,
+		totalVotingPower:   vals.totalVotingPower,
 		ThresholdPublicKey: vals.ThresholdPublicKey,
 	}
 }
@@ -1080,16 +1079,16 @@ func (e ErrNotEnoughVotingPowerSigned) Error() string {
 
 func (vals *ValidatorSet) ABCIEquivalentValidatorUpdates() *abci.ValidatorSetUpdate {
 	var valUpdates []abci.ValidatorUpdate
-	for i := 0; i < len(vals.Validators) ; i++ {
+	for i := 0; i < len(vals.Validators); i++ {
 		valUpdate := TM2PB.NewValidatorUpdate(vals.Validators[i].PubKey, DefaultDashVotingPower, vals.Validators[i].ProTxHash)
-		valUpdates = append(valUpdates,valUpdate)
+		valUpdates = append(valUpdates, valUpdate)
 	}
 	abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(vals.ThresholdPublicKey)
 	if err != nil {
 		panic(err)
 	}
 	return &abci.ValidatorSetUpdate{
-		ValidatorUpdates: valUpdates,
+		ValidatorUpdates:   valUpdates,
 		ThresholdPublicKey: abciThresholdPublicKey,
 	}
 }
@@ -1247,7 +1246,7 @@ func ValidatorSetFromExistingValidators(valz []*Validator, thresholdPublicKey cr
 		}
 	}
 	vals := &ValidatorSet{
-		Validators: valz,
+		Validators:         valz,
 		ThresholdPublicKey: thresholdPublicKey,
 	}
 	vals.Proposer = vals.findPreviousProposer()
@@ -1267,7 +1266,7 @@ func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {
 		valz           = make([]*Validator, numValidators)
 		privValidators = make([]PrivValidator, numValidators)
 	)
-	threshold := numValidators * 2 / 3 + 1
+	threshold := numValidators*2/3 + 1
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQData(numValidators, threshold)
 
 	for i := 0; i < numValidators; i++ {
@@ -1282,12 +1281,12 @@ func GenerateValidatorSet(numValidators int) (*ValidatorSet, []PrivValidator) {
 
 func GenerateTestValidatorSetWithAddresses(addresses []crypto.Address, power []int64) (*ValidatorSet, []PrivValidator) {
 	var (
-		numValidators  = len(addresses)
-		proTxHashes    = make([]ProTxHash, numValidators)
+		numValidators      = len(addresses)
+		proTxHashes        = make([]ProTxHash, numValidators)
 		originalAddressMap = make(map[string][]byte)
-		originalPowerMap = make(map[string]int64)
-		valz           = make([]*Validator, numValidators)
-		privValidators = make([]PrivValidator, numValidators)
+		originalPowerMap   = make(map[string]int64)
+		valz               = make([]*Validator, numValidators)
+		privValidators     = make([]PrivValidator, numValidators)
 	)
 	for i := 0; i < numValidators; i++ {
 		proTxHashes[i] = crypto.Sha256(addresses[i])
@@ -1311,11 +1310,11 @@ func GenerateTestValidatorSetWithAddresses(addresses []crypto.Address, power []i
 
 func GenerateTestValidatorSetWithAddressesDefaultPower(addresses []crypto.Address) (*ValidatorSet, []PrivValidator) {
 	var (
-		numValidators  = len(addresses)
-		proTxHashes    = make([]ProTxHash, numValidators)
+		numValidators      = len(addresses)
+		proTxHashes        = make([]ProTxHash, numValidators)
 		originalAddressMap = make(map[string][]byte)
-		valz           = make([]*Validator, numValidators)
-		privValidators = make([]PrivValidator, numValidators)
+		valz               = make([]*Validator, numValidators)
+		privValidators     = make([]PrivValidator, numValidators)
 	)
 	for i := 0; i < numValidators; i++ {
 		proTxHashes[i] = crypto.Sha256(addresses[i])
@@ -1341,7 +1340,7 @@ func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []*MockPV) {
 		valz           = make([]*Validator, numValidators)
 		privValidators = make([]*MockPV, numValidators)
 	)
-	threshold := numValidators * 2 / 3 + 1
+	threshold := numValidators*2/3 + 1
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQData(numValidators, threshold)
 
 	for i := 0; i < numValidators; i++ {
@@ -1357,15 +1356,15 @@ func GenerateMockValidatorSet(numValidators int) (*ValidatorSet, []*MockPV) {
 func GenerateGenesisValidators(numValidators int) ([]GenesisValidator, []PrivValidator, crypto.PubKey) {
 	var (
 		genesisValidators = make([]GenesisValidator, numValidators)
-		privValidators = make([]PrivValidator, numValidators)
+		privValidators    = make([]PrivValidator, numValidators)
 	)
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
 		genesisValidators[i] = GenesisValidator{
-			PubKey: privateKeys[i].PubKey(),
-			Power:  DefaultDashVotingPower,
+			PubKey:    privateKeys[i].PubKey(),
+			Power:     DefaultDashVotingPower,
 			ProTxHash: proTxHashes[i],
 		}
 	}
@@ -1379,15 +1378,15 @@ func GenerateGenesisValidators(numValidators int) ([]GenesisValidator, []PrivVal
 func GenerateMockGenesisValidators(numValidators int) ([]GenesisValidator, []*MockPV, crypto.PubKey) {
 	var (
 		genesisValidators = make([]GenesisValidator, numValidators)
-		privValidators = make([]*MockPV, numValidators)
+		privValidators    = make([]*MockPV, numValidators)
 	)
 	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(numValidators)
 
 	for i := 0; i < numValidators; i++ {
 		privValidators[i] = NewMockPVWithParams(privateKeys[i], proTxHashes[i], false, false)
 		genesisValidators[i] = GenesisValidator{
-			PubKey: privateKeys[i].PubKey(),
-			Power:  DefaultDashVotingPower,
+			PubKey:    privateKeys[i].PubKey(),
+			Power:     DefaultDashVotingPower,
 			ProTxHash: proTxHashes[i],
 		}
 	}
@@ -1443,16 +1442,16 @@ func GenerateMockValidatorSetUsingProTxHashes(proTxHashes []crypto.ProTxHash) (*
 func ValidatorUpdatesRegenerateOnProTxHashes(proTxHashes []crypto.ProTxHash) abci.ValidatorSetUpdate {
 	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 	var valUpdates []abci.ValidatorUpdate
-	for i := 0; i < len(proTxHashes) ; i++ {
+	for i := 0; i < len(proTxHashes); i++ {
 		valUpdate := TM2PB.NewValidatorUpdate(privateKeys[i].PubKey(), DefaultDashVotingPower, proTxHashes[i])
-		valUpdates = append(valUpdates,valUpdate)
+		valUpdates = append(valUpdates, valUpdate)
 	}
 	abciThresholdPublicKey, err := cryptoenc.PubKeyToProto(thresholdPublicKey)
 	if err != nil {
 		panic(err)
 	}
 	return abci.ValidatorSetUpdate{
-		ValidatorUpdates: valUpdates,
+		ValidatorUpdates:   valUpdates,
 		ThresholdPublicKey: abciThresholdPublicKey,
 	}
 }

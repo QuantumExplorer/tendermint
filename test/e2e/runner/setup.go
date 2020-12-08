@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/BurntSushi/toml"
 
@@ -186,19 +187,19 @@ services:
 // MakeGenesis generates a genesis document.
 func MakeGenesis(testnet *e2e.Testnet) (types.GenesisDoc, error) {
 	genesis := types.GenesisDoc{
-		GenesisTime:     time.Now(),
-		ChainID:         testnet.Name,
-		ConsensusParams: types.DefaultConsensusParams(),
-		InitialHeight:   testnet.InitialHeight,
+		GenesisTime:        time.Now(),
+		ChainID:            testnet.Name,
+		ConsensusParams:    types.DefaultConsensusParams(),
+		InitialHeight:      testnet.InitialHeight,
 		ThresholdPublicKey: testnet.ThresholdPublicKey,
 	}
 	for validator, power := range testnet.Validators {
 		genesis.Validators = append(genesis.Validators, types.GenesisValidator{
-			Name:    validator.Name,
-			Address: validator.PrivvalKey.PubKey().Address(),
-			PubKey:  validator.PrivvalKey.PubKey(),
+			Name:      validator.Name,
+			Address:   validator.PrivvalKey.PubKey().Address(),
+			PubKey:    validator.PrivvalKey.PubKey(),
 			ProTxHash: validator.ProTxHash,
-			Power:   power,
+			Power:     power,
 		})
 	}
 	// The validator set will be sorted internally by Tendermint ranked by power,

@@ -123,7 +123,7 @@ func (rs *RoundState) RoundStateSimple() RoundStateSimple {
 		Votes:             votesJSON,
 		Proposer: types.ValidatorInfo{
 			ProTxHash: proTxHash,
-			Index:   idx,
+			Index:     idx,
 		},
 	}
 }
@@ -139,7 +139,7 @@ func (rs *RoundState) NewRoundEvent() types.EventDataNewRound {
 		Step:   rs.Step.String(),
 		Proposer: types.ValidatorInfo{
 			ProTxHash: proTxHash,
-			Index:   idx,
+			Index:     idx,
 		},
 	}
 }

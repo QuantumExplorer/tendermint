@@ -2,10 +2,11 @@ package privval
 
 import (
 	"encoding/hex"
-	"github.com/tendermint/tendermint/crypto/bls12381"
-	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
+	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
@@ -22,9 +23,9 @@ var stamp = time.Date(2019, 10, 13, 16, 14, 44, 0, time.UTC)
 
 func exampleVote() *types.Vote {
 	return &types.Vote{
-		Type:      tmproto.SignedMsgType(1),
-		Height:    3,
-		Round:     2,
+		Type:   tmproto.SignedMsgType(1),
+		Height: 3,
+		Round:  2,
 		BlockID: types.BlockID{
 			Hash: tmhash.Sum([]byte("blockID_hash")),
 			PartSetHeader: types.PartSetHeader{
@@ -36,7 +37,7 @@ func exampleVote() *types.Vote {
 			LastAppHash: tmhash.Sum([]byte("stateID_hash")),
 		},
 		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
-		ValidatorIndex:   56789,
+		ValidatorIndex:     56789,
 	}
 }
 

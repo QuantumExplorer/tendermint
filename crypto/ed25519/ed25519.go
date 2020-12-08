@@ -93,7 +93,6 @@ func (privKey PrivKey) Equals(other crypto.PrivKey) bool {
 	return false
 }
 
-
 func (privKey PrivKey) Type() string {
 	return KeyType
 }
@@ -171,7 +170,6 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 func (pubKey PubKey) String() string {
 	return fmt.Sprintf("PubKeyEd25519{%X}", []byte(pubKey))
 }
-
 
 func (pubKey PubKey) Type() string {
 	return KeyType

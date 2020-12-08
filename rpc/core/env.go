@@ -18,8 +18,8 @@ import (
 
 const (
 	// see README
-	defaultPerPage = 30
-	maxPerPage     = 100
+	defaultPerPage                   = 30
+	maxPerPage                       = 100
 	defaultRequestThresholdPublicKey = true
 
 	// SubscribeTimeout is the maximum time we wait to subscribe for an event.

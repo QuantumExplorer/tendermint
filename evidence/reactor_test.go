@@ -3,10 +3,11 @@ package evidence_test
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/go-kit/kit/log/term"
 	"github.com/stretchr/testify/assert"
@@ -310,9 +311,9 @@ func (ps peerState) GetHeight() int64 {
 
 func exampleVote(t byte) *types.Vote {
 	return &types.Vote{
-		Type:      tmproto.SignedMsgType(t),
-		Height:    3,
-		Round:     2,
+		Type:   tmproto.SignedMsgType(t),
+		Height: 3,
+		Round:  2,
 		BlockID: types.BlockID{
 			Hash: tmhash.Sum([]byte("blockID_hash")),
 			PartSetHeader: types.PartSetHeader{
@@ -324,7 +325,7 @@ func exampleVote(t byte) *types.Vote {
 			LastAppHash: tmhash.Sum([]byte("stateID_hash")),
 		},
 		ValidatorProTxHash: crypto.ProTxHashFromSeedBytes([]byte("validator_pro_tx_hash")),
-		ValidatorIndex:   56789,
+		ValidatorIndex:     56789,
 	}
 }
 

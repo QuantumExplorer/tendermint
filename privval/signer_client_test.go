@@ -119,22 +119,22 @@ func TestSignerProposal(t *testing.T) {
 		ts := time.Now()
 		hash := tmrand.Bytes(tmhash.Size)
 		have := &types.Proposal{
-			Type:      tmproto.ProposalType,
-			Height:    1,
+			Type:                  tmproto.ProposalType,
+			Height:                1,
 			CoreChainLockedHeight: 1,
-			Round:     2,
-			POLRound:  2,
-			BlockID:   types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp: ts,
+			Round:                 2,
+			POLRound:              2,
+			BlockID:               types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			Timestamp:             ts,
 		}
 		want := &types.Proposal{
-			Type:      tmproto.ProposalType,
-			Height:    1,
+			Type:                  tmproto.ProposalType,
+			Height:                1,
 			CoreChainLockedHeight: 1,
-			Round:     2,
-			POLRound:  2,
-			BlockID:   types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Timestamp: ts,
+			Round:                 2,
+			POLRound:              2,
+			BlockID:               types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			Timestamp:             ts,
 		}
 
 		tc := tc
@@ -162,23 +162,23 @@ func TestSignerVote(t *testing.T) {
 		stateHash := tmrand.Bytes(tmhash.Size)
 		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		want := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
+			ValidatorIndex:     1,
 		}
 
 		have := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
+			ValidatorIndex:     1,
 		}
 
 		tc := tc
@@ -207,23 +207,23 @@ func TestSignerVoteResetDeadline(t *testing.T) {
 		stateHash := tmrand.Bytes(tmhash.Size)
 		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		want := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
+			ValidatorIndex:     1,
 		}
 
 		have := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
+			ValidatorIndex:     1,
 		}
 
 		tc := tc
@@ -263,23 +263,23 @@ func TestSignerVoteKeepAlive(t *testing.T) {
 		stateHash := tmrand.Bytes(tmhash.Size)
 		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		want := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
+			ValidatorIndex:     1,
 		}
 
 		have := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
+			ValidatorIndex:     1,
 		}
 
 		tc := tc
@@ -331,13 +331,13 @@ func TestSignerSignProposalErrors(t *testing.T) {
 
 		hash := tmrand.Bytes(tmhash.Size)
 		proposal := &types.Proposal{
-			Type:      tmproto.ProposalType,
-			Height:    1,
+			Type:                  tmproto.ProposalType,
+			Height:                1,
 			CoreChainLockedHeight: 1,
-			Round:     2,
-			POLRound:  2,
-			BlockID:   types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			Signature: []byte("signature"),
+			Round:                 2,
+			POLRound:              2,
+			BlockID:               types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			Signature:             []byte("signature"),
 		}
 
 		err := tc.signerClient.SignProposal(tc.chainID, proposal.ToProto())
@@ -357,15 +357,15 @@ func TestSignerSignVoteErrors(t *testing.T) {
 		stateHash := tmrand.Bytes(tmhash.Size)
 		valProTxHash := tmrand.Bytes(crypto.DefaultHashSize)
 		vote := &types.Vote{
-			Type:             tmproto.PrecommitType,
-			Height:           1,
-			Round:            2,
-			BlockID:          types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
-			StateID:          types.StateID{LastAppHash: stateHash},
+			Type:               tmproto.PrecommitType,
+			Height:             1,
+			Round:              2,
+			BlockID:            types.BlockID{Hash: hash, PartSetHeader: types.PartSetHeader{Hash: hash, Total: 2}},
+			StateID:            types.StateID{LastAppHash: stateHash},
 			ValidatorProTxHash: valProTxHash,
-			ValidatorIndex:   1,
-			BlockSignature:   []byte("signature"),
-			StateSignature:   []byte("stateSignature"),
+			ValidatorIndex:     1,
+			BlockSignature:     []byte("signature"),
+			StateSignature:     []byte("stateSignature"),
 		}
 
 		// Replace signer service privval with one that always fails

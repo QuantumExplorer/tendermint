@@ -3,11 +3,12 @@ package http
 import (
 	"context"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"math/rand"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
 
 	"github.com/tendermint/tendermint/light/provider"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -100,10 +101,10 @@ func (p *http) ReportEvidence(ctx context.Context, ev types.Evidence) error {
 
 func (p *http) validatorSet(ctx context.Context, height *int64) (*types.ValidatorSet, error) {
 	var (
-		maxPerPage = 100
-		vals       = []*types.Validator{}
+		maxPerPage         = 100
+		vals               = []*types.Validator{}
 		thresholdPublicKey crypto.PubKey
-		page       = 1
+		page               = 1
 	)
 
 	for len(vals)%maxPerPage == 0 {

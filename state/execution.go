@@ -3,8 +3,9 @@ package state
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	cryptoenc "github.com/tendermint/tendermint/crypto/encoding"
@@ -169,7 +170,6 @@ func (blockExec *BlockExecutor) ApplyBlock(
 	if err != nil {
 		return state, 0, fmt.Errorf("error in chain lock from proto: %v", err)
 	}
-
 
 	validatorUpdates, thresholdPublicKeyUpdate, err := types.PB2TM.ValidatorUpdatesFromValidatorSet(abciValidatorSetUpdates)
 	if err != nil {

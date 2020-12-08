@@ -14,15 +14,15 @@ func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 	}
 
 	return ValidatorUpdate{
-		PubKey: pkp,
-		Power:  power,
+		PubKey:    pkp,
+		Power:     power,
 		ProTxHash: proTxHash,
 	}
 }
 
 func UpdateValidatorSet(validatorUpdates []ValidatorUpdate, thresholdPublicKey crypto2.PublicKey) ValidatorSetUpdate {
 	return ValidatorSetUpdate{
-		ValidatorUpdates: validatorUpdates,
+		ValidatorUpdates:   validatorUpdates,
 		ThresholdPublicKey: thresholdPublicKey,
 	}
 }

@@ -5,10 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/merkle"
@@ -79,7 +80,7 @@ func (dve *DuplicateVoteEvidence) ABCI() []abci.Evidence {
 		Type: abci.EvidenceType_DUPLICATE_VOTE,
 		Validator: abci.Validator{
 			ProTxHash: dve.VoteA.ValidatorProTxHash,
-			Power:   dve.ValidatorPower,
+			Power:     dve.ValidatorPower,
 		},
 		Height:           dve.VoteA.Height,
 		Time:             dve.Timestamp,
@@ -611,4 +612,3 @@ func randStateID() StateID {
 		LastAppHash: tmrand.Bytes(tmhash.Size),
 	}
 }
-

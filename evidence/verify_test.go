@@ -51,7 +51,7 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 			ValidatorSet: conflictingVals,
 		},
 		CommonHeight:        4,
-		TotalVotingPower:    2*types.DefaultDashVotingPower,
+		TotalVotingPower:    2 * types.DefaultDashVotingPower,
 		ByzantineValidators: commonVals.Validators,
 		Timestamp:           defaultEvidenceTime,
 	}
@@ -82,11 +82,11 @@ func TestVerifyLightClientAttack_Lunatic(t *testing.T) {
 	assert.Error(t, err)
 
 	// evidence with different total validator power should fail
-	ev.TotalVotingPower = types.DefaultDashVotingPower+1
+	ev.TotalVotingPower = types.DefaultDashVotingPower + 1
 	err = evidence.VerifyLightClientAttack(ev, commonSignedHeader, trustedSignedHeader, commonVals,
 		defaultEvidenceTime.Add(2*time.Hour), 3*time.Hour)
 	assert.Error(t, err)
-	ev.TotalVotingPower = 2*types.DefaultDashVotingPower
+	ev.TotalVotingPower = 2 * types.DefaultDashVotingPower
 
 	state := sm.State{
 		LastBlockTime:   defaultEvidenceTime.Add(2 * time.Hour),
@@ -156,7 +156,7 @@ func TestVerifyLightClientAttack_Equivocation(t *testing.T) {
 		},
 		CommonHeight:        10,
 		ByzantineValidators: conflictingVals.Validators[:4],
-		TotalVotingPower:    5*types.DefaultDashVotingPower,
+		TotalVotingPower:    5 * types.DefaultDashVotingPower,
 		Timestamp:           defaultEvidenceTime,
 	}
 
@@ -242,7 +242,7 @@ func TestVerifyLightClientAttack_Amnesia(t *testing.T) {
 		},
 		CommonHeight:        10,
 		ByzantineValidators: nil, // with amnesia evidence no validators are submitted as abci evidence
-		TotalVotingPower:    5*types.DefaultDashVotingPower,
+		TotalVotingPower:    5 * types.DefaultDashVotingPower,
 		Timestamp:           defaultEvidenceTime,
 	}
 
@@ -398,12 +398,12 @@ func makeVote(
 	require.NoError(t, err)
 	v := &types.Vote{
 		ValidatorProTxHash: proTxHash,
-		ValidatorIndex:   valIndex,
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.SignedMsgType(step),
-		BlockID:          blockID,
-		StateID:          stateID,
+		ValidatorIndex:     valIndex,
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.SignedMsgType(step),
+		BlockID:            blockID,
+		StateID:            stateID,
 	}
 
 	vpb := v.ToProto()
@@ -453,11 +453,10 @@ func makeBlockID(hash []byte, partSetSize uint32, partSetHash []byte) types.Bloc
 
 func makeStateID(lastAppHash []byte) types.StateID {
 	var (
-		ah   = make([]byte, tmhash.Size)
+		ah = make([]byte, tmhash.Size)
 	)
 	copy(ah, lastAppHash)
 	return types.StateID{
 		LastAppHash: ah,
 	}
 }
-

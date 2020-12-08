@@ -125,9 +125,9 @@ type Peer struct {
 
 // Validators for a height.
 type ResultValidators struct {
-	BlockHeight int64              `json:"block_height"`
-	Validators  []*types.Validator `json:"validators"`
-	ThresholdPublicKey *crypto.PubKey `json:"threshold_public_key"`
+	BlockHeight        int64              `json:"block_height"`
+	Validators         []*types.Validator `json:"validators"`
+	ThresholdPublicKey *crypto.PubKey     `json:"threshold_public_key"`
 	// Count of actual validators in this result
 	Count int `json:"count"`
 	// Total number of validators

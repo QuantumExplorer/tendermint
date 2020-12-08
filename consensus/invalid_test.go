@@ -77,10 +77,10 @@ func invalidDoPrevoteFunc(t *testing.T, height int64, round int32, cs *State, sw
 		}
 		precommit := &types.Vote{
 			ValidatorProTxHash: proTxHash,
-			ValidatorIndex:   valIndex,
-			Height:           cs.Height,
-			Round:            cs.Round,
-			Type:             tmproto.PrecommitType,
+			ValidatorIndex:     valIndex,
+			Height:             cs.Height,
+			Round:              cs.Round,
+			Type:               tmproto.PrecommitType,
 			BlockID: types.BlockID{
 				Hash:          blockHash,
 				PartSetHeader: types.PartSetHeader{Total: 1, Hash: tmrand.Bytes(32)}},

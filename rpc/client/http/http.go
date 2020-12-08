@@ -494,7 +494,7 @@ func (c *baseRPCClient) Validators(
 	height *int64,
 	page,
 	perPage *int,
-    requestThresholdPublicKey *bool,
+	requestThresholdPublicKey *bool,
 ) (*ctypes.ResultValidators, error) {
 	result := new(ctypes.ResultValidators)
 	params := make(map[string]interface{})

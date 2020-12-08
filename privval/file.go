@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"time"
+
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -45,12 +46,12 @@ func voteToStep(vote *tmproto.Vote) int8 {
 
 // FilePVKey stores the immutable part of PrivValidator.
 type FilePVKey struct {
-	Address                types.Address    `json:"address"`
-	PubKey                 crypto.PubKey    `json:"pub_key"`
-	PrivKey                crypto.PrivKey   `json:"priv_key"`
-	NextPrivKeys           []crypto.PrivKey `json:"next_priv_key,omitempty"`
-	NextPrivKeyHeights     []int64          `json:"next_priv_key_height,omitempty"`
-	ProTxHash              crypto.ProTxHash `json:"pro_tx_hash"`
+	Address            types.Address    `json:"address"`
+	PubKey             crypto.PubKey    `json:"pub_key"`
+	PrivKey            crypto.PrivKey   `json:"priv_key"`
+	NextPrivKeys       []crypto.PrivKey `json:"next_priv_key,omitempty"`
+	NextPrivKeyHeights []int64          `json:"next_priv_key_height,omitempty"`
+	ProTxHash          crypto.ProTxHash `json:"pro_tx_hash"`
 
 	filePath string
 }
@@ -77,9 +78,9 @@ func (pvKey FilePVKey) Save() {
 
 // FilePVLastSignState stores the mutable part of PrivValidator.
 type FilePVLastSignState struct {
-	Height    int64            `json:"height"`
-	Round     int32            `json:"round"`
-	Step      int8             `json:"step"`
+	Height         int64            `json:"height"`
+	Round          int32            `json:"round"`
+	Step           int8             `json:"step"`
 	BlockSignature []byte           `json:"block_signature,omitempty"`
 	BlockSignBytes tmbytes.HexBytes `json:"block_sign_bytes,omitempty"`
 	StateSignature []byte           `json:"state_signature,omitempty"`
@@ -167,11 +168,11 @@ type FilePV struct {
 func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, keyFilePath, stateFilePath string) *FilePV {
 	return &FilePV{
 		Key: FilePVKey{
-			Address:  privKey.PubKey().Address(),
-			PubKey:   privKey.PubKey(),
-			PrivKey:  privKey,
+			Address:   privKey.PubKey().Address(),
+			PubKey:    privKey.PubKey(),
+			PrivKey:   privKey,
 			ProTxHash: proTxHash,
-			filePath: keyFilePath,
+			filePath:  keyFilePath,
 		},
 		LastSignState: FilePVLastSignState{
 			Step:     stepNone,
@@ -264,7 +265,7 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 
 func (pv *FilePV) ExtractIntoValidator(height int64) *types.Validator {
 	var pubKey crypto.PubKey
-	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && height >= pv.Key.NextPrivKeyHeights[0]  {
+	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && height >= pv.Key.NextPrivKeyHeights[0] {
 		for i, nextPrivKeyHeight := range pv.Key.NextPrivKeyHeights {
 			if height >= nextPrivKeyHeight {
 				pubKey = pv.Key.NextPrivKeys[i].PubKey()
@@ -346,7 +347,7 @@ func (pv *FilePV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) erro
 	return nil
 }
 
-func (pv *FilePV)updateKeyIfNeeded(height int64) {
+func (pv *FilePV) updateKeyIfNeeded(height int64) {
 	if pv.Key.NextPrivKeys != nil && len(pv.Key.NextPrivKeys) > 0 && pv.Key.NextPrivKeyHeights != nil && len(pv.Key.NextPrivKeyHeights) > 0 && height >= pv.Key.NextPrivKeyHeights[0] {
 		//fmt.Printf("privval file node %X at height %d updating key %X with new key %X\n", pv.Key.ProTxHash, height, pv.Key.PrivKey.PubKey().Bytes(), pv.Key.NextPrivKeys[0].PubKey().Bytes())
 		pv.Key.PrivKey = pv.Key.NextPrivKeys[0]
@@ -359,7 +360,7 @@ func (pv *FilePV)updateKeyIfNeeded(height int64) {
 		}
 	}
 	//else {
-		//fmt.Printf("privval file node %X at height %d did not update key %X with next keys %v\n", pv.Key.ProTxHash, height, pv.Key.PrivKey.PubKey().Bytes(), pv.Key.NextPrivKeyHeights)
+	//fmt.Printf("privval file node %X at height %d did not update key %X with next keys %v\n", pv.Key.ProTxHash, height, pv.Key.PrivKey.PubKey().Bytes(), pv.Key.NextPrivKeyHeights)
 	//}
 }
 
@@ -397,7 +398,6 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 		}
 		return err
 	}
-
 
 	sigBlock, err := pv.Key.PrivKey.Sign(blockSignBytes)
 	if err != nil {

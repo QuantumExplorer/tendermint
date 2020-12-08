@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"fmt"
+
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	dbm "github.com/tendermint/tm-db"
 
@@ -111,10 +112,10 @@ func makeState(nVals, height int) (sm.State, dbm.DB, map[string]types.PrivValida
 		privValsByProTxHash[proTxHash.String()] = types.NewMockPVWithParams(privVals[i].PrivKey, vals[i].ProTxHash, false, false)
 	}
 	s, _ := sm.MakeGenesisState(&types.GenesisDoc{
-		ChainID:    chainID,
-		Validators: vals,
+		ChainID:            chainID,
+		Validators:         vals,
 		ThresholdPublicKey: thresholdPublicKey,
-		AppHash:    nil,
+		AppHash:            nil,
 	})
 
 	stateDB := dbm.NewMemDB()
@@ -144,7 +145,6 @@ func makeBlock(state sm.State, height int64) *types.Block {
 	)
 	return block
 }
-
 
 func makeHeaderPartsResponsesValKeysRegenerate(state sm.State, regenerate bool) (types.Header, *types.CoreChainLock, types.BlockID, *tmstate.ABCIResponses) {
 	block := makeBlock(state, state.LastBlockHeight+1)
@@ -207,14 +207,14 @@ func randomGenesisDoc() *types.GenesisDoc {
 		ChainID:     "abc",
 		Validators: []types.GenesisValidator{
 			{
-				Address: pubkey.Address(),
-				PubKey:  pubkey,
+				Address:   pubkey.Address(),
+				PubKey:    pubkey,
 				ProTxHash: crypto.RandProTxHash(),
-				Power:   types.DefaultDashVotingPower,
-				Name:    "myval",
+				Power:     types.DefaultDashVotingPower,
+				Name:      "myval",
 			},
 		},
-		ConsensusParams: types.DefaultConsensusParams(),
+		ConsensusParams:    types.DefaultConsensusParams(),
 		ThresholdPublicKey: pubkey,
 	}
 }

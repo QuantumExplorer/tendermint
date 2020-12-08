@@ -26,7 +26,7 @@ const (
 	// MaxHeaderBytes is a maximum header size.
 	// NOTE: Because app hash can be of arbitrary size, the header is therefore not
 	// capped in size and thus this number should be seen as a soft max
-	MaxHeaderBytes int64 = 646
+	MaxHeaderBytes       int64 = 646
 	MaxCoreChainLockSize int64 = 132
 
 	// MaxOverheadForBlock - maximum overhead to encode a block (up to
@@ -71,7 +71,6 @@ func (b *Block) ValidateBasic() error {
 			return fmt.Errorf("invalid chain lock data: %w", err)
 		}
 	}
-
 
 	// Validate the last commit and its hash.
 	if b.LastCommit == nil {
@@ -300,7 +299,7 @@ func MaxDataBytes(maxBytes int64, keyType crypto.KeyType, evidenceBytes int64, v
 		MaxOverheadForBlock -
 		MaxHeaderBytes -
 		MaxCoreChainLockSize -
-		MaxCommitBytes(valsCount,keyType) -
+		MaxCommitBytes(valsCount, keyType) -
 		evidenceBytes
 
 	if maxDataBytes < 0 {
@@ -369,8 +368,8 @@ type Header struct {
 	LastResultsHash tmbytes.HexBytes `json:"last_results_hash"`
 
 	// consensus info
-	EvidenceHash    tmbytes.HexBytes `json:"evidence_hash"`    // evidence included in the block
-	ProposerProTxHash ProTxHash          `json:"proposer_pro_tx_hash"` // original proposer of the block
+	EvidenceHash      tmbytes.HexBytes `json:"evidence_hash"`        // evidence included in the block
+	ProposerProTxHash ProTxHash        `json:"proposer_pro_tx_hash"` // original proposer of the block
 }
 
 // Populate the Header with state-derived data.
@@ -621,10 +620,10 @@ const (
 
 // CommitSig is a part of the Vote included in a Commit.
 type CommitSig struct {
-	BlockIDFlag           BlockIDFlag `json:"block_id_flag"`
-	ValidatorProTxHash    []byte      `json:"validator_pro_tx_hash"`
-	BlockSignature        []byte      `json:"block_signature"`
-	StateSignature        []byte      `json:"state_signature"`
+	BlockIDFlag        BlockIDFlag `json:"block_id_flag"`
+	ValidatorProTxHash []byte      `json:"validator_pro_tx_hash"`
+	BlockSignature     []byte      `json:"block_signature"`
+	StateSignature     []byte      `json:"state_signature"`
 }
 
 // NewCommitSigForBlock returns new CommitSig with BlockIDFlagCommit.
@@ -810,7 +809,7 @@ type Commit struct {
 	Height                  int64       `json:"height"`
 	Round                   int32       `json:"round"`
 	BlockID                 BlockID     `json:"block_id"`
-	StateID	                StateID     `json:"state_id"`
+	StateID                 StateID     `json:"state_id"`
 	Signatures              []CommitSig `json:"signatures"`
 	ThresholdBlockSignature []byte      `json:"threshold_block_signature"`
 	ThresholdStateSignature []byte      `json:"threshold_state_signature"`
@@ -825,11 +824,11 @@ type Commit struct {
 // NewCommit returns a new Commit.
 func NewCommit(height int64, round int32, blockID BlockID, stateID StateID, commitSigs []CommitSig, thresholdBlockSignature []byte, thresholdStateSignature []byte) *Commit {
 	return &Commit{
-		Height:     height,
-		Round:      round,
-		BlockID:    blockID,
-		StateID:    stateID,
-		Signatures: commitSigs,
+		Height:                  height,
+		Round:                   round,
+		BlockID:                 blockID,
+		StateID:                 stateID,
+		Signatures:              commitSigs,
 		ThresholdBlockSignature: thresholdBlockSignature,
 		ThresholdStateSignature: thresholdStateSignature,
 	}
@@ -858,28 +857,27 @@ func CommitToVoteSet(chainID string, commit *Commit, vals *ValidatorSet) *VoteSe
 func (commit *Commit) GetVote(valIdx int32) *Vote {
 	commitSig := commit.Signatures[valIdx]
 	return &Vote{
-		Type:             tmproto.PrecommitType,
-		Height:           commit.Height,
-		Round:            commit.Round,
-		BlockID:          commitSig.BlockID(commit.BlockID),
-		StateID: 		  commitSig.StateID(commit.StateID),
+		Type:               tmproto.PrecommitType,
+		Height:             commit.Height,
+		Round:              commit.Round,
+		BlockID:            commitSig.BlockID(commit.BlockID),
+		StateID:            commitSig.StateID(commit.StateID),
 		ValidatorProTxHash: commitSig.ValidatorProTxHash,
-		ValidatorIndex:   valIdx,
-		BlockSignature:   commitSig.BlockSignature,
-		StateSignature:   commitSig.StateSignature,
+		ValidatorIndex:     valIdx,
+		BlockSignature:     commitSig.BlockSignature,
+		StateSignature:     commitSig.StateSignature,
 	}
 }
 
 func (commit *Commit) GetCanonicalVote() *Vote {
 	return &Vote{
-		Type:             tmproto.PrecommitType,
-		Height:           commit.Height,
-		Round:            commit.Round,
-		BlockID:          commit.BlockID,
-		StateID: 		  commit.StateID,
+		Type:    tmproto.PrecommitType,
+		Height:  commit.Height,
+		Round:   commit.Round,
+		BlockID: commit.BlockID,
+		StateID: commit.StateID,
 	}
 }
-
 
 // VoteBlockSignBytes returns the bytes of the Vote corresponding to valIdx for
 // signing.
@@ -899,7 +897,6 @@ func (commit *Commit) CanonicalVoteVerifySignBytes(chainID string) []byte {
 	vCanonical := voteCanonical.ToProto()
 	return VoteBlockSignBytes(chainID, vCanonical)
 }
-
 
 // VoteStateSignBytes returns the bytes of the State corresponding to valIdx for
 // signing.
@@ -1383,7 +1380,7 @@ func BlockIDFromProto(bID *tmproto.BlockID) (*BlockID, error) {
 
 // StateID
 type StateID struct {
-	LastAppHash          tmbytes.HexBytes `json:"last_app_hash"`
+	LastAppHash tmbytes.HexBytes `json:"last_app_hash"`
 }
 
 // Equals returns true if the StateID matches the given StateID
@@ -1430,7 +1427,7 @@ func (stateID *StateID) ToProto() tmproto.StateID {
 	}
 
 	return tmproto.StateID{
-		LastAppHash:          stateID.LastAppHash,
+		LastAppHash: stateID.LastAppHash,
 	}
 }
 

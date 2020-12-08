@@ -66,12 +66,12 @@ func makeVoteHR(t *testing.T, height int64, valIndex, round int32, privVals []ty
 
 	vote := &types.Vote{
 		ValidatorProTxHash: proTxHash,
-		ValidatorIndex:   valIndex,
-		Height:           height,
-		Round:            round,
-		Type:             tmproto.PrecommitType,
-		BlockID:          types.BlockID{Hash: randBytes1, PartSetHeader: types.PartSetHeader{}},
-		StateID:		  types.StateID{LastAppHash: randBytes2},
+		ValidatorIndex:     valIndex,
+		Height:             height,
+		Round:              round,
+		Type:               tmproto.PrecommitType,
+		BlockID:            types.BlockID{Hash: randBytes1, PartSetHeader: types.PartSetHeader{}},
+		StateID:            types.StateID{LastAppHash: randBytes2},
 	}
 	chainID := config.ChainID()
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -13,14 +14,14 @@ import (
 // that signs votes and proposals, and never double signs.
 type PrivValidator interface {
 	GetPubKey() (crypto.PubKey, error)
-    UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error
+	UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error
 
 	GetProTxHash() (crypto.ProTxHash, error)
 
 	SignVote(chainID string, vote *tmproto.Vote) error
 	SignProposal(chainID string, proposal *tmproto.Proposal) error
 
-    ExtractIntoValidator(height int64) *Validator
+	ExtractIntoValidator(height int64) *Validator
 }
 
 type PrivValidatorsByProTxHash []PrivValidator
@@ -52,12 +53,12 @@ func (pvs PrivValidatorsByProTxHash) Swap(i, j int) {
 // MockPV implements PrivValidator without any safety or persistence.
 // Only use it for testing.
 type MockPV struct {
-	PrivKey                crypto.PrivKey
-	NextPrivKeys           []crypto.PrivKey
-	NextPrivKeyHeights     []int64
-	ProTxHash			   crypto.ProTxHash
-	breakProposalSigning   bool
-	breakVoteSigning       bool
+	PrivKey              crypto.PrivKey
+	NextPrivKeys         []crypto.PrivKey
+	NextPrivKeyHeights   []int64
+	ProTxHash            crypto.ProTxHash
+	breakProposalSigning bool
+	breakVoteSigning     bool
 }
 
 func NewMockPV() *MockPV {
@@ -137,7 +138,7 @@ func (pv *MockPV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) erro
 	return nil
 }
 
-func (pv *MockPV)updateKeyIfNeeded(height int64) {
+func (pv *MockPV) updateKeyIfNeeded(height int64) {
 	if pv.NextPrivKeys != nil && len(pv.NextPrivKeys) > 0 && pv.NextPrivKeyHeights != nil && len(pv.NextPrivKeyHeights) > 0 && height >= pv.NextPrivKeyHeights[0] {
 		//fmt.Printf("mockpv node %X at height %d updating key %X with new key %X\n", pv.ProTxHash, height, pv.PrivKey.PubKey().Bytes(), pv.NextPrivKeys[0].PubKey().Bytes())
 		pv.PrivKey = pv.NextPrivKeys[0]
@@ -156,7 +157,7 @@ func (pv *MockPV)updateKeyIfNeeded(height int64) {
 
 func (pv *MockPV) ExtractIntoValidator(height int64) *Validator {
 	var pubKey crypto.PubKey
-	if pv.NextPrivKeys != nil && len(pv.NextPrivKeys) > 0 && height >= pv.NextPrivKeyHeights[0]  {
+	if pv.NextPrivKeys != nil && len(pv.NextPrivKeys) > 0 && height >= pv.NextPrivKeyHeights[0] {
 		for i, nextPrivKeyHeight := range pv.NextPrivKeyHeights {
 			if height >= nextPrivKeyHeight {
 				pubKey = pv.NextPrivKeys[i].PubKey()
@@ -175,6 +176,7 @@ func (pv *MockPV) ExtractIntoValidator(height int64) *Validator {
 		ProTxHash:   pv.ProTxHash,
 	}
 }
+
 // String returns a string representation of the MockPV.
 func (pv *MockPV) String() string {
 	mpv, _ := pv.GetPubKey() // mockPV will never return an error, ignored here
