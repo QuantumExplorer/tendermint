@@ -93,8 +93,8 @@ func (pv *MockPV) SignVote(chainID string, vote *tmproto.Vote) error {
 	blockSignBytes := VoteBlockSignBytes(useChainID, vote)
 	stateSignBytes := VoteStateSignBytes(useChainID, vote)
 	blockSignature, err := pv.PrivKey.Sign(blockSignBytes)
-	//fmt.Printf("validator %X signing vote of type %d at height %d with key %X blockSignBytes %X stateSignBytes %X\n", pv.ProTxHash, vote.Type, vote.Height, pv.PrivKey.PubKey().Bytes(), blockSignBytes, stateSignBytes)
-	//fmt.Printf("block sign bytes are %X by %X using key %X resulting in sig %X\n", blockSignBytes, pv.ProTxHash, pv.PrivKey.PubKey().Bytes(), blockSignature)
+	// fmt.Printf("validator %X signing vote of type %d at height %d with key %X blockSignBytes %X stateSignBytes %X\n", pv.ProTxHash, vote.Type, vote.Height, pv.PrivKey.PubKey().Bytes(), blockSignBytes, stateSignBytes)
+	// fmt.Printf("block sign bytes are %X by %X using key %X resulting in sig %X\n", blockSignBytes, pv.ProTxHash, pv.PrivKey.PubKey().Bytes(), blockSignature)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (pv *MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 	}
 
 	signBytes := ProposalBlockSignBytes(useChainID, proposal)
-	//fmt.Printf("proposer %X signing proposal at height %d with key %X proposalSignBytes %X\n", pv.ProTxHash, proposal.Height, pv.PrivKey.PubKey().Bytes(), signBytes)
+	// fmt.Printf("proposer %X signing proposal at height %d with key %X proposalSignBytes %X\n", pv.ProTxHash, proposal.Height, pv.PrivKey.PubKey().Bytes(), signBytes)
 	sig, err := pv.PrivKey.Sign(signBytes)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func (pv *MockPV) SignProposal(chainID string, proposal *tmproto.Proposal) error
 }
 
 func (pv *MockPV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) error {
-	//fmt.Printf("mockpv node %X setting a new key %X at height %d\n", pv.ProTxHash, privateKey.PubKey().Bytes(), height)
+	// fmt.Printf("mockpv node %X setting a new key %X at height %d\n", pv.ProTxHash, privateKey.PubKey().Bytes(), height)
 	pv.NextPrivKeys = append(pv.NextPrivKeys, privateKey)
 	pv.NextPrivKeyHeights = append(pv.NextPrivKeyHeights, height)
 	return nil
@@ -140,7 +140,7 @@ func (pv *MockPV) UpdatePrivateKey(privateKey crypto.PrivKey, height int64) erro
 
 func (pv *MockPV) updateKeyIfNeeded(height int64) {
 	if pv.NextPrivKeys != nil && len(pv.NextPrivKeys) > 0 && pv.NextPrivKeyHeights != nil && len(pv.NextPrivKeyHeights) > 0 && height >= pv.NextPrivKeyHeights[0] {
-		//fmt.Printf("mockpv node %X at height %d updating key %X with new key %X\n", pv.ProTxHash, height, pv.PrivKey.PubKey().Bytes(), pv.NextPrivKeys[0].PubKey().Bytes())
+		// fmt.Printf("mockpv node %X at height %d updating key %X with new key %X\n", pv.ProTxHash, height, pv.PrivKey.PubKey().Bytes(), pv.NextPrivKeys[0].PubKey().Bytes())
 		pv.PrivKey = pv.NextPrivKeys[0]
 		if len(pv.NextPrivKeys) > 1 {
 			pv.NextPrivKeys = pv.NextPrivKeys[1:]
@@ -150,9 +150,9 @@ func (pv *MockPV) updateKeyIfNeeded(height int64) {
 			pv.NextPrivKeyHeights = nil
 		}
 	}
-	//else {
+	// else {
 	//	fmt.Printf("mockpv node %X at height %d did not update key %X with next keys %v\n", pv.ProTxHash, height, pv.PrivKey.PubKey().Bytes(), pv.NextPrivKeyHeights)
-	//}
+	// }
 }
 
 func (pv *MockPV) ExtractIntoValidator(height int64) *Validator {
