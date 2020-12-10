@@ -91,8 +91,10 @@ func (app *Application) Commit() (resp types.ResponseCommit) {
 	if app.txCount == 0 {
 		return types.ResponseCommit{}
 	}
-	hash := make([]byte, 8)
-	binary.BigEndian.PutUint64(hash, uint64(app.txCount))
+	hash := make([]byte, 24)
+	endHash := make([]byte, 8)
+	binary.BigEndian.PutUint64(endHash, uint64(app.txCount))
+	hash = append(hash, endHash...)
 	return types.ResponseCommit{Data: hash}
 }
 
