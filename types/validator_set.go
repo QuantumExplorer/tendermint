@@ -442,7 +442,7 @@ func (vals *ValidatorSet) RegenerateWithNewKeys() (*ValidatorSet, []PrivValidato
 		valz[i] = NewValidatorDefaultVotingPower(privateKeys[i].PubKey(), proTxHashes[i])
 	}
 
-	//Just to make sure
+	// Just to make sure
 	sort.Sort(PrivValidatorsByProTxHash(privValidators))
 
 	return NewValidatorSet(valz, thresholdPublicKey), privValidators

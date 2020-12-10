@@ -57,11 +57,11 @@ type State struct {
 	LastBlockID     types.BlockID
 	LastBlockTime   time.Time
 
-	//The Last StateID is actually the previous App Hash
+	// The Last StateID is actually the previous App Hash
 	LastStateID types.StateID
 
-	//Last Chain Lock is the last known chain lock in consensus, and does not go to nil if a block had no chain lock
-	//Next Chain Lock is a chain lock being proposed by the abci application
+	// Last Chain Lock is the last known chain lock in consensus, and does not go to nil if a block had no chain lock
+	// Next Chain Lock is a chain lock being proposed by the abci application
 	LastCoreChainLock types.CoreChainLock
 	NextCoreChainLock types.CoreChainLock
 

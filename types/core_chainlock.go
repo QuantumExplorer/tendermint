@@ -11,8 +11,8 @@ import (
 
 type CoreChainLock struct {
 	CoreBlockHeight uint32 `json:"core_block_height,string,omitempty"` // height of Chain Lock.
-	CoreBlockHash   []byte `json:"core_block_hash,string,omitempty"`   // hash of Chain Lock.
-	Signature       []byte `json:"signature,string,omitempty"`         // signature.
+	CoreBlockHash   []byte `json:"core_block_hash,omitempty"`   // hash of Chain Lock.
+	Signature       []byte `json:"signature,omitempty"`         // signature.
 }
 
 // ToProto converts Header to protobuf
@@ -50,7 +50,7 @@ func (cl *CoreChainLock) PopulateFromProto(clp *tmproto.CoreChainLock) error {
 	return cl.ValidateBasic()
 }
 
-func (cl CoreChainLock) RequestId() []byte {
+func (cl CoreChainLock) RequestID() []byte {
 	s := []byte{0x05, 0x63, 0x6c, 0x73, 0x69, 0x67} //5 clsig
 
 	var coreBlockHeightBytes [4]byte

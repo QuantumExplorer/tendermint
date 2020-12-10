@@ -138,8 +138,8 @@ func TestBlockMakePartSetWithEvidence(t *testing.T) {
 	block := MakeBlock(h, 0, nil, []Tx{Tx("Hello World")}, commit, evList)
 	partSet := block.MakePartSet(512)
 	assert.NotNil(t, partSet)
-	//The part set can be either 4 or 5 parts, this is because of variance in sizes due to the non second part of
-	// timestamps marshalling to different sizes
+	// The part set can be either 4 or 5 parts, this is because of variance in sizes due to the non second part of
+	//  timestamps marshalling to different sizes
 	assert.True(t, partSet.Total() >= 7)
 	assert.True(t, partSet.Total() <= 8)
 }
@@ -494,7 +494,7 @@ func TestBlockMaxDataBytes(t *testing.T) {
 		5: {1390, crypto.BLS12381, 2, 0, false, 1},
 		6: {1489, crypto.BLS12381, 2, 100, false, 0},
 	}
-	//An extra 33 bytes (32 for sig, 1 for proto encoding are needed for BLS compared to edwards per validator
+	// An extra 33 bytes (32 for sig, 1 for proto encoding are needed for BLS compared to edwards per validator
 
 	for i, tc := range testCases {
 		tc := tc

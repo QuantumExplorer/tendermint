@@ -67,8 +67,8 @@ func TestReactorInvalidProposalHeightForChainLocks(t *testing.T) {
 
 
 	// this proposer sends a chain lock at each height
-	byzProposerId := 0
-	byzProposer := css[byzProposerId]
+	byzProposerID := 0
+	byzProposer := css[byzProposerID]
 
 	//hitIt := false
 

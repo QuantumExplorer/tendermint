@@ -1,8 +1,8 @@
 package light_test
 
 //
-//// Automatically getting new headers and verifying them.
-//func ExampleClient_Update() {
+// // Automatically getting new headers and verifying them.
+// func ExampleClient_Update() {
 //	// give Tendermint time to generate some blocks
 //	time.Sleep(5 * time.Second)
 //
@@ -67,10 +67,10 @@ package light_test
 //		fmt.Println("update failed")
 //	}
 //	// Output: successful update
-//}
+// }
 //
-//// Manually getting light blocks and verifying them.
-//func ExampleClient_VerifyLightBlockAtHeight() {
+// // Manually getting light blocks and verifying them.
+// func ExampleClient_VerifyLightBlockAtHeight() {
 //	// give Tendermint time to generate some blocks
 //	time.Sleep(5 * time.Second)
 //
@@ -134,9 +134,9 @@ package light_test
 //
 //	fmt.Println("got header", h.Height)
 //	// Output: got header 3
-//}
+// }
 //
-//func TestMain(m *testing.M) {
+// func TestMain(m *testing.M) {
 //	// start a tendermint node (and kvstore) in the background to test against
 //	app := kvstore.NewApplication()
 //	node := rpctest.StartTendermint(app, rpctest.SuppressStdout)
@@ -146,4 +146,4 @@ package light_test
 //	// and shut down proper at the end
 //	rpctest.StopTendermint(node)
 //	os.Exit(code)
-//}
+// }

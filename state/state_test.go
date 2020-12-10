@@ -861,6 +861,7 @@ func TestFourAddFourMinusOneGenesisValidators(t *testing.T) {
 	privateKeys4, thresholdPublicKey4 := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes[1:])
 	var abciValidatorUpdates []abci.ValidatorUpdate
 	updatedPubKey, err := cryptoenc.PubKeyToProto(originalValidatorSet.Validators[0].PubKey)
+	require.NoError(t, err)
 	updatePreviousVal := abci.ValidatorUpdate{ProTxHash: proTxHashes[0], Power: 0, PubKey: updatedPubKey}
 	abciValidatorUpdates = append(abciValidatorUpdates, updatePreviousVal)
 	for i := 1; i < len(proTxHashes); i++ {

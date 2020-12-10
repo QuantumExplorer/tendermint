@@ -89,15 +89,6 @@ func newValidatorStub(privValidator types.PrivValidator, valIndex int32) *valida
 	}
 }
 
-func newValidatorStubAtHeight(privValidator types.PrivValidator, valIndex int32, height int64) *validatorStub {
-	return &validatorStub{
-		Index:         valIndex,
-		Height:        height,
-		PrivValidator: privValidator,
-		VotingPower:   testMinPower,
-	}
-}
-
 func (vs *validatorStub) signVote(
 	voteType tmproto.SignedMsgType,
 	hash []byte,
@@ -770,7 +761,7 @@ func updateConsensusNetAddNewValidators(css []*State, height int64, addValCount 
 			}
 		}
 	}
-	//just do this for sanity testing
+	// just do this for sanity testing
 	recoveredThresholdPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(publicKeys, validatorProTxHashesAsByteArray)
 	if err != nil {
 		panic(err)
@@ -867,7 +858,7 @@ func updateConsensusNetRemoveValidatorsWithProTxHashes(css []*State, height int6
 		_, removedValidator := currentValidators.GetByProTxHash(proTxHash)
 		removedValidators[i] = removedValidator
 	}
-	//just do this for sanity testing
+	// just do this for sanity testing
 	recoveredThresholdPublicKey, err := bls12381.RecoverThresholdPublicKeyFromPublicKeys(publicKeys, validatorProTxHashesAsByteArray)
 	if err != nil {
 		panic(err)
