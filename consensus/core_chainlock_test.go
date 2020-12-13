@@ -2,9 +2,10 @@ package consensus
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
-	"testing"
 
 	"github.com/tendermint/tendermint/abci/example/counter"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -65,7 +66,6 @@ func TestReactorInvalidProposalHeightForChainLocks(t *testing.T) {
 
 	reactors, blocksSubs, eventBuses := startConsensusNet(t, css, N)
 
-
 	// this proposer sends a chain lock at each height
 	byzProposerID := 0
 	byzProposer := css[byzProposerID]
@@ -82,7 +82,6 @@ func TestReactorInvalidProposalHeightForChainLocks(t *testing.T) {
 		}
 	}(int32(0))
 	byzProposer.mtx.Unlock()
-
 
 	defer stopConsensusNet(log.TestingLogger(), reactors, eventBuses)
 

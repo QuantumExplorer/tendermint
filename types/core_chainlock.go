@@ -11,8 +11,8 @@ import (
 
 type CoreChainLock struct {
 	CoreBlockHeight uint32 `json:"core_block_height,string,omitempty"` // height of Chain Lock.
-	CoreBlockHash   []byte `json:"core_block_hash,omitempty"`   // hash of Chain Lock.
-	Signature       []byte `json:"signature,omitempty"`         // signature.
+	CoreBlockHash   []byte `json:"core_block_hash,omitempty"`          // hash of Chain Lock.
+	Signature       []byte `json:"signature,omitempty"`                // signature.
 }
 
 // ToProto converts Header to protobuf

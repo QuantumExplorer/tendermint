@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"fmt"
+
 	"github.com/tendermint/tendermint/crypto/bls12381"
 	dbm "github.com/tendermint/tm-db"
 

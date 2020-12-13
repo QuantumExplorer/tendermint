@@ -6,7 +6,6 @@ import (
 	crypto2 "github.com/tendermint/tendermint/proto/tendermint/crypto"
 )
 
-
 func UpdateValidator(proTxHash []byte, pk []byte, power int64) ValidatorUpdate {
 	pke := bls12381.PubKey(pk)
 	pkp, err := cryptoenc.PubKeyToProto(pke)
