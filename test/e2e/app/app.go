@@ -200,6 +200,9 @@ func (app *Application) validatorSetUpdates(height uint64) (*abci.ValidatorSetUp
 	}
 
 	thresholdPublicKeyUpdateString := app.cfg.ThesholdPublicKeyUpdate[fmt.Sprintf("%v", height)]
+	if len(thresholdPublicKeyUpdateString) == 0 {
+		return nil, fmt.Errorf("thresholdPublicKeyUpdate must be set")
+	}
 	thresholdPublicKeyUpdateBytes, err := base64.StdEncoding.DecodeString(thresholdPublicKeyUpdateString)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base64 pubkey value %q: %w", thresholdPublicKeyUpdateString, err)

@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"time"
-
-	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/crypto"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -105,12 +104,13 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 		if len(v.ProTxHash) != 32 {
 			return fmt.Errorf("validators must all contain a pro_tx_hash of size 32")
 		}
-		if genDoc.ThresholdPublicKey == nil {
-			return fmt.Errorf("the threshold public key must be set")
-		}
-		if len(genDoc.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
-			return fmt.Errorf("the threshold public key must be 48 bytes for BLS")
-		}
+	}
+
+	if genDoc.ThresholdPublicKey == nil {
+		return fmt.Errorf("the threshold public key must be set")
+	}
+	if len(genDoc.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
+		return fmt.Errorf("the threshold public key must be 48 bytes for BLS")
 	}
 
 	if genDoc.GenesisTime.IsZero() {
