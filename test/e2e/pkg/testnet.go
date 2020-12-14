@@ -2,6 +2,7 @@
 package e2e
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -50,42 +51,45 @@ const (
 
 // Testnet represents a single testnet.
 type Testnet struct {
-	Name               string
-	File               string
-	Dir                string
-	IP                 *net.IPNet
-	InitialHeight      int64
-	InitialState       map[string]string
-	Validators         map[*Node]int64
-	ValidatorUpdates   map[int64]map[*Node]int64
-	Nodes              []*Node
-	KeyType            string
-	ThresholdPublicKey crypto.PubKey
+	Name                      string
+	File                      string
+	Dir                       string
+	IP                        *net.IPNet
+	InitialHeight             int64
+	InitialState              map[string]string
+	Validators                map[*Node]int64
+	ValidatorUpdates          map[int64]map[*Node]int64
+	Nodes                     []*Node
+	KeyType                   string
+	ThresholdPublicKey        crypto.PubKey
+	ThresholdPublicKeyUpdates map[int64]crypto.PubKey
 }
 
 // Node represents a Tenderdash node in a testnet.
 type Node struct {
-	Name             string
-	Testnet          *Testnet
-	Mode             Mode
-	PrivvalKey       crypto.PrivKey
-	NodeKey          crypto.PrivKey
-	ProTxHash        crypto.ProTxHash
-	IP               net.IP
-	ProxyPort        uint32
-	StartAt          int64
-	FastSync         string
-	StateSync        bool
-	Database         string
-	ABCIProtocol     Protocol
-	PrivvalProtocol  Protocol
-	PersistInterval  uint64
-	SnapshotInterval uint64
-	RetainBlocks     uint64
-	Seeds            []*Node
-	PersistentPeers  []*Node
-	Perturbations    []Perturbation
-	Misbehaviors     map[int64]string
+	Name               string
+	Testnet            *Testnet
+	Mode               Mode
+	PrivvalKey         crypto.PrivKey
+	NextPrivvalKeys    []crypto.PrivKey
+	NextPrivvalHeights []int64
+	NodeKey            crypto.PrivKey
+	ProTxHash          crypto.ProTxHash
+	IP                 net.IP
+	ProxyPort          uint32
+	StartAt            int64
+	FastSync           string
+	StateSync          bool
+	Database           string
+	ABCIProtocol       Protocol
+	PrivvalProtocol    Protocol
+	PersistInterval    uint64
+	SnapshotInterval   uint64
+	RetainBlocks       uint64
+	Seeds              []*Node
+	PersistentPeers    []*Node
+	Perturbations      []Perturbation
+	Misbehaviors       map[int64]string
 }
 
 // LoadTestnet loads a testnet from a manifest file, using the filename to
@@ -112,6 +116,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 	ipGen := newIPGenerator(ipNet)
 	keyGen := newKeyGenerator(randomSeed)
+	proTxHashGen := newProTxHashGenerator(randomSeed + 1)
 	proxyPortGen := newPortGenerator(proxyPortFirst)
 
 	// Set up nodes, in alphabetical order (IPs and ports get same order).
@@ -139,7 +144,13 @@ func LoadTestnet(file string) (*Testnet, error) {
 		}
 	}
 
-	privateKeys, proTxHashes, thresholdPublicKey := bls12381.CreatePrivLLMQDataDefaultThreshold(validatorCount)
+	proTxHashes := make([]crypto.ProTxHash, validatorCount)
+
+	for i := 0; i< validatorCount; i++ {
+		proTxHashes[i] = proTxHashGen.Generate()
+	}
+
+	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 
 	testnet := &Testnet{
 		Name:               filepath.Base(dir),
@@ -276,14 +287,35 @@ func LoadTestnet(file string) (*Testnet, error) {
 			return nil, fmt.Errorf("invalid validator update height %q: %w", height, err)
 		}
 		valUpdate := map[*Node]int64{}
+		proTxHashesInUpdate := make([]crypto.ProTxHash, len(validators))
+		i := 0
 		for name, power := range validators {
 			node := testnet.LookupNode(name)
 			if node == nil {
 				return nil, fmt.Errorf("unknown validator %q for update at height %v", name, height)
 			}
 			valUpdate[node] = power
+			proTxHashesInUpdate[i] = node.ProTxHash
+			i++
 		}
 		testnet.ValidatorUpdates[int64(height)] = valUpdate
+
+		currentProTxHashes := append(proTxHashes, proTxHashesInUpdate...)
+
+		sort.Sort(crypto.SortProTxHash(currentProTxHashes))
+
+		privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(currentProTxHashes)
+
+		for i, proTxHash := range currentProTxHashes {
+			node := testnet.LookupNodeByProTxHash(proTxHash)
+			if node == nil {
+				return nil, fmt.Errorf("unknown validator with protxHash %X for update at height %v", proTxHash, height)
+			}
+			node.NextPrivvalKeys = append(node.NextPrivvalKeys, privateKeys[i])
+			node.NextPrivvalHeights = append(node.NextPrivvalHeights, int64(height))
+		}
+
+		testnet.ThresholdPublicKeyUpdates[int64(height)] = thresholdPublicKey
 	}
 
 	return testnet, testnet.Validate()
@@ -412,6 +444,16 @@ func (t Testnet) LookupNode(name string) *Node {
 	return nil
 }
 
+// LookupNode looks up a node by name. For now, simply do a linear search.
+func (t Testnet) LookupNodeByProTxHash(proTxHash crypto.ProTxHash) *Node {
+	for _, node := range t.Nodes {
+		if bytes.Equal(node.ProTxHash, proTxHash) {
+			return node
+		}
+	}
+	return nil
+}
+
 // ArchiveNodes returns a list of archive nodes that start at the initial height
 // and contain the entire blockchain history. They are used e.g. as light client
 // RPC servers.
@@ -504,7 +546,7 @@ func newKeyGenerator(seed int64) *keyGenerator {
 }
 
 func (g *keyGenerator) Generate(keyType string) crypto.PrivKey {
-	seed := make([]byte, ed25519.SeedSize)
+	seed := make([]byte, bls12381.SeedSize)
 
 	_, err := io.ReadFull(g.random, seed)
 	if err != nil {
@@ -577,4 +619,25 @@ func (g *ipGenerator) Next() net.IP {
 		}
 	}
 	return ip
+}
+
+// proTxHashGenerator generates pseudorandom proTxHash based on a seed.
+type proTxHashGenerator struct {
+	random *rand.Rand
+}
+
+func newProTxHashGenerator(seed int64) *proTxHashGenerator {
+	return &proTxHashGenerator{
+		random: rand.New(rand.NewSource(seed)),
+	}
+}
+
+func (g *proTxHashGenerator) Generate() crypto.ProTxHash {
+	seed := make([]byte, crypto.DefaultHashSize)
+
+	_, err := io.ReadFull(g.random, seed)
+	if err != nil {
+		panic(err) // this shouldn't happen
+	}
+	return crypto.ProTxHash(seed)
 }

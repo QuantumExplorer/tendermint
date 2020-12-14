@@ -102,14 +102,14 @@ func Setup(testnet *e2e.Testnet) error {
 			return err
 		}
 
-		(privval.NewFilePV(node.PrivvalKey, node.ProTxHash,
+		(privval.NewFilePV(node.PrivvalKey, node.ProTxHash, node.NextPrivvalKeys, node.NextPrivvalHeights,
 			filepath.Join(nodeDir, PrivvalKeyFile),
 			filepath.Join(nodeDir, PrivvalStateFile),
 		)).Save()
 
 		// Set up a dummy validator. Tenderdash requires a file PV even when not used, so we
 		// give it a dummy such that it will fail if it actually tries to use it.
-		(privval.NewFilePV(bls12381.GenPrivKey(), node.ProTxHash,
+		(privval.NewFilePV(bls12381.GenPrivKey(), node.ProTxHash, nil, nil,
 			filepath.Join(nodeDir, PrivvalDummyKeyFile),
 			filepath.Join(nodeDir, PrivvalDummyStateFile),
 		)).Save()
@@ -363,11 +363,18 @@ func MakeAppConfig(node *e2e.Node) ([]byte, error) {
 		for height, validators := range node.Testnet.ValidatorUpdates {
 			updateVals := map[string]int64{}
 			for node, power := range validators {
-				updateVals[base64.StdEncoding.EncodeToString(node.PrivvalKey.PubKey().Bytes())] = power
+				updateVals[base64.StdEncoding.EncodeToString(node.ProTxHash.Bytes())] = power
 			}
 			validatorUpdates[fmt.Sprintf("%v", height)] = updateVals
 		}
 		cfg["validator_update"] = validatorUpdates
+
+		thresholdPublicKeyUpdates := map[string]string{}
+		for height, thresholdPublicKey := range node.Testnet.ThresholdPublicKeyUpdates {
+
+			thresholdPublicKeyUpdates[fmt.Sprintf("%v", height)] = base64.StdEncoding.EncodeToString(thresholdPublicKey.Bytes())
+		}
+		cfg["threshold_public_key_update"] = validatorUpdates
 	}
 
 	var buf bytes.Buffer

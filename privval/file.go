@@ -165,12 +165,14 @@ type FilePV struct {
 }
 
 // NewFilePV generates a new validator from the given key and paths.
-func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, keyFilePath, stateFilePath string) *FilePV {
+func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, nextPrivKeys []crypto.PrivKey, nextPrivHeights []int64, keyFilePath, stateFilePath string) *FilePV {
 	return &FilePV{
 		Key: FilePVKey{
 			Address:   privKey.PubKey().Address(),
 			PubKey:    privKey.PubKey(),
 			PrivKey:   privKey,
+			NextPrivKeys: nextPrivKeys,
+			NextPrivKeyHeights: nextPrivHeights,
 			ProTxHash: proTxHash,
 			filePath:  keyFilePath,
 		},
@@ -184,7 +186,7 @@ func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, keyFilePath, stateFileP
 // GenFilePV generates a new validator with randomly generated private key
 // and sets the filePaths, but does not call Save().
 func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	return NewFilePV(bls12381.GenPrivKey(), crypto.RandProTxHash(), keyFilePath, stateFilePath)
+	return NewFilePV(bls12381.GenPrivKey(), crypto.RandProTxHash(), nil, nil, keyFilePath, stateFilePath)
 }
 
 // LoadFilePV loads a FilePV from the filePaths.  The FilePV handles double

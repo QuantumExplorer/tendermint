@@ -173,6 +173,11 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 	if len(proTxHashes) == 0 {
 		panic("there must be at least one pro_tx_hash")
 	}
+	for _, proTxHash := range proTxHashes {
+		if len(proTxHash.Bytes()) != crypto.DefaultHashSize {
+			panic(fmt.Errorf("blsId incorrect size in public key recovery, expected 32 bytes (got %d)", len(proTxHash)))
+		}
+	}
 	if len(proTxHashes) == 1 {
 		privKey := GenPrivKey()
 		return []crypto.PrivKey{privKey}, privKey.PubKey()
@@ -246,7 +251,7 @@ func RecoverThresholdPublicKeyFromPublicKeys(publicKeys []crypto.PubKey, blsIds 
 
 	for i, blsId := range blsIds {
 		if len(blsId) != tmhash.Size {
-			return nil, errors.New("blsId incorrect size, expected 32 bytes")
+			return nil, fmt.Errorf("blsId incorrect size in public key recovery, expected 32 bytes (got %d)", len(blsId))
 		}
 		var hash bls.Hash
 		copy(hash[:], blsId)
@@ -282,7 +287,7 @@ func RecoverThresholdSignatureFromShares(sigSharesData [][]byte, blsIds [][]byte
 
 	for i, blsId := range blsIds {
 		if len(blsId) != tmhash.Size {
-			return nil, errors.New("blsId incorrect size, expected 32 bytes")
+			return nil, fmt.Errorf("blsId incorrect size in signature recovery, expected 32 bytes (got %d)", len(blsId))
 		}
 		var hash bls.Hash
 		copy(hash[:], blsId)

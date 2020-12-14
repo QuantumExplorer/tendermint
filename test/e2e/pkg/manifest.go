@@ -30,7 +30,7 @@ type Manifest struct {
 	// setting validator_update.0 (see below).
 	Validators *map[string]int64 `toml:"validators"`
 
-	// ValidatorUpdates is a map of heights to validator names and their power,
+	// ValidatorUpdates is a map of heights to validator proTxHashes and their power,
 	// and will be returned by the ABCI application. For example, the following
 	// adds validator01 and validator02 at height 1000:
 	//

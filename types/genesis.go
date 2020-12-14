@@ -106,10 +106,10 @@ func (genDoc *GenesisDoc) ValidateAndComplete() error {
 		}
 	}
 
-	if genDoc.ThresholdPublicKey == nil {
-		return fmt.Errorf("the threshold public key must be set")
+	if genDoc.Validators != nil && genDoc.ThresholdPublicKey == nil {
+		return fmt.Errorf("the threshold public key must be set if there are validators")
 	}
-	if len(genDoc.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
+	if genDoc.Validators != nil && len(genDoc.ThresholdPublicKey.Bytes()) != bls12381.PubKeySize {
 		return fmt.Errorf("the threshold public key must be 48 bytes for BLS")
 	}
 
