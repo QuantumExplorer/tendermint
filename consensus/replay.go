@@ -320,7 +320,7 @@ func (h *Handshaker) ReplayBlocks(
 		if err != nil {
 			return nil, err
 		}
-	    fmt.Printf("res %s\n",res.String())
+	    //fmt.Printf("res %s\n",res.String())
 		appHash = res.AppHash
 
 		if stateBlockHeight == 0 { // we only update state when we are in initial state

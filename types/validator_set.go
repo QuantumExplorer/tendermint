@@ -99,7 +99,7 @@ func (vals *ValidatorSet) ValidateBasic() error {
 	}
 
 	if err := vals.ThresholdPublicKeyValid(); err != nil {
-		return err
+		return fmt.Errorf("thresholdPublicKey error: %w", err)
 	}
 
 	if err := vals.Proposer.ValidateBasic(); err != nil {
@@ -1210,7 +1210,7 @@ func ValidatorSetFromProto(vp *tmproto.ValidatorSet) (*ValidatorSet, error) {
 	for i := 0; i < len(vp.Validators); i++ {
 		v, err := ValidatorFromProto(vp.Validators[i])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("fromProto: validatorSet validator error: %w", err)
 		}
 		valsProto[i] = v
 	}
