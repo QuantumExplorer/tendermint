@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/tendermint/tendermint/crypto/bls12381"
 
@@ -50,6 +51,7 @@ func PubKeyToProto(k crypto.PubKey) (pc.PublicKey, error) {
 // PubKeyFromProto takes a protobuf Pubkey and transforms it to a crypto.Pubkey
 func PubKeyFromProto(k pc.PublicKey) (crypto.PubKey, error) {
 	if k.Sum == nil {
+		debug.PrintStack()
 		return nil, fmt.Errorf("fromproto: key is nil")
 	}
 	switch k := k.Sum.(type) {

@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/types"
 	"os"
 	"path/filepath"
 
@@ -216,12 +218,17 @@ func (app *Application) validatorSetUpdates(height uint64) (*abci.ValidatorSetUp
 	valSetUpdates := abci.ValidatorSetUpdate{}
 
 	valUpdates := abci.ValidatorUpdates{}
-	for keyString, power := range updates {
-		keyBytes, err := base64.StdEncoding.DecodeString(keyString)
+	for proTxHashString, keyString := range updates {
+		keyBytes, err := base64.StdEncoding.DecodeString(proTxHashString)
 		if err != nil {
 			return nil, fmt.Errorf("invalid base64 pubkey value %q: %w", keyString, err)
 		}
-		valUpdates = append(valUpdates, abci.UpdateValidator(keyBytes, nil, int64(power)))
+		proTxHashBytes, err := hex.DecodeString(proTxHashString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid hex proTxHash value %q: %w", proTxHashBytes, err)
+		}
+		publicKeyUpdate := bls12381.PubKey(keyBytes)
+		valUpdates = append(valUpdates, abci.UpdateValidator(proTxHashBytes, publicKeyUpdate, types.DefaultDashVotingPower))
 	}
 	valSetUpdates.ValidatorUpdates = valUpdates
 	valSetUpdates.ThresholdPublicKey = abciThresholdPublicKeyUpdate

@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -193,13 +194,13 @@ func MakeGenesis(testnet *e2e.Testnet) (types.GenesisDoc, error) {
 		InitialHeight:      testnet.InitialHeight,
 		ThresholdPublicKey: testnet.ThresholdPublicKey,
 	}
-	for validator, power := range testnet.Validators {
+	for validator, pubkey := range testnet.Validators {
 		genesis.Validators = append(genesis.Validators, types.GenesisValidator{
 			Name:      validator.Name,
-			Address:   validator.PrivvalKey.PubKey().Address(),
-			PubKey:    validator.PrivvalKey.PubKey(),
+			Address:   pubkey.Address(),
+			PubKey:    pubkey,
 			ProTxHash: validator.ProTxHash,
-			Power:     power,
+			Power:     types.DefaultDashVotingPower,
 		})
 	}
 	// The validator set will be sorted internally by Tenderdash ranked by power,
@@ -359,11 +360,11 @@ func MakeAppConfig(node *e2e.Node) ([]byte, error) {
 	cfg["misbehaviors"] = misbehaviors
 
 	if len(node.Testnet.ValidatorUpdates) > 0 {
-		validatorUpdates := map[string]map[string]int64{}
+		validatorUpdates := map[string]map[string]string{}
 		for height, validators := range node.Testnet.ValidatorUpdates {
-			updateVals := map[string]int64{}
-			for node, power := range validators {
-				updateVals[base64.StdEncoding.EncodeToString(node.ProTxHash.Bytes())] = power
+			updateVals := map[string]string{}
+			for node, pubkey := range validators {
+				updateVals[hex.EncodeToString(node.ProTxHash.Bytes())] = base64.StdEncoding.EncodeToString(pubkey.Bytes())
 			}
 			validatorUpdates[fmt.Sprintf("%v", height)] = updateVals
 		}
@@ -374,7 +375,7 @@ func MakeAppConfig(node *e2e.Node) ([]byte, error) {
 
 			thresholdPublicKeyUpdates[fmt.Sprintf("%v", height)] = base64.StdEncoding.EncodeToString(thresholdPublicKey.Bytes())
 		}
-		cfg["threshold_public_key_update"] = validatorUpdates
+		cfg["threshold_public_key_update"] = thresholdPublicKeyUpdates
 	}
 
 	var buf bytes.Buffer

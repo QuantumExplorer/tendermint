@@ -57,8 +57,8 @@ type Testnet struct {
 	IP                        *net.IPNet
 	InitialHeight             int64
 	InitialState              map[string]string
-	Validators                map[*Node]int64
-	ValidatorUpdates          map[int64]map[*Node]int64
+	Validators                map[*Node]crypto.PubKey
+	ValidatorUpdates          map[int64]map[*Node]crypto.PubKey
 	Nodes                     []*Node
 	KeyType                   string
 	ThresholdPublicKey        crypto.PubKey
@@ -148,6 +148,9 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 	for i := 0; i< validatorCount; i++ {
 		proTxHashes[i] = proTxHashGen.Generate()
+		if proTxHashes[i] == nil || len(proTxHashes[i]) != crypto.DefaultHashSize {
+			panic("the proTxHash must be 32 bytes")
+		}
 	}
 
 	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
@@ -159,16 +162,18 @@ func LoadTestnet(file string) (*Testnet, error) {
 		IP:                 ipGen.Network(),
 		InitialHeight:      1,
 		InitialState:       manifest.InitialState,
-		Validators:         map[*Node]int64{},
-		ValidatorUpdates:   map[int64]map[*Node]int64{},
+		Validators:         map[*Node]crypto.PubKey{},
+		ValidatorUpdates:   map[int64]map[*Node]crypto.PubKey{},
 		Nodes:              []*Node{},
 		ThresholdPublicKey: thresholdPublicKey,
+		ThresholdPublicKeyUpdates: map[int64]crypto.PubKey{},
 	}
 	if manifest.InitialHeight > 0 {
 		testnet.InitialHeight = manifest.InitialHeight
 	}
 
 	for _, name := range nodeNames {
+		fmt.Printf("Creating node: %s\n", name)
 		nodeManifest := manifest.Nodes[name]
 		node := &Node{
 			Name:             name,
@@ -258,23 +263,25 @@ func LoadTestnet(file string) (*Testnet, error) {
 	// Set up genesis validators. If not specified explicitly, use all validator nodes.
 	if manifest.Validators != nil {
 		var i = 0
-		for validatorName, power := range *manifest.Validators {
+		for validatorName, _ := range *manifest.Validators {
 			validator := testnet.LookupNode(validatorName)
 			if validator == nil {
 				return nil, fmt.Errorf("unknown validator %q", validatorName)
 			}
-			testnet.Validators[validator] = power
+			testnet.Validators[validator] = privateKeys[i].PubKey()
 			validator.ProTxHash = proTxHashes[i]
 			validator.PrivvalKey = privateKeys[i]
+			fmt.Printf("Setting validator (defined validators) %s proTxHash to %X\n", validatorName, validator.ProTxHash)
 			i++
 		}
 	} else {
 		var i = 0
 		for _, node := range testnet.Nodes {
 			if node.Mode == ModeValidator {
-				testnet.Validators[node] = 100
+				testnet.Validators[node] = privateKeys[i].PubKey()
 				node.ProTxHash = proTxHashes[i]
 				node.PrivvalKey = privateKeys[i]
+				fmt.Printf("Setting validator %s proTxHash to %X\n", node.Name, node.ProTxHash)
 				i++
 			}
 		}
@@ -286,19 +293,21 @@ func LoadTestnet(file string) (*Testnet, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid validator update height %q: %w", height, err)
 		}
-		valUpdate := map[*Node]int64{}
+		valUpdate := map[*Node]crypto.PubKey{}
 		proTxHashesInUpdate := make([]crypto.ProTxHash, len(validators))
 		i := 0
-		for name, power := range validators {
+		for name, _ := range validators {
 			node := testnet.LookupNode(name)
 			if node == nil {
 				return nil, fmt.Errorf("unknown validator %q for update at height %v", name, height)
 			}
-			valUpdate[node] = power
+			if node.ProTxHash == nil {
+				node.ProTxHash = proTxHashGen.Generate()
+				fmt.Printf("Set validator (at update) %s proTxHash to %X\n", node.Name, node.ProTxHash)
+			}
 			proTxHashesInUpdate[i] = node.ProTxHash
 			i++
 		}
-		testnet.ValidatorUpdates[int64(height)] = valUpdate
 
 		currentProTxHashes := append(proTxHashes, proTxHashesInUpdate...)
 
@@ -308,13 +317,19 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 		for i, proTxHash := range currentProTxHashes {
 			node := testnet.LookupNodeByProTxHash(proTxHash)
+			valUpdate[node] = privateKeys[i].PubKey()
 			if node == nil {
 				return nil, fmt.Errorf("unknown validator with protxHash %X for update at height %v", proTxHash, height)
 			}
-			node.NextPrivvalKeys = append(node.NextPrivvalKeys, privateKeys[i])
-			node.NextPrivvalHeights = append(node.NextPrivvalHeights, int64(height))
+			if height == 0 {
+				node.PrivvalKey = privateKeys[i]
+			} else {
+				node.NextPrivvalKeys = append(node.NextPrivvalKeys, privateKeys[i])
+				node.NextPrivvalHeights = append(node.NextPrivvalHeights, int64(height))
+			}
 		}
 
+		testnet.ValidatorUpdates[int64(height)] = valUpdate
 		testnet.ThresholdPublicKeyUpdates[int64(height)] = thresholdPublicKey
 	}
 
@@ -359,6 +374,11 @@ func (n Node) Validate(testnet Testnet) error {
 			if peer.Name != n.Name && peer.ProxyPort == n.ProxyPort {
 				return fmt.Errorf("peer %q also has local port %v", peer.Name, n.ProxyPort)
 			}
+		}
+	}
+	if n.Mode == "validator" {
+		if n.ProTxHash == nil || len(n.ProTxHash) != crypto.DefaultHashSize {
+			return fmt.Errorf("validators %s must have a proTxHash set", n.Name)
 		}
 	}
 	switch n.FastSync {
