@@ -14,16 +14,16 @@ type Config struct {
 	Listen                  string
 	Protocol                string
 	Dir                     string
-	PersistInterval         uint64                      `toml:"persist_interval"`
-	SnapshotInterval        uint64                      `toml:"snapshot_interval"`
-	RetainBlocks            uint64                      `toml:"retain_blocks"`
-	ValidatorUpdates        map[string]map[string]uint8 `toml:"validator_update"`
-	ThesholdPublicKeyUpdate map[string]string           `toml:"threshold_public_key_update"`
-	PrivValServer           string                      `toml:"privval_server"`
-	PrivValKey              string                      `toml:"privval_key"`
-	PrivValState            string                      `toml:"privval_state"`
-	Misbehaviors            map[string]string           `toml:"misbehaviors"`
-	KeyType                 string                      `toml:"key_type"`
+	PersistInterval         uint64                       `toml:"persist_interval"`
+	SnapshotInterval        uint64                       `toml:"snapshot_interval"`
+	RetainBlocks            uint64                       `toml:"retain_blocks"`
+	ValidatorUpdates        map[string]map[string]string `toml:"validator_update"`
+	ThesholdPublicKeyUpdate map[string]string            `toml:"threshold_public_key_update"`
+	PrivValServer           string                       `toml:"privval_server"`
+	PrivValKey              string                       `toml:"privval_key"`
+	PrivValState            string                       `toml:"privval_state"`
+	Misbehaviors            map[string]string            `toml:"misbehaviors"`
+	KeyType                 string                       `toml:"key_type"`
 }
 
 // LoadConfig loads the configuration from disk.
