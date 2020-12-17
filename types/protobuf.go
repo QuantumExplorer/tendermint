@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/bls12381"
 
@@ -167,6 +168,10 @@ func (pb2tm) ValidatorUpdatesFromValidatorSet(valSetUpdate *abci.ValidatorSetUpd
 			return nil, nil, err
 		}
 		tmVals[i] = NewValidator(pub, v.Power, v.ProTxHash)
+		err = tmVals[i].ValidateBasic()
+		if err != nil {
+			return nil, nil, fmt.Errorf("validator updates from validator set error when validating validator: %s", err)
+		}
 	}
 	if valSetUpdate.ThresholdPublicKey.Sum == nil {
 		return nil, nil, nil

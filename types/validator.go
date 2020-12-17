@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"strings"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -64,6 +65,10 @@ func (v *Validator) ValidateBasic() error {
 	}
 	if v.PubKey == nil {
 		return errors.New("validator does not have a public key")
+	}
+
+	if len(v.PubKey.Bytes()) != bls12381.PubKeySize {
+		return fmt.Errorf("validator PubKey is the wrong size: %X", v.PubKey.Bytes())
 	}
 
 	if v.ProTxHash == nil {
@@ -133,7 +138,7 @@ func (v *Validator) String() string {
 func ValidatorListString(vals []*Validator) string {
 	chunks := make([]string, len(vals))
 	for i, val := range vals {
-		chunks[i] = fmt.Sprintf("%s:%d", val.ProTxHash, val.VotingPower)
+		chunks[i] = fmt.Sprintf("%s:%s:%d", val.ProTxHash, val.PubKey, val.VotingPower)
 	}
 
 	return strings.Join(chunks, ",")

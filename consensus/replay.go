@@ -304,8 +304,16 @@ func (h *Handshaker) ReplayBlocks(
 		validators := make([]*types.Validator, len(h.genDoc.Validators))
 		for i, val := range h.genDoc.Validators {
 			validators[i] = types.NewValidatorDefaultVotingPower(val.PubKey, val.ProTxHash)
+			err := validators[i].ValidateBasic()
+			if err != nil {
+				return nil, fmt.Errorf("replay blocks error when validating validator: %s", err)
+			}
 		}
 		validatorSet := types.NewValidatorSet(validators, h.genDoc.ThresholdPublicKey)
+		err :=  validatorSet.ValidateBasic()
+		if err != nil {
+			return nil, fmt.Errorf("replay blocks error when validating validatorSet: %s", err)
+		}
 		nextVals := types.TM2PB.ValidatorUpdates(validatorSet)
 		csParams := types.TM2PB.ConsensusParams(h.genDoc.ConsensusParams)
 		req := abci.RequestInitChain{
@@ -320,7 +328,7 @@ func (h *Handshaker) ReplayBlocks(
 		if err != nil {
 			return nil, err
 		}
-	    //fmt.Printf("res %s\n",res.String())
+	    // fmt.Printf("res %s\n", res.String())
 		appHash = res.AppHash
 
 		if stateBlockHeight == 0 { // we only update state when we are in initial state

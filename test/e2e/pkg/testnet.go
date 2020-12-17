@@ -323,7 +323,9 @@ func LoadTestnet(file string) (*Testnet, error) {
 			}
 			if height == 0 {
 				node.PrivvalKey = privateKeys[i]
+				fmt.Printf("Set validator %s/%X (at genesis) pubkey to %X\n", node.Name, node.ProTxHash, node.PrivvalKey.PubKey().Bytes())
 			} else {
+				fmt.Printf("Set validator %s/%X (at height %d) pubkey to %X\n", node.Name, node.ProTxHash, height, privateKeys[i].PubKey().Bytes())
 				node.NextPrivvalKeys = append(node.NextPrivvalKeys, privateKeys[i])
 				node.NextPrivvalHeights = append(node.NextPrivvalHeights, int64(height))
 			}
@@ -331,6 +333,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 		testnet.ValidatorUpdates[int64(height)] = valUpdate
 		testnet.ThresholdPublicKeyUpdates[int64(height)] = thresholdPublicKey
+		proTxHashes = currentProTxHashes
 	}
 
 	return testnet, testnet.Validate()

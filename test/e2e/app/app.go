@@ -219,7 +219,7 @@ func (app *Application) validatorSetUpdates(height uint64) (*abci.ValidatorSetUp
 
 	valUpdates := abci.ValidatorUpdates{}
 	for proTxHashString, keyString := range updates {
-		keyBytes, err := base64.StdEncoding.DecodeString(proTxHashString)
+		keyBytes, err := base64.StdEncoding.DecodeString(keyString)
 		if err != nil {
 			return nil, fmt.Errorf("invalid base64 pubkey value %q: %w", keyString, err)
 		}

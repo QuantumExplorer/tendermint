@@ -244,7 +244,7 @@ func RecoverThresholdPublicKeyFromPublicKeys(publicKeys []crypto.PubKey, blsIds 
 	for i, publicKey := range publicKeys {
 		publicKeyShare, error := bls.PublicKeyFromBytes(publicKey.Bytes())
 		if error != nil {
-			return nil, fmt.Errorf("error recovering public key share from bytes %X (size %d - proTxHash %X): %w", publicKey, len(publicKey.Bytes()), blsIds[i], error)
+			return nil, fmt.Errorf("error recovering public key share from bytes %X (size %d - proTxHash %X): %w", publicKey.Bytes(), len(publicKey.Bytes()), blsIds[i], error)
 		}
 		publicKeyShares[i] = publicKeyShare
 	}
