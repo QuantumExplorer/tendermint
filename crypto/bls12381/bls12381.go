@@ -5,8 +5,8 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
-
 	"io"
+	"runtime/debug"
 	"sort"
 
 	bls "github.com/dashpay/bls-signatures/go-bindings"
@@ -65,6 +65,8 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 		return nil, err
 	}
 	insecureSignature := blsPrivateKey.SignInsecure(msg)
+	serializedSignature := insecureSignature.Serialize()
+	fmt.Printf("signature %X created for msg %X with key %X\n", serializedSignature, msg, privKey.PubKey().Bytes())
 	return insecureSignature.Serialize(), nil
 }
 
@@ -174,7 +176,7 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 		panic("there must be at least one pro_tx_hash")
 	}
 	for _, proTxHash := range proTxHashes {
-		if len(proTxHash.Bytes()) != crypto.DefaultHashSize {
+		if len(proTxHash.Bytes()) != crypto.ProTxHashSize {
 			panic(fmt.Errorf("blsId incorrect size in public key recovery, expected 32 bytes (got %d)", len(proTxHash)))
 		}
 	}
@@ -346,23 +348,35 @@ func (pubKey PubKey) AggregateSignatures(sigSharesData [][]byte, messages [][]by
 
 func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
+	if len(sig) == 0 {
+		fmt.Printf("bls verifying error (signature empty) from message %X with key %X\n", msg, pubKey.Bytes())
+		return false
+	}
 	if len(sig) != SignatureSize {
+		fmt.Printf("bls verifying error (signature size) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	publicKey, err := bls.PublicKeyFromBytes(pubKey)
 	if err != nil {
+		fmt.Printf("bls verifying error (publicKey) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	aggregationInfo := bls.AggregationInfoFromMsg(publicKey, msg)
 	if err != nil {
+		fmt.Printf("bls verifying error (aggregationInfo) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	blsSignature, err := bls.SignatureFromBytesWithAggregationInfo(sig, aggregationInfo)
 	if err != nil {
-		// maybe log/panic?
+		fmt.Printf("bls verifying error (blsSignature) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
-	return blsSignature.Verify()
+	verified := blsSignature.Verify()
+	if !verified {
+		fmt.Printf("bls verified (%t) sig %X from message %X with key %X\n", verified, sig, msg, pubKey.Bytes())
+		debug.PrintStack()
+	}
+	return verified
 }
 
 func (pubKey PubKey) VerifyAggregateSignature(messages [][]byte, sig []byte) bool {

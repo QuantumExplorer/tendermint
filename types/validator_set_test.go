@@ -130,7 +130,7 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 				ThresholdPublicKey: bls12381.GenPrivKey().PubKey(),
 			},
 			err: true,
-			msg: "incorrect threshold public key",
+			msg: "thresholdPublicKey error: incorrect threshold public key",
 		},
 		{
 			vals: ValidatorSet{
@@ -163,12 +163,12 @@ func TestValidatorSetValidateBasic(t *testing.T) {
 				Proposer:   val,
 			},
 			err: true,
-			msg: "threshold public key is not set",
+			msg: "thresholdPublicKey error: threshold public key is not set",
 		},
 		{
 			vals: *badValSet,
 			err:  true,
-			msg:  "incorrect recovered threshold public key",
+			msg:  "thresholdPublicKey error: incorrect recovered threshold public key",
 		},
 		{
 			vals: *goodValSet,

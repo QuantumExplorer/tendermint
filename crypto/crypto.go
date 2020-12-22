@@ -11,6 +11,7 @@ const (
 	// AddressSize is the size of a pubkey address.
 	AddressSize     = tmhash.TruncatedSize
 	DefaultHashSize = 32
+	ProTxHashSize = DefaultHashSize
 )
 
 type KeyType int
@@ -39,7 +40,7 @@ func ProTxHashFromSeedBytes(bz []byte) ProTxHash {
 }
 
 func RandProTxHash() ProTxHash {
-	return ProTxHash(CRandBytes(32))
+	return ProTxHash(CRandBytes(ProTxHashSize))
 }
 
 type SortProTxHash []ProTxHash

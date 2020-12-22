@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"runtime/debug"
 	"time"
 
 	"github.com/tendermint/tendermint/crypto/bls12381"
@@ -166,6 +167,11 @@ type FilePV struct {
 
 // NewFilePV generates a new validator from the given key and paths.
 func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, nextPrivKeys []crypto.PrivKey, nextPrivHeights []int64, keyFilePath, stateFilePath string) *FilePV {
+	if len(proTxHash) != crypto.ProTxHashSize {
+		debug.PrintStack()
+		panic("error setting incorrect proTxHash size in NewFilePV")
+	}
+
 	return &FilePV{
 		Key: FilePVKey{
 			Address:   privKey.PubKey().Address(),
@@ -212,6 +218,10 @@ func loadFilePV(keyFilePath, stateFilePath string, loadState bool) *FilePV {
 	err = tmjson.Unmarshal(keyJSONBytes, &pvKey)
 	if err != nil {
 		tmos.Exit(fmt.Sprintf("Error reading PrivValidator key from %v: %v\n", keyFilePath, err))
+	}
+	// verify proTxHash is 32 bytes if it exists
+	if pvKey.ProTxHash != nil && len(pvKey.ProTxHash) != crypto.ProTxHashSize {
+		tmos.Exit(fmt.Sprintf("loadFilePV proTxHash must be 32 bytes in key file path %s", keyFilePath))
 	}
 
 	// overwrite pubkey and address for convenience
@@ -290,6 +300,9 @@ func (pv *FilePV) ExtractIntoValidator(height int64) *types.Validator {
 // GetProTxHash returns the pro tx hash of the validator.
 // Implements PrivValidator.
 func (pv *FilePV) GetProTxHash() (crypto.ProTxHash, error) {
+	if len(pv.Key.ProTxHash) != crypto.ProTxHashSize {
+		return nil, fmt.Errorf("file proTxHash is invalid size")
+	}
 	return pv.Key.ProTxHash, nil
 }
 

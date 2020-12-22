@@ -49,7 +49,7 @@ func DoublePrevoteMisbehavior() Misbehavior {
 	b := DefaultMisbehavior()
 	b.Name = "double-prevote"
 	b.EnterPrevote = func(cs *State, height int64, round int32) {
-
+		fmt.Printf("entering prevote\n")
 		// If a block is locked, prevote that.
 		if cs.LockedBlock != nil {
 			cs.Logger.Info("enterPrevote: Already locked on a block, prevoting locked block")
@@ -88,6 +88,14 @@ func DoublePrevoteMisbehavior() Misbehavior {
 			cs.Logger.Error("enterPrevote: Unable to sign block", "err", err)
 		}
 
+		fmt.Printf("%+v prevote\n", prevote.String())
+		fmt.Printf("%+v nilPrevote\n", nilPrevote.String())
+		a,_ := MsgToProto(&VoteMessage{prevote})
+		fmt.Printf("%+v encoded prevote\n", a)
+
+		fmt.Printf("%X proTxHash (%d)\n", prevote.ValidatorProTxHash.Bytes(), len(prevote.ValidatorProTxHash.Bytes()))
+		fmt.Printf("%X cs proTxHash (%d)\n", cs.privValidatorProTxHash.Bytes(), len(cs.privValidatorProTxHash))
+
 		// add our own vote
 		cs.sendInternalMessage(msgInfo{&VoteMessage{prevote}, ""})
 
@@ -123,7 +131,7 @@ func defaultEnterPropose(cs *State, height int64, round int32) {
 	if err != nil {
 		// If this node is a validator & proposer in the currentx round, it will
 		// miss the opportunity to create a block.
-		logger.Error("Error on retrival of pubkey", "err", err)
+		logger.Error("Error on retrieval of pubkey", "err", err)
 		return
 	}
 
@@ -378,10 +386,13 @@ func defaultReceiveProposal(cs *State, proposal *types.Proposal) error {
 	}
 
 	p := proposal.ToProto()
+
+	proposer := cs.Validators.GetProposer()
+	proposalBlockSignBytes := types.ProposalBlockSignBytes(cs.state.ChainID, p)
 	// Verify signature
-	if !cs.Validators.GetProposer().PubKey.VerifySignature(
-		types.ProposalBlockSignBytes(cs.state.ChainID, p), proposal.Signature) {
-		return ErrInvalidProposalSignature
+	if !proposer.PubKey.VerifySignature(proposalBlockSignBytes, proposal.Signature) {
+		return fmt.Errorf("error proposer %X verifying proposal signature %X at height %d with key %X blockSignBytes %X\n",
+			proposer.ProTxHash, proposal.Signature, proposal.Height, proposer.PubKey.Bytes(), proposalBlockSignBytes)
 	}
 
 	proposal.Signature = p.Signature

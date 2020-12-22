@@ -84,6 +84,9 @@ func (sc *RetrySignerClient) GetProTxHash() (crypto.ProTxHash, error) {
 	)
 	for i := 0; i < sc.retries || sc.retries == 0; i++ {
 		proTxHash, err = sc.next.GetProTxHash()
+		if len(proTxHash) != crypto.ProTxHashSize {
+			return nil, fmt.Errorf("retrySignerClient proTxHash is invalid size")
+		}
 		if err == nil {
 			return proTxHash, nil
 		}

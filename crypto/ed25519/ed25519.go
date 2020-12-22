@@ -164,7 +164,9 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 		return false
 	}
 
-	return ed25519.Verify(ed25519.PublicKey(pubKey), msg, sig)
+	verified := ed25519.Verify(ed25519.PublicKey(pubKey), msg, sig)
+	// fmt.Printf("ed25519 verified (%t) sig %X from message %X with key %X\n", verified, sig, msg, pubKey.Bytes())
+	return verified
 }
 
 func (pubKey PubKey) String() string {

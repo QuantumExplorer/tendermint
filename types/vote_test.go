@@ -212,7 +212,7 @@ func TestVoteVerify(t *testing.T) {
 
 	err = vote.Verify("test_chain_id", pubkey, proTxHash)
 	if assert.Error(t, err) {
-		assert.Equal(t, ErrVoteInvalidSignature, err)
+		assert.Equal(t, ErrVoteInvalidBlockSignature, err) // since block signatures are verified first
 	}
 }
 

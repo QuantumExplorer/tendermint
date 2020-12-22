@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,8 +19,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-
-	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/BurntSushi/toml"
 
@@ -103,14 +103,18 @@ func Setup(testnet *e2e.Testnet) error {
 			return err
 		}
 
-		(privval.NewFilePV(node.PrivvalKey, node.ProTxHash, node.NextPrivvalKeys, node.NextPrivvalHeights,
-			filepath.Join(nodeDir, PrivvalKeyFile),
-			filepath.Join(nodeDir, PrivvalStateFile),
-		)).Save()
-
+		if node.Mode == e2e.ModeValidator {
+			if len(node.ProTxHash) != crypto.ProTxHashSize {
+				return fmt.Errorf("node proTxHash should be 32 bytes")
+			}
+			(privval.NewFilePV(node.PrivvalKey, node.ProTxHash.Bytes(), node.NextPrivvalKeys, node.NextPrivvalHeights,
+				filepath.Join(nodeDir, PrivvalKeyFile),
+				filepath.Join(nodeDir, PrivvalStateFile),
+			)).Save()
+		}
 		// Set up a dummy validator. Tenderdash requires a file PV even when not used, so we
 		// give it a dummy such that it will fail if it actually tries to use it.
-		(privval.NewFilePV(bls12381.GenPrivKey(), node.ProTxHash, nil, nil,
+		(privval.NewFilePV(bls12381.GenPrivKey(), crypto.RandProTxHash(), nil, nil,
 			filepath.Join(nodeDir, PrivvalDummyKeyFile),
 			filepath.Join(nodeDir, PrivvalDummyStateFile),
 		)).Save()

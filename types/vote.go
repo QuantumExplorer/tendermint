@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 
 	"github.com/tendermint/tendermint/crypto"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
@@ -29,13 +30,15 @@ func MaxVoteBytesForKeyType(keyType crypto.KeyType) int64 {
 }
 
 var (
-	ErrVoteUnexpectedStep            = errors.New("unexpected step")
-	ErrVoteInvalidValidatorIndex     = errors.New("invalid validator index")
-	ErrVoteInvalidValidatorProTxHash = errors.New("invalid validator pro_tx_hash")
-	ErrVoteInvalidSignature          = errors.New("invalid signature")
-	ErrVoteInvalidBlockHash          = errors.New("invalid block hash")
-	ErrVoteNonDeterministicSignature = errors.New("non-deterministic signature")
-	ErrVoteNil                       = errors.New("nil vote")
+	ErrVoteUnexpectedStep             = errors.New("unexpected step")
+	ErrVoteInvalidValidatorIndex      = errors.New("invalid validator index")
+	ErrVoteInvalidValidatorProTxHash  = errors.New("invalid validator pro_tx_hash")
+	ErrVoteInvalidValidatorPubKeySize = errors.New("invalid validator public key size")
+	ErrVoteInvalidBlockSignature      = errors.New("invalid block signature")
+	ErrVoteInvalidStateSignature      = errors.New("invalid state signature")
+	ErrVoteInvalidBlockHash           = errors.New("invalid block hash")
+	ErrVoteNonDeterministicSignature  = errors.New("non-deterministic signature")
+	ErrVoteNil                        = errors.New("nil vote")
 )
 
 type ErrVoteConflictingVotes struct {
@@ -141,7 +144,7 @@ func (vote *Vote) Copy() *Vote {
 // String returns a string representation of Vote.
 //
 // 1. validator index
-// 2. first 6 bytes of validator address
+// 2. first 6 bytes of validator proTxHash
 // 3. height
 // 4. round,
 // 5. type byte
@@ -182,14 +185,17 @@ func (vote *Vote) Verify(chainID string, pubKey crypto.PubKey, proTxHash crypto.
 	if !bytes.Equal(proTxHash, vote.ValidatorProTxHash) {
 		return ErrVoteInvalidValidatorProTxHash
 	}
+	if len(pubKey.Bytes()) != bls12381.PubKeySize {
+		return ErrVoteInvalidValidatorPubKeySize
+	}
 	v := vote.ToProto()
 	voteBlockSignBytes := VoteBlockSignBytes(chainID, v)
 	voteStateSignBytes := VoteStateSignBytes(chainID, v)
 	if !pubKey.VerifySignature(voteBlockSignBytes, vote.BlockSignature) {
-		return ErrVoteInvalidSignature
+		return ErrVoteInvalidBlockSignature
 	}
 	if !pubKey.VerifySignature(voteStateSignBytes, vote.StateSignature) {
-		return ErrVoteInvalidSignature
+		return ErrVoteInvalidStateSignature
 	}
 	return nil
 }
@@ -225,9 +231,10 @@ func (vote *Vote) ValidateBasic() error {
 	}
 
 	if len(vote.ValidatorProTxHash) != crypto.DefaultHashSize {
-		return fmt.Errorf("expected ValidatorProTxHash size to be %d bytes, got %d bytes",
+		return fmt.Errorf("expected ValidatorProTxHash size to be %d bytes, got %d bytes (%X)",
 			crypto.DefaultHashSize,
 			len(vote.ValidatorProTxHash),
+			vote.ValidatorProTxHash.Bytes(),
 		)
 	}
 	if vote.ValidatorIndex < 0 {

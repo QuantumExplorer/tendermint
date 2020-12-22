@@ -63,7 +63,6 @@ func CanonicalizeProposal(chainID string, proposal *tmproto.Proposal) tmproto.Ca
 		Round:     int64(proposal.Round), // encoded as sfixed64
 		POLRound:  int64(proposal.PolRound),
 		BlockID:   CanonicalizeBlockID(proposal.BlockID),
-		StateID:   CanonicalizeStateID(proposal.StateID),
 		Timestamp: proposal.Timestamp,
 		ChainID:   chainID,
 	}

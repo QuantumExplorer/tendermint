@@ -112,9 +112,9 @@ type State struct {
 	// to avoid extra requests to HSM
 	privValidatorPubKey crypto.PubKey
 
-	// privValidator pubkey, memoized for the duration of one block
+	// privValidator proTxHash, memoized for the duration of one block
 	// to avoid extra requests to HSM
-	privValidatorProTxHash []byte
+	privValidatorProTxHash crypto.ProTxHash
 
 	// state changes may be triggered by: msgs from peers,
 	// msgs from ourself, or by timeouts
@@ -1070,8 +1070,8 @@ func (cs *State) enterPropose(height int64, round int32) {
 	}
 }
 
-func (cs *State) isProposer(proTxHash []byte) bool {
-	return bytes.Equal(cs.Validators.GetProposer().ProTxHash, proTxHash)
+func (cs *State) isProposer(proTxHash crypto.ProTxHash) bool {
+	return bytes.Equal(cs.Validators.GetProposer().ProTxHash.Bytes(), proTxHash.Bytes())
 }
 
 func (cs *State) defaultDecideProposal(height int64, round int32) {
@@ -1756,9 +1756,10 @@ func (cs *State) defaultSetProposal(proposal *types.Proposal) error {
 	// Verify signature
 	proposalBlockSignBytes := types.ProposalBlockSignBytes(cs.state.ChainID, p)
 	proposer := cs.Validators.GetProposer()
-	// fmt.Printf("validator %X verifying proposal signature %X at height %d with key %X blockSignBytes %X\n", proposer.ProTxHash, proposal.Signature, proposal.Height, proposer.PubKey.Bytes(), proposalBlockSignBytes)
+
 	if !proposer.PubKey.VerifySignature(proposalBlockSignBytes, proposal.Signature) {
-		return ErrInvalidProposalSignature
+		return fmt.Errorf("error proposer %X verifying proposal signature %X at height %d with key %X blockSignBytes %X\n",
+			proposer.ProTxHash, proposal.Signature, proposal.Height, proposer.PubKey.Bytes(), proposalBlockSignBytes)
 	}
 	// } else if proposal.Height == 9 {
 	//	 return errors.New("just need a breakpoint")
@@ -1824,7 +1825,7 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 		}
 
 		if cs.RoundState.Proposal != nil && block.Header.CoreChainLockedHeight != cs.RoundState.Proposal.CoreChainLockedHeight {
-			return added, errors.New("core chain lock height of block does not match proposal")
+			return added, fmt.Errorf("core chain lock height of block %d does not match proposal %d", block.Header.CoreChainLockedHeight, cs.RoundState.Proposal.CoreChainLockedHeight)
 		}
 
 		cs.ProposalBlock = block
@@ -1919,6 +1920,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			// 3) tmkms use with multiple validators connecting to a single tmkms instance
 			// 		(https://github.com/tendermint/tendermint/issues/3839).
 			cs.Logger.Info("Error attempting to add vote", "err", err)
+			debug.PrintStack()
 			return added, ErrAddingVote
 		}
 	}
@@ -2218,6 +2220,9 @@ func (cs *State) updatePrivValidatorProTxHash() error {
 		return err
 	}
 	cs.privValidatorProTxHash = proTxHash
+	if len(proTxHash.Bytes()) != crypto.ProTxHashSize {
+		return fmt.Errorf("proTxHash must be 32 bytes")
+	}
 	return nil
 }
 

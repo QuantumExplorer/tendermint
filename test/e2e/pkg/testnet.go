@@ -148,7 +148,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 	for i := 0; i< validatorCount; i++ {
 		proTxHashes[i] = proTxHashGen.Generate()
-		if proTxHashes[i] == nil || len(proTxHashes[i]) != crypto.DefaultHashSize {
+		if proTxHashes[i] == nil || len(proTxHashes[i]) != crypto.ProTxHashSize {
 			panic("the proTxHash must be 32 bytes")
 		}
 	}
@@ -271,7 +271,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 			testnet.Validators[validator] = privateKeys[i].PubKey()
 			validator.ProTxHash = proTxHashes[i]
 			validator.PrivvalKey = privateKeys[i]
-			fmt.Printf("Setting validator (defined validators) %s proTxHash to %X\n", validatorName, validator.ProTxHash)
+			fmt.Printf("Set validator %s/%X (at file genesis) pubkey to %X\n", validatorName, validator.ProTxHash, validator.PrivvalKey.PubKey().Bytes())
 			i++
 		}
 	} else {
@@ -308,14 +308,13 @@ func LoadTestnet(file string) (*Testnet, error) {
 			proTxHashesInUpdate[i] = node.ProTxHash
 			i++
 		}
+		proTxHashes = append(proTxHashes, proTxHashesInUpdate...)
 
-		currentProTxHashes := append(proTxHashes, proTxHashesInUpdate...)
+		sort.Sort(crypto.SortProTxHash(proTxHashes))
 
-		sort.Sort(crypto.SortProTxHash(currentProTxHashes))
+		privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
 
-		privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(currentProTxHashes)
-
-		for i, proTxHash := range currentProTxHashes {
+		for i, proTxHash := range proTxHashes {
 			node := testnet.LookupNodeByProTxHash(proTxHash)
 			valUpdate[node] = privateKeys[i].PubKey()
 			if node == nil {
@@ -325,15 +324,14 @@ func LoadTestnet(file string) (*Testnet, error) {
 				node.PrivvalKey = privateKeys[i]
 				fmt.Printf("Set validator %s/%X (at genesis) pubkey to %X\n", node.Name, node.ProTxHash, node.PrivvalKey.PubKey().Bytes())
 			} else {
-				fmt.Printf("Set validator %s/%X (at height %d) pubkey to %X\n", node.Name, node.ProTxHash, height, privateKeys[i].PubKey().Bytes())
+				fmt.Printf("Set validator %s/%X (at height %d (+ 2)) pubkey to %X\n", node.Name, node.ProTxHash, height, privateKeys[i].PubKey().Bytes())
 				node.NextPrivvalKeys = append(node.NextPrivvalKeys, privateKeys[i])
-				node.NextPrivvalHeights = append(node.NextPrivvalHeights, int64(height))
+				node.NextPrivvalHeights = append(node.NextPrivvalHeights, int64(height + 2)) //the keys will change at the following height
 			}
 		}
 
 		testnet.ValidatorUpdates[int64(height)] = valUpdate
 		testnet.ThresholdPublicKeyUpdates[int64(height)] = thresholdPublicKey
-		proTxHashes = currentProTxHashes
 	}
 
 	return testnet, testnet.Validate()
@@ -380,8 +378,11 @@ func (n Node) Validate(testnet Testnet) error {
 		}
 	}
 	if n.Mode == "validator" {
-		if n.ProTxHash == nil || len(n.ProTxHash) != crypto.DefaultHashSize {
-			return fmt.Errorf("validators %s must have a proTxHash set", n.Name)
+		if n.ProTxHash == nil {
+			return fmt.Errorf("validator %s must have a proTxHash set", n.Name)
+		}
+		if len(n.ProTxHash) != crypto.ProTxHashSize {
+			return fmt.Errorf("validator %s must have a proTxHash of size 32 (%d)", n.Name, len(n.ProTxHash))
 		}
 	}
 	switch n.FastSync {

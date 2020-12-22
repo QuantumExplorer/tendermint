@@ -79,6 +79,9 @@ func (pv *MockPV) GetPubKey() (crypto.PubKey, error) {
 
 // Implements PrivValidator.
 func (pv *MockPV) GetProTxHash() (crypto.ProTxHash, error) {
+	if len(pv.ProTxHash) != crypto.ProTxHashSize {
+		return nil, fmt.Errorf("mock proTxHash is invalid size")
+	}
 	return pv.ProTxHash, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -547,6 +548,10 @@ func (cs *State) GetValidators() (int64, []*types.Validator) {
 func (cs *State) SetPrivValidator(priv types.PrivValidator) {
 	cs.mtx.Lock()
 	defer cs.mtx.Unlock()
+
+	if priv == nil {
+		cs.Logger.Error("attempting to set private validator to nil")
+	}
 
 	cs.privValidator = priv
 
@@ -1797,6 +1802,8 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			// 3) tmkms use with multiple validators connecting to a single tmkms instance
 			// 		(https://github.com/tendermint/tendermint/issues/3839).
 			cs.Logger.Info("Error attempting to add vote", "err", err)
+			debug.PrintStack()
+			fmt.Printf("Error attempting to add vote %s\n", err)
 			return added, ErrAddingVote
 		}
 	}
@@ -1835,6 +1842,7 @@ func (cs *State) signVote(
 	v := vote.ToProto()
 	err := cs.privValidator.SignVote(cs.state.ChainID, v)
 	vote.BlockSignature = v.BlockSignature
+	vote.StateSignature = v.StateSignature
 
 	return vote, err
 }
@@ -1904,7 +1912,13 @@ func (cs *State) updatePrivValidatorPubKeyAndProTxHash() error {
 	if err != nil {
 		return err
 	}
+	if len(pubKey.Bytes()) != bls12381.PubKeySize {
+		return fmt.Errorf("maverick pubKey must be 48 bytes")
+	}
 	cs.privValidatorPubKey = pubKey
+	if len(proTxHash.Bytes()) != crypto.ProTxHashSize {
+		return fmt.Errorf("maverick proTxHash must be 32 bytes")
+	}
 	cs.privValidatorProTxHash = proTxHash
 	return nil
 }

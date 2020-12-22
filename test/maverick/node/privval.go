@@ -3,10 +3,11 @@ package node
 import (
 	"errors"
 	"fmt"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	"io/ioutil"
+	"runtime/debug"
 
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -49,7 +50,7 @@ type FilePVKey struct {
 	PrivKey            crypto.PrivKey   `json:"priv_key"`
 	NextPrivKeys       []crypto.PrivKey `json:"next_priv_key,omitempty"`
 	NextPrivKeyHeights []int64          `json:"next_priv_key_height,omitempty"`
-	ProTxHash          []byte           `json:"pro_tx_hash"`
+	ProTxHash          crypto.ProTxHash `json:"pro_tx_hash"`
 
 	filePath string
 }
@@ -162,23 +163,34 @@ type FilePV struct {
 	LastSignState FilePVLastSignState
 }
 
-// GenFilePV generates a new validator with randomly generated private key
-// and sets the filePaths, but does not call Save().
-func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
-	privKey := ed25519.GenPrivKey()
+// NewFilePV generates a new validator from the given key and paths.
+func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, nextPrivKeys []crypto.PrivKey, nextPrivHeights []int64, keyFilePath, stateFilePath string) *FilePV {
+	if len(proTxHash) != crypto.ProTxHashSize {
+		debug.PrintStack()
+		panic("maverick error setting incorrect proTxHash size in NewFilePV")
+	}
 
 	return &FilePV{
 		Key: FilePVKey{
-			Address:  privKey.PubKey().Address(),
-			PubKey:   privKey.PubKey(),
-			PrivKey:  privKey,
-			filePath: keyFilePath,
+			Address:   privKey.PubKey().Address(),
+			PubKey:    privKey.PubKey(),
+			PrivKey:   privKey,
+			NextPrivKeys: nextPrivKeys,
+			NextPrivKeyHeights: nextPrivHeights,
+			ProTxHash: proTxHash,
+			filePath:  keyFilePath,
 		},
 		LastSignState: FilePVLastSignState{
 			Step:     stepNone,
 			filePath: stateFilePath,
 		},
 	}
+}
+
+// GenFilePV generates a new validator with randomly generated private key
+// and sets the filePaths, but does not call Save().
+func GenFilePV(keyFilePath, stateFilePath string) *FilePV {
+	return NewFilePV(bls12381.GenPrivKey(), crypto.RandProTxHash(), nil, nil, keyFilePath, stateFilePath)
 }
 
 // LoadFilePV loads a FilePV from the filePaths.  The FilePV handles double
@@ -204,6 +216,10 @@ func loadFilePV(keyFilePath, stateFilePath string, loadState bool) *FilePV {
 	err = tmjson.Unmarshal(keyJSONBytes, &pvKey)
 	if err != nil {
 		tmos.Exit(fmt.Sprintf("Error reading PrivValidator key from %v: %v\n", keyFilePath, err))
+	}
+	// verify proTxHash is 32 bytes if it exists
+	if pvKey.ProTxHash != nil && len(pvKey.ProTxHash) != crypto.ProTxHashSize {
+		tmos.Exit(fmt.Sprintf("maverick loadFilePV proTxHash must be 32 bytes in key file path %s", keyFilePath))
 	}
 
 	// overwrite pubkey and address for convenience
@@ -260,6 +276,9 @@ func (pv *FilePV) GetPubKey() (crypto.PubKey, error) {
 // GetPubKey returns the public key of the validator.
 // Implements PrivValidator.
 func (pv *FilePV) GetProTxHash() (crypto.ProTxHash, error) {
+	if len(pv.Key.ProTxHash) != crypto.ProTxHashSize {
+		return nil, fmt.Errorf("privval proTxHash is invalid size")
+	}
 	return pv.Key.ProTxHash, nil
 }
 
@@ -411,18 +430,13 @@ func (pv *FilePV) signProposal(chainID string, proposal *tmproto.Proposal) error
 	}
 
 	blockSignBytes := types.ProposalBlockSignBytes(chainID, proposal)
-	stateSignBytes := types.ProposalStateSignBytes(chainID, proposal)
 
 	// It passed the checks. Sign the proposal
 	blockSig, err := pv.Key.PrivKey.Sign(blockSignBytes)
 	if err != nil {
 		return err
 	}
-	stateSig, err := pv.Key.PrivKey.Sign(stateSignBytes)
-	if err != nil {
-		return err
-	}
-	pv.saveSigned(height, round, step, blockSignBytes, blockSig, stateSignBytes, stateSig)
+	pv.saveSigned(height, round, step, blockSignBytes, blockSig, nil, nil)
 	proposal.Signature = blockSig
 	return nil
 }
