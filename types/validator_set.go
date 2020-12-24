@@ -863,15 +863,20 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID, stateID 
 		voteBlockSignBytes := commit.VoteBlockSignBytes(chainID, int32(idx))
 		if !val.PubKey.VerifySignature(voteBlockSignBytes, commitSig.BlockSignature) {
 			return fmt.Errorf("wrong block signature (#%d/proTxHash:%X/pubKey:%X) | voteBlockSignBytes : %X | signature : %X | commitBID: %s | vote :%v | commit sig %v\n", idx, val.ProTxHash, val.PubKey.Bytes(), voteBlockSignBytes, commitSig.BlockSignature, commit.BlockID.String(), commit.GetVote(int32(idx)), commit.Signatures[idx])
-		} else {
-			fmt.Printf("correct block signature  (#%d/proTxHash:%X/pubKey:%X) | voteBlockSignBytes : %X | signature : %X | commitBID: %s | vote :%v | commit sig %v\n", idx, val.ProTxHash, val.PubKey.Bytes(), voteBlockSignBytes, commitSig.BlockSignature, commit.BlockID.String(), commit.GetVote(int32(idx)), commit.Signatures[idx])
+		}
+		// else {
+		//	fmt.Printf("correct block signature  (#%d/proTxHash:%X/pubKey:%X) | voteBlockSignBytes : %X | signature : %X | commitBID: %s | vote :%v | commit sig %v\n", idx, val.ProTxHash, val.PubKey.Bytes(), voteBlockSignBytes, commitSig.BlockSignature, commit.BlockID.String(), commit.GetVote(int32(idx)), commit.Signatures[idx])
+		// }
+
+		// Validate state signature.
+		if commitSig.BlockIDFlag == BlockIDFlagCommit {
+			// Only verify signatures that voted to commit the block
+			voteStateSignBytes := commit.VoteStateSignBytes(chainID, int32(idx))
+			if !val.PubKey.VerifySignature(voteStateSignBytes, commitSig.StateSignature) {
+				return fmt.Errorf("wrong state signature (#%d/proTxHash:%X/pubKey:%X) | voteStateSignBytes : %X | signature : %X", idx, val.ProTxHash, val.PubKey.Bytes(), voteStateSignBytes, commitSig.StateSignature)
+			}
 		}
 
-		// Validate block signature.
-		voteStateSignBytes := commit.VoteStateSignBytes(chainID, int32(idx))
-		if !val.PubKey.VerifySignature(voteStateSignBytes, commitSig.StateSignature) {
-			return fmt.Errorf("wrong state signature (#%d/proTxHash:%X/pubKey:%X) | voteStateSignBytes : %X | signature : %X", idx, val.ProTxHash, val.PubKey.Bytes(), voteStateSignBytes, commitSig.StateSignature)
-		}
 		// Good!
 		if commitSig.ForBlock() {
 			talliedVotingPower += val.VotingPower
@@ -896,7 +901,6 @@ func (vals *ValidatorSet) VerifyCommit(chainID string, blockID BlockID, stateID 
 	if !vals.ThresholdPublicKey.VerifySignature(canonicalVoteStateSignBytes, commit.ThresholdStateSignature) {
 		return fmt.Errorf("incorrect threshold state signature %X %X", canonicalVoteStateSignBytes, commit.ThresholdStateSignature)
 	}
-
 
 	return nil
 }

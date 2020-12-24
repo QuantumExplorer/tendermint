@@ -350,6 +350,7 @@ func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
 	if len(sig) == 0 {
 		fmt.Printf("bls verifying error (signature empty) from message %X with key %X\n", msg, pubKey.Bytes())
+		debug.PrintStack()
 		return false
 	}
 	if len(sig) != SignatureSize {

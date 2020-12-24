@@ -435,7 +435,6 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 
 	if vote.BlockID.Hash == nil {
 		fmt.Printf("***********we are signing NIL (%d/%d) %X signed (file) for vote %v blockSignBytes %X\n", vote.Height, vote.Round, sigBlock, vote, blockSignBytes)
-		debug.PrintStack()
 	} else {
 		fmt.Printf("==block signature (%d/%d) %X signed (file) for vote %v\n", vote.Height, vote.Round, sigBlock, vote)
 	}

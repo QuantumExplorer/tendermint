@@ -190,13 +190,19 @@ func (vote *Vote) Verify(chainID string, pubKey crypto.PubKey, proTxHash crypto.
 	}
 	v := vote.ToProto()
 	voteBlockSignBytes := VoteBlockSignBytes(chainID, v)
-	voteStateSignBytes := VoteStateSignBytes(chainID, v)
+
 	if !pubKey.VerifySignature(voteBlockSignBytes, vote.BlockSignature) {
 		return ErrVoteInvalidBlockSignature
 	}
-	if !pubKey.VerifySignature(voteStateSignBytes, vote.StateSignature) {
-		return ErrVoteInvalidStateSignature
+
+	// we must verify the stateID but only if the blockID isn't nil
+	if vote.BlockID.Hash != nil {
+		voteStateSignBytes := VoteStateSignBytes(chainID, v)
+		if !pubKey.VerifySignature(voteStateSignBytes, vote.StateSignature) {
+			return ErrVoteInvalidStateSignature
+		}
 	}
+
 	return nil
 }
 

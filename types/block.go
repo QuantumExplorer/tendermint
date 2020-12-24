@@ -729,14 +729,6 @@ func (cs CommitSig) StateID(commitStateID StateID) StateID {
 func (cs CommitSig) ValidateBasic() error {
 	switch cs.BlockIDFlag {
 	case BlockIDFlagAbsent:
-	case BlockIDFlagCommit:
-	case BlockIDFlagNil:
-	default:
-		return fmt.Errorf("unknown BlockIDFlag: %v", cs.BlockIDFlag)
-	}
-
-	switch cs.BlockIDFlag {
-	case BlockIDFlagAbsent:
 		if len(cs.ValidatorProTxHash) != 0 {
 			return errors.New("validator proTxHash is present")
 		}
@@ -746,7 +738,20 @@ func (cs CommitSig) ValidateBasic() error {
 		if len(cs.StateSignature) != 0 {
 			return errors.New("state signature is present")
 		}
-	default:
+	case BlockIDFlagNil:
+		if len(cs.ValidatorProTxHash) != crypto.DefaultHashSize {
+			return fmt.Errorf("expected ValidatorProTxHash size to be %d bytes, got %d bytes",
+				crypto.DefaultHashSize,
+				len(cs.ValidatorProTxHash),
+			)
+		}
+		if len(cs.BlockSignature) == 0 {
+			return errors.New("block signature is missing")
+		}
+		if len(cs.BlockSignature) > MaxSignatureSize {
+			return fmt.Errorf("block signature is too big (max: %d)", MaxSignatureSize)
+		}
+	case BlockIDFlagCommit:
 		if len(cs.ValidatorProTxHash) != crypto.DefaultHashSize {
 			return fmt.Errorf("expected ValidatorProTxHash size to be %d bytes, got %d bytes",
 				crypto.DefaultHashSize,
@@ -765,9 +770,12 @@ func (cs CommitSig) ValidateBasic() error {
 		if len(cs.StateSignature) > MaxSignatureSize {
 			return fmt.Errorf("state signature is too big (max: %d)", MaxSignatureSize)
 		}
+	default:
+		return fmt.Errorf("unknown BlockIDFlag: %v", cs.BlockIDFlag)
 	}
 
-	return nil
+
+return nil
 }
 
 // ToProto converts CommitSig to protobuf

@@ -1981,7 +1981,7 @@ func (cs *State) addVote(
 		return
 	}
 
-	if !bytes.Equal(vote.StateID.LastAppHash, cs.state.AppHash) {
+	if vote.BlockID.Hash != nil && !bytes.Equal(vote.StateID.LastAppHash, cs.state.AppHash) {
 		added = false
 		err = errors.New("vote state last app hash does not match the known state app hash")
 		cs.Logger.Info("Vote ignored because sending wrong app hash", "voteHeight", vote.Height, "csHeight", cs.Height, "peerID", peerID)
