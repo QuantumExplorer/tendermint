@@ -248,8 +248,8 @@ func (vote *Vote) ValidateBasic() error {
 		return fmt.Errorf("block signature is too big (max: %d)", MaxSignatureSize)
 	}
 
-	if len(vote.StateSignature) == 0 {
-		return errors.New("state signature is missing")
+	if vote.BlockID.Hash != nil && len(vote.StateSignature) == 0 {
+		return errors.New("state signature is missing for a block not voting nil")
 	}
 
 	if len(vote.StateSignature) > MaxSignatureSize {

@@ -1921,7 +1921,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			// 		(https://github.com/tendermint/tendermint/issues/3839).
 			cs.Logger.Info("Error attempting to add vote", "err", err)
 			debug.PrintStack()
-			return added, ErrAddingVote
+			return added, fmt.Errorf("error attempting to add vote %v", err)
 		}
 	}
 	return added, nil
