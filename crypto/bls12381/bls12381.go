@@ -67,7 +67,7 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	insecureSignature := blsPrivateKey.SignInsecure(msg)
 	serializedSignature := insecureSignature.Serialize()
 	fmt.Printf("signature %X created for msg %X with key %X\n", serializedSignature, msg, privKey.PubKey().Bytes())
-	return insecureSignature.Serialize(), nil
+	return serializedSignature, nil
 }
 
 // PubKey gets the corresponding public key from the private key.

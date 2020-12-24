@@ -2134,6 +2134,11 @@ func (cs *State) signVote(
 		BlockID:            types.BlockID{Hash: hash, PartSetHeader: header},
 		StateID:            types.StateID{LastAppHash: lastAppHash},
 	}
+	if hash == nil {
+
+	}
+	fmt.Printf("##state signing vote %v\n", vote)
+
 	v := vote.ToProto()
 	err := cs.privValidator.SignVote(cs.state.ChainID, v)
 	vote.BlockSignature = v.BlockSignature

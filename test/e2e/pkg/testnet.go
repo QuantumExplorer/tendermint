@@ -287,12 +287,24 @@ func LoadTestnet(file string) (*Testnet, error) {
 		}
 	}
 
-	// Set up validator updates.
-	for heightStr, validators := range manifest.ValidatorUpdates {
+	heights := make([]int, len(manifest.ValidatorUpdates))
+	i := 0
+	// We need to do validator updates in order, as we use the previous validator set as the basis of current proTxHashes
+	for heightStr, _ := range manifest.ValidatorUpdates {
 		height, err := strconv.Atoi(heightStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid validator update height %q: %w", height, err)
 		}
+		heights[i] = height
+		i++
+	}
+
+	sort.Ints(heights)
+
+	// Set up validator updates.
+	for _, height := range heights {
+		heightStr := strconv.FormatInt(int64(height), 10)
+		validators := manifest.ValidatorUpdates[heightStr]
 		valUpdate := map[*Node]crypto.PubKey{}
 		proTxHashesInUpdate := make([]crypto.ProTxHash, len(validators))
 		i := 0
