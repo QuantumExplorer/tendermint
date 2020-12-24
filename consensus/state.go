@@ -2134,8 +2134,10 @@ func (cs *State) signVote(
 		BlockID:            types.BlockID{Hash: hash, PartSetHeader: header},
 		StateID:            types.StateID{LastAppHash: lastAppHash},
 	}
-	if hash == nil {
 
+	//if hash is nil no need to send the state id
+	if hash == nil {
+		vote.StateID.LastAppHash = nil
 	}
 	fmt.Printf("##state signing vote %v\n", vote)
 

@@ -388,6 +388,12 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 
 	lss := pv.LastSignState
 
+	// The vote should not have a state ID set if the block ID is set to nil
+
+	if vote.BlockID.Hash == nil && vote.StateID.LastAppHash != nil {
+		return fmt.Errorf("error : vote should not have a state ID set if the block ID for the round (%d/%d) is not set", vote.Height, vote.Round)
+	}
+
 	_, err := lss.CheckHRS(height, round, step)
 	if err != nil {
 		return err
