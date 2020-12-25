@@ -451,7 +451,7 @@ func (store dbStore) LoadValidators(height int64) (*types.ValidatorSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("loaded validators at %d %v", height, vip)
+	// fmt.Printf("loaded validators at %d %v", height, vip)
 
 	return vip, nil
 }

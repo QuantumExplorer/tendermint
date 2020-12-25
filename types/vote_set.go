@@ -295,7 +295,7 @@ func (voteSet *VoteSet) addVerifiedVote(
 		if voteSet.maj23 == nil {
 			maj23BlockID := vote.BlockID
 			stateMaj23StateID := vote.StateID
-			fmt.Printf("vote majority reached at height %d (%d/%d) quorum size %d\n", voteSet.height, voteSet.round, voteSet.signedMsgType, quorum)
+			// fmt.Printf("vote majority reached at height %d (%d/%d) quorum size %d\n", voteSet.height, voteSet.round, voteSet.signedMsgType, quorum)
 			voteSet.maj23 = &maj23BlockID
 			voteSet.stateMaj23 = &stateMaj23StateID
 			if len(votesByBlock.votes) > 1 {

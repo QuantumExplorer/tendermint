@@ -1802,8 +1802,7 @@ func (cs *State) tryAddVote(vote *types.Vote, peerID p2p.ID) (bool, error) {
 			// 3) tmkms use with multiple validators connecting to a single tmkms instance
 			// 		(https://github.com/tendermint/tendermint/issues/3839).
 			cs.Logger.Info("Error attempting to add vote", "err", err)
-			debug.PrintStack()
-			fmt.Printf("Error attempting to add vote %s\n", err)
+			// fmt.Printf("Error attempting to add vote %s\n", err)
 			return added, ErrAddingVote
 		}
 	}

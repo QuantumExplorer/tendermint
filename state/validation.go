@@ -97,7 +97,7 @@ func validateBlock(proxyAppQueryConn proxy.AppConnQuery, state State, block *typ
 			return errors.New("initial block can't have LastCommit signatures")
 		}
 	} else {
-		fmt.Printf("validating against state with lastBlockId %s lastStateId %s\n", state.LastBlockID.String(), state.LastStateID.String())
+		// fmt.Printf("validating against state with lastBlockId %s lastStateId %s\n", state.LastBlockID.String(), state.LastStateID.String())
 		// LastCommit.Signatures length is checked in VerifyCommit.
 		if err := state.LastValidators.VerifyCommit(
 			state.ChainID, state.LastBlockID, state.LastStateID, block.Height-1, block.LastCommit); err != nil {

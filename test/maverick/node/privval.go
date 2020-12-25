@@ -3,17 +3,15 @@ package node
 import (
 	"errors"
 	"fmt"
-	"github.com/tendermint/tendermint/crypto/bls12381"
-	"io/ioutil"
-	"runtime/debug"
-
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/bls12381"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/libs/tempfile"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"github.com/tendermint/tendermint/types"
+	"io/ioutil"
 )
 
 // *******************************************************************************************************************
@@ -166,7 +164,6 @@ type FilePV struct {
 // NewFilePV generates a new validator from the given key and paths.
 func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, nextPrivKeys []crypto.PrivKey, nextPrivHeights []int64, keyFilePath, stateFilePath string) *FilePV {
 	if len(proTxHash) != crypto.ProTxHashSize {
-		debug.PrintStack()
 		panic("maverick error setting incorrect proTxHash size in NewFilePV")
 	}
 

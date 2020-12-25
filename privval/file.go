@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"runtime/debug"
 	"time"
 
 	"github.com/tendermint/tendermint/crypto/bls12381"
@@ -168,7 +167,6 @@ type FilePV struct {
 // NewFilePV generates a new validator from the given key and paths.
 func NewFilePV(privKey crypto.PrivKey, proTxHash []byte, nextPrivKeys []crypto.PrivKey, nextPrivHeights []int64, keyFilePath, stateFilePath string) *FilePV {
 	if len(proTxHash) != crypto.ProTxHashSize {
-		debug.PrintStack()
 		panic("error setting incorrect proTxHash size in NewFilePV")
 	}
 
@@ -433,11 +431,11 @@ func (pv *FilePV) signVote(chainID string, vote *tmproto.Vote) error {
 		}
 	}
 
-	if vote.BlockID.Hash == nil {
-		fmt.Printf("***********we are signing NIL (%d/%d) %X signed (file) for vote %v blockSignBytes %X\n", vote.Height, vote.Round, sigBlock, vote, blockSignBytes)
-	} else {
-		fmt.Printf("==block signature (%d/%d) %X signed (file) for vote %v\n", vote.Height, vote.Round, sigBlock, vote)
-	}
+	//  if vote.BlockID.Hash == nil {
+	//	  fmt.Printf("***********we are signing NIL (%d/%d) %X signed (file) for vote %v blockSignBytes %X\n", vote.Height, vote.Round, sigBlock, vote, blockSignBytes)
+	//  } else {
+	//	  fmt.Printf("==block signature (%d/%d) %X signed (file) for vote %v\n", vote.Height, vote.Round, sigBlock, vote)
+	//  }
 
 	pv.saveSigned(height, round, step, blockSignBytes, sigBlock, stateSignBytes, sigState)
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"runtime/debug"
 	"sort"
 
 	bls "github.com/dashpay/bls-signatures/go-bindings"
@@ -67,7 +66,7 @@ func (privKey PrivKey) Sign(msg []byte) ([]byte, error) {
 	}
 	insecureSignature := blsPrivateKey.SignInsecure(msg)
 	serializedSignature := insecureSignature.Serialize()
-	fmt.Printf("signature %X created for msg %X with key %X\n", serializedSignature, msg, privKey.PubKey().Bytes())
+	// fmt.Printf("signature %X created for msg %X with key %X\n", serializedSignature, msg, privKey.PubKey().Bytes())
 	return serializedSignature, nil
 }
 
@@ -191,18 +190,14 @@ func CreatePrivLLMQDataOnProTxHashesUsingSeed(proTxHashes []crypto.ProTxHash, th
 	}
 	var reader io.Reader
 	if seedSource != 0 {
-		fmt.Printf("using seed source %d\n", seedSource)
 		reader = rand.New(rand.NewSource(seedSource))
 	} else {
-		fmt.Printf("using default reader\n")
-		debug.PrintStack()
 		reader = crypto.CReader()
 	}
 
 	if len(proTxHashes) == 1 {
 		createdSeed := make([]byte, SeedSize)
 		_, err := io.ReadFull(reader, createdSeed)
-		fmt.Printf("created seed is %X", createdSeed)
 		if err != nil {
 			panic(err)
 		}
@@ -223,7 +218,6 @@ func CreatePrivLLMQDataOnProTxHashesUsingSeed(proTxHashes []crypto.ProTxHash, th
 	for i := 0; i < threshold; i++ {
 		createdSeed := make([]byte, SeedSize)
 		_, err := io.ReadFull(reader, createdSeed)
-		fmt.Printf("created seed is %X", createdSeed)
 		if err != nil {
 			panic(err)
 		}
@@ -375,34 +369,33 @@ func (pubKey PubKey) AggregateSignatures(sigSharesData [][]byte, messages [][]by
 func (pubKey PubKey) VerifySignature(msg []byte, sig []byte) bool {
 	// make sure we use the same algorithm to sign
 	if len(sig) == 0 {
-		fmt.Printf("bls verifying error (signature empty) from message %X with key %X\n", msg, pubKey.Bytes())
-		debug.PrintStack()
+		//  fmt.Printf("bls verifying error (signature empty) from message %X with key %X\n", msg, pubKey.Bytes())
 		return false
 	}
 	if len(sig) != SignatureSize {
-		fmt.Printf("bls verifying error (signature size) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
+		// fmt.Printf("bls verifying error (signature size) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	publicKey, err := bls.PublicKeyFromBytes(pubKey)
 	if err != nil {
-		fmt.Printf("bls verifying error (publicKey) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
+		// fmt.Printf("bls verifying error (publicKey) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	aggregationInfo := bls.AggregationInfoFromMsg(publicKey, msg)
 	if err != nil {
-		fmt.Printf("bls verifying error (aggregationInfo) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
+		// fmt.Printf("bls verifying error (aggregationInfo) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	blsSignature, err := bls.SignatureFromBytesWithAggregationInfo(sig, aggregationInfo)
 	if err != nil {
-		fmt.Printf("bls verifying error (blsSignature) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
+		// fmt.Printf("bls verifying error (blsSignature) sig %X from message %X with key %X\n", sig, msg, pubKey.Bytes())
 		return false
 	}
 	verified := blsSignature.Verify()
-	if !verified {
-		fmt.Printf("bls verified (%t) sig %X from message %X with key %X\n", verified, sig, msg, pubKey.Bytes())
-		debug.PrintStack()
-	}
+	//  if !verified {
+	//	  fmt.Printf("bls verified (%t) sig %X from message %X with key %X\n", verified, sig, msg, pubKey.Bytes())
+	//	  debug.PrintStack()
+	//  }
 	return verified
 }
 

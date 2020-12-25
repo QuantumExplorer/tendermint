@@ -88,13 +88,13 @@ func DoublePrevoteMisbehavior() Misbehavior {
 			cs.Logger.Error("enterPrevote: Unable to sign block", "err", err)
 		}
 
-		fmt.Printf("%+v prevote\n", prevote.String())
-		fmt.Printf("%+v nilPrevote\n", nilPrevote.String())
-		a,_ := MsgToProto(&VoteMessage{prevote})
-		fmt.Printf("%+v encoded prevote\n", a)
+		// fmt.Printf("%+v prevote\n", prevote.String())
+		// fmt.Printf("%+v nilPrevote\n", nilPrevote.String())
+		// a,_ := MsgToProto(&VoteMessage{prevote})
+		// fmt.Printf("%+v encoded prevote\n", a)
 
-		fmt.Printf("%X proTxHash (%d)\n", prevote.ValidatorProTxHash.Bytes(), len(prevote.ValidatorProTxHash.Bytes()))
-		fmt.Printf("%X cs proTxHash (%d)\n", cs.privValidatorProTxHash.Bytes(), len(cs.privValidatorProTxHash))
+		// fmt.Printf("%X proTxHash (%d)\n", prevote.ValidatorProTxHash.Bytes(), len(prevote.ValidatorProTxHash.Bytes()))
+		// fmt.Printf("%X cs proTxHash (%d)\n", cs.privValidatorProTxHash.Bytes(), len(cs.privValidatorProTxHash))
 
 		// add our own vote
 		cs.sendInternalMessage(msgInfo{&VoteMessage{prevote}, ""})
