@@ -44,6 +44,18 @@ type Manifest struct {
 	// not specified are not changed.
 	ValidatorUpdates map[string]map[string]int64 `toml:"validator_update"`
 
+	// ChainLockUpdates is a map of heights at which a new chain lock should be proposed
+	// The first number is the tendermint height, and the second is the
+	//
+	// [chainlock_updates]
+	// 1000 = 3450
+	// 1004 = 3451
+	// 1020 = 3454
+	// 1040 = 3500
+	//
+
+	ChainLockUpdates map[string]int64 `toml:"chainlock_updates"`
+
 	// Nodes specifies the network nodes. At least one node must be given.
 	Nodes map[string]*ManifestNode `toml:"node"`
 
@@ -144,6 +156,7 @@ func (m Manifest) Save(file string) error {
 func LoadManifest(file string) (Manifest, error) {
 	manifest := Manifest{}
 	_, err := toml.DecodeFile(file, &manifest)
+	fmt.Printf("loaded manifest %v", manifest)
 	if err != nil {
 		return manifest, fmt.Errorf("failed to load testnet manifest %q: %w", file, err)
 	}
