@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"runtime/debug"
 	"sort"
 
@@ -164,7 +165,15 @@ func CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes []crypto.ProTxH
 	return CreatePrivLLMQDataOnProTxHashes(proTxHashes, len(proTxHashes)*2/3+1)
 }
 
+func CreatePrivLLMQDataOnProTxHashesDefaultThresholdUsingSeedSource(proTxHashes []crypto.ProTxHash, seedSource int64) ([]crypto.PrivKey, crypto.PubKey) {
+	return CreatePrivLLMQDataOnProTxHashesUsingSeed(proTxHashes, len(proTxHashes)*2/3+1, seedSource)
+}
+
 func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold int) ([]crypto.PrivKey, crypto.PubKey) {
+	return CreatePrivLLMQDataOnProTxHashesUsingSeed(proTxHashes, threshold, 0)
+}
+
+func CreatePrivLLMQDataOnProTxHashesUsingSeed(proTxHashes []crypto.ProTxHash, threshold int, seedSource int64) ([]crypto.PrivKey, crypto.PubKey) {
 	members := len(proTxHashes)
 	if members < threshold {
 		panic("members must be bigger than threshold")
@@ -180,8 +189,24 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 			panic(fmt.Errorf("blsId incorrect size in public key recovery, expected 32 bytes (got %d)", len(proTxHash)))
 		}
 	}
+	var reader io.Reader
+	if seedSource != 0 {
+		fmt.Printf("using seed source %d\n", seedSource)
+		reader = rand.New(rand.NewSource(seedSource))
+	} else {
+		fmt.Printf("using default reader\n")
+		debug.PrintStack()
+		reader = crypto.CReader()
+	}
+
 	if len(proTxHashes) == 1 {
-		privKey := GenPrivKey()
+		createdSeed := make([]byte, SeedSize)
+		_, err := io.ReadFull(reader, createdSeed)
+		fmt.Printf("created seed is %X", createdSeed)
+		if err != nil {
+			panic(err)
+		}
+		privKey := GenPrivKeyFromSecret(createdSeed)
 		return []crypto.PrivKey{privKey}, privKey.PubKey()
 	}
 
@@ -194,14 +219,15 @@ func CreatePrivLLMQDataOnProTxHashes(proTxHashes []crypto.ProTxHash, threshold i
 	testPubKey := make([]crypto.PubKey, members)
 	testProTxHashes := make([][]byte, members)
 
-	for i := 0; i < threshold; i++ {
-		seed := make([]byte, SeedSize)
 
-		_, err := io.ReadFull(crypto.CReader(), seed)
+	for i := 0; i < threshold; i++ {
+		createdSeed := make([]byte, SeedSize)
+		_, err := io.ReadFull(reader, createdSeed)
+		fmt.Printf("created seed is %X", createdSeed)
 		if err != nil {
 			panic(err)
 		}
-		privKey, err := bls.PrivateKeyFromSeed(seed)
+		privKey, err := bls.PrivateKeyFromSeed(createdSeed)
 		if err != nil {
 			panic(err)
 		}

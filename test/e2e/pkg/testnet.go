@@ -153,7 +153,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 		}
 	}
 
-	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
+	privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThresholdUsingSeedSource(proTxHashes, randomSeed)
 
 	testnet := &Testnet{
 		Name:               filepath.Base(dir),
@@ -324,7 +324,7 @@ func LoadTestnet(file string) (*Testnet, error) {
 
 		sort.Sort(crypto.SortProTxHash(proTxHashes))
 
-		privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThreshold(proTxHashes)
+		privateKeys, thresholdPublicKey := bls12381.CreatePrivLLMQDataOnProTxHashesDefaultThresholdUsingSeedSource(proTxHashes, randomSeed + int64(height))
 
 		for i, proTxHash := range proTxHashes {
 			node := testnet.LookupNodeByProTxHash(proTxHash)
@@ -570,7 +570,7 @@ func (n Node) Client() (*rpchttp.HTTP, error) {
 	return rpchttp.New(fmt.Sprintf("http://127.0.0.1:%v", n.ProxyPort), "/websocket")
 }
 
-// keyGenerator generates pseudorandom Ed25519 keys based on a seed.
+// keyGenerator generates pseudorandom keys based on a seed.
 type keyGenerator struct {
 	random *rand.Rand
 }

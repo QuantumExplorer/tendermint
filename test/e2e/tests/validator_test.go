@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -34,6 +35,7 @@ func TestValidator_Sets(t *testing.T) {
 		}
 
 		valSchedule := newValidatorSchedule(*node.Testnet)
+		fmt.Printf("node %s(%X) validator schedule is %v\n", node.Name, node.ProTxHash, valSchedule)
 		valSchedule.Increment(first - node.Testnet.InitialHeight)
 
 		for h := first; h <= last; h++ {
@@ -52,6 +54,7 @@ func TestValidator_Sets(t *testing.T) {
 					break
 				}
 			}
+			fmt.Printf("node %s(%X) validator set for height %d is %v\n", node.Name, node.ProTxHash, h, valSchedule.Set)
 			for i, valScheduleValidator := range valSchedule.Set.Validators {
 				validator := validators[i]
 				require.Equal(t, valScheduleValidator.ProTxHash, validator.ProTxHash,

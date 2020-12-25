@@ -126,6 +126,15 @@ func TestRecoverThresholdPublicKeyFromPublicKeys5(t *testing.T) {
 	require.Equal(t, expectedThresholdPublicKeyString, encodedThresholdPublicKey)
 }
 
+func TestPublicKeyGeneration(t *testing.T) {
+	decodedPrivateKeyBytes, err := base64.StdEncoding.DecodeString("BAo7smfbXWCycH2gctnV2aKTFWcNk/lCXrLahGZeay4=")
+	require.NoError(t, err)
+	privateKey := bls12381.PrivKey(decodedPrivateKeyBytes)
+	expectedPublicKeyString := "BBdEXubJCrsGbU3vFyYpfQs1F9iuj6YBB6mc6ntizjX7bh8mnEWk3NkBEs/cVVfN"
+	encodedPublicKeyString := base64.StdEncoding.EncodeToString(privateKey.PubKey().Bytes())
+	require.Equal(t, expectedPublicKeyString, encodedPublicKeyString)
+}
+
 func TestAggregationDiffMessages(t *testing.T) {
 	privKey := bls12381.GenPrivKey()
 	pubKey := privKey.PubKey()
