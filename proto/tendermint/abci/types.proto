@@ -65,7 +65,8 @@ message RequestInitChain {
   //repeated ValidatorUpdate validators       = 4 [(gogoproto.nullable) = false];
   bytes                    app_state_bytes  = 5;
   int64                    initial_height   = 6;
-  ValidatorSetUpdate validator_set = 100 [(gogoproto.nullable) = false];
+  tendermint.types.CoreChainLock  next_core_chain_lock_update  = 100;
+  ValidatorSetUpdate validator_set = 101 [(gogoproto.nullable) = false];
 }
 
 message RequestQuery {
@@ -169,6 +170,7 @@ message ResponseInfo {
 
   int64 last_block_height   = 4;
   bytes last_block_app_hash = 5;
+  uint32 last_core_chain_locked_height   = 100;
 }
 
 // nondeterministic
