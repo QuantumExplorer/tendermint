@@ -55,6 +55,8 @@ type State struct {
 	// when it's detected
 	evpool evidencePool
 
+	nextCoreChainLock *types.CoreChainLock
+
 	// internal state
 	mtx sync.RWMutex
 	cstypes.RoundState
@@ -1212,7 +1214,7 @@ func (cs *State) defaultDecideProposal(height int64, round int32) {
 
 	// Make proposal
 	propBlockID := types.BlockID{Hash: block.Hash(), PartSetHeader: blockParts.Header()}
-	proposal := types.NewProposal(height, cs.state.NextCoreChainLock.CoreBlockHeight, round, cs.ValidRound, propBlockID)
+	proposal := types.NewProposal(height, cs.nextCoreChainLock.CoreBlockHeight, round, cs.ValidRound, propBlockID)
 	p := proposal.ToProto()
 	if err := cs.privValidator.SignProposal(cs.state.ChainID, p); err == nil {
 		proposal.Signature = p.Signature
