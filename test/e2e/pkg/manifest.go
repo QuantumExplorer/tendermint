@@ -15,6 +15,9 @@ type Manifest struct {
 	// InitialHeight specifies the initial block height, set in genesis. Defaults to 1.
 	InitialHeight int64 `toml:"initial_height"`
 
+	// InitialCoreChainLockedHeight specifies the initial core chain locked block height, set in genesis. Defaults to 1.
+	InitialCoreChainLockedHeight uint32 `toml:"initial_core_chain_locked_height"`
+
 	// InitialState is an initial set of key/value pairs for the application,
 	// set in genesis. Defaults to nothing.
 	InitialState map[string]string `toml:"initial_state"`

@@ -66,6 +66,20 @@ func (ml *mockBlockStore) Height() int64 {
 	return int64(len(ml.blocks))
 }
 
+func (ml *mockBlockStore) CoreChainLockedHeight() uint32 {
+	latestHeight := int64(0)
+	for k := range ml.blocks {
+		if latestHeight > k {
+			latestHeight = k
+		}
+	}
+	if latestHeight > 0 {
+		return ml.blocks[latestHeight].CoreChainLockedHeight
+	} else {
+		return 0
+	}
+}
+
 func (ml *mockBlockStore) LoadBlock(height int64) *types.Block {
 	return ml.blocks[height]
 }

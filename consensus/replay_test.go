@@ -1355,19 +1355,21 @@ func stateAndStore(
 // mock block store
 
 type mockBlockStore struct {
-	config  *cfg.Config
-	params  tmproto.ConsensusParams
-	chain   []*types.Block
-	commits []*types.Commit
-	base    int64
+	config                *cfg.Config
+	params                tmproto.ConsensusParams
+	chain                 []*types.Block
+	commits               []*types.Commit
+	base                  int64
+	coreChainLockedHeight uint32
 }
 
 // TODO: NewBlockStore(db.NewMemDB) ...
 func newMockBlockStore(config *cfg.Config, params tmproto.ConsensusParams) *mockBlockStore {
-	return &mockBlockStore{config, params, nil, nil, 0}
+	return &mockBlockStore{config, params, nil, nil, 0, 1}
 }
 
 func (bs *mockBlockStore) Height() int64                       { return int64(len(bs.chain)) }
+func (bs *mockBlockStore) CoreChainLockedHeight() uint32       { return bs.coreChainLockedHeight }
 func (bs *mockBlockStore) Base() int64                         { return bs.base }
 func (bs *mockBlockStore) Size() int64                         { return bs.Height() - bs.Base() + 1 }
 func (bs *mockBlockStore) LoadBaseMeta() *types.BlockMeta      { return bs.LoadBlockMeta(bs.base) }
